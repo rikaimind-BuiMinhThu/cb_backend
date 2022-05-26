@@ -9,6 +9,9 @@ Rails.application.routes.draw do
         resources :registrations
         resources :confirmations
       end
+      namespace :managements do
+        resources :users, except: [:new, :edit]
+      end
     end
   end
 end
