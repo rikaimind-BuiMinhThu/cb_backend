@@ -1,6 +1,4 @@
 class Api::V1::Managements::UsersController < ApplicationController
-  before_action :load_user_authentication
-
   def index
     users = User.all
     render json: {code: 1, data: users}
