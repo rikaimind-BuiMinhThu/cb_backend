@@ -11,6 +11,7 @@ Rails.application.routes.draw do
       end
       namespace :managements do
         resources :users, except: [:new, :edit]
+        resources :clients, except: [:new, :edit]
       end
     end
   end
