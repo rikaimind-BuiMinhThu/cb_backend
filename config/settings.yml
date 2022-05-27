@@ -1,4 +1,5 @@
 api:
   time_reset_token: 2
+  time_refresh_token: 30
   company: rikai
   client_name: chatbot

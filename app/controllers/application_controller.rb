@@ -10,7 +10,7 @@ class ApplicationController < ActionController::Base
     payload = token.nil? ? nil : JsonWebToken.decode(token) rescue nil
     if payload.nil? || !JsonWebToken.valid_payload(payload.first)
       render json: {code: 0,
-        message: "Bạn cần phải đăng nhập trước khi tiếp tục."}, status: 401
+        message: "You need to sign in before continuing."}, status: 401
       return
     end
     @current_user = User.find_by_id payload.first["user_id"]
