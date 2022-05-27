@@ -4,6 +4,7 @@ Rails.application.routes.draw do
   namespace :api, defaults: { format: :json } do
     namespace :v1 do
       post "sign_in", :to => 'sessions#create'
+      post "refresh_token", :to => 'tokens#create'
       namespace :users do
         resources :passwords
         resources :registrations
