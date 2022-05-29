@@ -1,5 +1,8 @@
 Rails.application.routes.draw do
-  devise_for :users, :skip => :sessions, :controllers => {:passwords => 'api/v1/users/passwords'}
+  devise_for :users, :skip => :sessions, :controllers => {
+    :passwords => "api/v1/users/passwords",
+    :omniauth_callbacks => "users/omniauth_callbacks"
+  }
   # root "articles#index"
   namespace :api, defaults: { format: :json } do
     namespace :v1 do
@@ -15,6 +18,12 @@ Rails.application.routes.draw do
         resources :clients, except: [:new, :edit]
       end
       resources :clients, except: [:new, :edit]
+    end
+  end
+
+  namespace :api do
+    namespace :v1 do
+      resources :sessions, only: :new
     end
   end
 end
