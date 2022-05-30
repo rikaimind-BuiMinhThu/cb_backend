@@ -1,6 +1,4 @@
 class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
-  skip_before_action :permision
-
   Devise.omniauth_providers.each do |provider|
     define_method provider do
       handle_with_omniauth
@@ -8,47 +6,76 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
   end
 
   def failure
-    render json: {code: 2, data: failure_message}
-
+    redirect_to after_omniauth_failure_path_for(resource_name)
+    render json: {code: 2, message: "error"}
   end
 
   private
   def handle_with_omniauth
-    if identity = Identity.find_by(identity_hash)
-      set_flash_message!(:notice, :signed_in)
-      # sign_in_and_redirect identity.user and return
-      return render json: {code: 1, data: identity.user}
+    begin
+      if check_user_token == 2
+        render json: {code: 2, message: "Đăng nhập không thành công. Vui lòng thử lại."}
+        return
+      end
+      @user = User.from_omniauth auth
+      if @user.email.blank?
+        tmp_user = User.find_by email: identity_hash[:uid].to_s + "@rikai.technology"
+        if tmp_user.present?
+          @user = tmp_user
+        else
+          @user.email = identity_hash[:uid].to_s + "@rikai.technology"
+          @user.save
+        end
+      end
+      @user.identities.create identity_hash
+      auth_token = JsonWebToken.encode(user_id: @user.id)
+      refresh_token = JsonWebToken.encode_refresh(user_id: @user.id)
+      render json: {code: 1, message: "Success",
+        user: @user, token: auth_token, refresh_token: refresh_token}, status: 200
+    rescue e
+      puts e
+      render json: {code: 2, message: "Đăng nhập không thành công. Vui lòng thử lại."}
+      return
     end
-
-    if auth.info.email.nil?
-      flash[:notice] = t "registration.not_email"
-      return render json: {code: 2, data: "not have email"}
-    end
-
-    @user = User.from_omniauth auth
-    @user.identities.create identity_hash
-    sign_in_and_redirect @user
-    render json: {code: 1, data: @user}
   end
 
   def auth
-    @auth ||= request.env["omniauth.auth"]
+    # @auth ||= request.env["omniauth.auth"]
+    @auth ||= JSON.parse(@authParams.to_json, object_class: OpenStruct)
   end
 
   def identity_hash
     {
-      provider: auth.provider,
-      uid: auth.uid
+      provider: auth.info.provider,
+      uid: auth.info.uid
     }
   end
 
-  def user_hash
-    full_name = auth.info.name || auth.info.nickname
+  def check_user_token
+    info = get_request "https://graph.facebook.com/me?access_token="+ params[:access_token] +
+      "&fields=id,name,email,picture"
+    raw_info = JSON.parse info
 
-    {
-      full_name: full_name,
-      last_name: last_name,
-      email: auth.info.email,
-    }
+    if raw_info["error"].present?
+      return 2
+    end
+    @authParams = {"info": {}}
+    puts @authParams
+    @authParams[:info].merge! raw_info
+    @authParams[:info][:id] = raw_info["id"]
+    @authParams[:info][:image] = raw_info["picture"]["data"]["url"]
+    return 1
+  end
+
+  def get_request url
+    require 'uri'
+    require 'net/http'
+    uri = URI(url)
+    res = Net::HTTP.get_response(uri)
+    if res.is_a?(Net::HTTPSuccess)
+      return res.body
+    else
+      return false
+    end
   end
 end
