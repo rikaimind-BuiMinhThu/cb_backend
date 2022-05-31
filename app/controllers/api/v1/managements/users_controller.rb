@@ -13,8 +13,7 @@ class Api::V1::Managements::UsersController < ApplicationController
     user = User.find_by(id: params[:id])
     return render json: {code: 2, data: "Not found"} if user.blank?
     return render json: {code: 2, data: "Not have permission"} unless current_user.admin_deel? || user.client_id == current_user.client_id || user.id == current_user.id
-    render json: {code: 1, data: user} if user.present?
-    render json: {code: 2, data: "Not found"}
+    render json: {code: 1, data: user}
   end
 
   def update
