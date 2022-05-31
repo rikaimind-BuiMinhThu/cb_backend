@@ -17,13 +17,6 @@ Rails.application.routes.draw do
         resources :users, except: [:new, :edit]
         resources :clients, except: [:new, :edit]
       end
-      resources :clients, except: [:new, :edit]
-    end
-  end
-
-  namespace :api do
-    namespace :v1 do
-      resources :sessions, only: :new
     end
   end
 end
