@@ -1,11 +1,18 @@
 class Api::V1::Managements::UsersController < ApplicationController
   def index
-    users = User.ransack(full_name_cont: params[:name]).result
+    return render json: {code: 2, data: "Not have permission"} if current_user.client?
+    users = User.ransack(full_name_cont: params[:name])
+    if current_user.admin_client?
+      users = users.ransack(client_id_eq: current_user.client_id)
+    end
+    users = users.result
     render json: {code: 1, data: users}
   end
 
   def show
     user = User.find_by(id: params[:id])
+    return render json: {code: 2, data: "Not found"} if user.blank?
+    return render json: {code: 2, data: "Not have permission"} unless current_user.admin_deel? || user.client_id == current_user.client_id || user.id == current_user.id
     render json: {code: 1, data: user} if user.present?
     render json: {code: 2, data: "Not found"}
   end
