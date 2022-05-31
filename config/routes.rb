@@ -9,9 +9,9 @@ Rails.application.routes.draw do
       post "sign_in", :to => 'sessions#create'
       post "refresh_token", :to => 'tokens#create'
       namespace :users do
-        resources :passwords
         resources :registrations
-        resources :confirmations
+        resources :omniauth_callbacks
+        post "/auth/facebook/callback" => "omniauth_callbacks#facebook"
       end
       namespace :managements do
         resources :users, except: [:new, :edit]
