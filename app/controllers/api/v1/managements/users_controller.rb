@@ -1,11 +1,11 @@
 class Api::V1::Managements::UsersController < ApplicationController
   def index
     return render json: {code: 2, data: "Not have permission"} if current_user.client?
-    users = User.ransack(full_name_cont: params[:name])
+    q = {full_name_cont: params[:name]}
     if current_user.admin_client?
-      users = users.ransack(client_id_eq: current_user.client_id)
+      q[:client_id_eq] = current_user.client_id
     end
-    users = users.result
+    users = User.ransack(full_name_cont: params[:name]).result
     render json: {code: 1, data: users}
   end
 
