@@ -5,7 +5,7 @@ class Api::V1::Managements::UsersController < ApplicationController
     if current_user.admin_client?
       q[:client_id_eq] = current_user.client_id
     end
-    users = User.ransack(full_name_cont: params[:name]).result
+    users = User.ransack(q).result
     render json: {code: 1, data: users}
   end
 
