@@ -5,10 +5,13 @@ class CreateClients < ActiveRecord::Migration[7.0]
       t.string :address
       t.string :phone_number
 
+      t.datetime :deleted_at
+
       t.timestamps
     end
 
     add_index :clients, :name, unique: true
+    add_index :clients, :deleted_at, where: "deleted_at IS NULL"
 
     add_foreign_key(
       :users,
