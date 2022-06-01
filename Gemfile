@@ -20,6 +20,7 @@ gem "ransack"
 gem "omniauth-facebook"
 gem "omniauth-rails_csrf_protection", "~> 1.0"
 gem "paranoia", "~> 2.6.0"
+gem "rack-cors"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
