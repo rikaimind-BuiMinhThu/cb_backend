@@ -18,7 +18,9 @@ class Api::V1::Managements::ClientsController < ApplicationController
   def index
     return render json: {code: 2, data: "No permission"} unless current_user.admin_deel?
     clients = Client.ransack(name_cont: params[:name]).result
-    render json: {code: 1, data: clients}
+    total = clients.size
+    clients = clients.page(params[:page])
+    render json: {code: 1, data: {clients: client, total: total}}
   end
 
   def show
