@@ -20,7 +20,7 @@ class Api::V1::Managements::ClientsController < ApplicationController
     clients = Client.ransack(name_cont: params[:name]).result
     total = clients.size
     clients = clients.page(params[:page])
-    render json: {code: 1, data: {clients: client, total: total}}
+    render json: {code: 1, data: {clients: clients, total: total}}
   end
 
   def show
