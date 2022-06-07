@@ -3,7 +3,7 @@ class Api::V1::Managements::ClientsController < ApplicationController
   def create
     return render json: {code: 2, data: "No permission"} unless current_user.admin_deel?
     if Client.find_by_name(client_params[:name])
-      render json: {:code => 2, message: t("devise.registrations.username")}
+      render json: {:code => 2, message: "Client name has unique."}
       return
     end
     begin
@@ -15,12 +15,12 @@ class Api::V1::Managements::ClientsController < ApplicationController
                             password: user_params[:password],
                             password_confirmation: user_params[:password_confirmation],
                             role: 'admin_client', client_id: client.id)
-            return render json: {code: 1, message: "Success", data: {client: client, user: user}}, status: 200 if user.save!
+            render json: {code: 1, message: "Success", data: {client: client, user: user}}, status: 200 if user.save!
           end
         end
       end
     rescue Exception => e
-      return render json: {code: 2, message: e}
+      render json: {code: 2, message: e}
     end
   end
 
