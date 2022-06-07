@@ -1,17 +1,11 @@
 class Api::V1::Users::RegistrationsController < ApplicationController
-  skip_before_action :permision
-  respond_to :json
-
   def create
-    if User.find_by_email(user_params[:email])
-      render json: {:code => 2, message: t("devise.registrations.username")}
-      return
-    end
+    return render json: {code: 2, data: "Not have permission"} if current_user.client?
     params[:user][:role] = :client
+    params[:user][:client_id] = current_user.client_id if current_user.admin_client?
     user = User.new(user_params)
     if user.save
-      user.update role: :client
-      render json: {code: 1, message: t("devise.registrations.signed_up_but_unconfirmed")},
+      render json: {code: 1, message: "Success"},
         status: 200
     else
       render json: {:code => 2, :message => user.errors.full_messages[0]}
@@ -20,6 +14,6 @@ class Api::V1::Users::RegistrationsController < ApplicationController
 
   private
   def user_params
-    params.require(:user).permit :first_name, :last_name, :email, :password, :role
+    params.require(:user).permit :full_name, :english_name, :email, :password, :role, :client_id
   end
 end
