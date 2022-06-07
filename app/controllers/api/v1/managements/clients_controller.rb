@@ -14,7 +14,7 @@ class Api::V1::Managements::ClientsController < ApplicationController
             user = User.new(email: client_params[:email],
                             password: user_params[:password],
                             password_confirmation: user_params[:password_confirmation],
-                            role: 'admin_client')
+                            role: 'admin_client', client_id: client.id)
             return render json: {code: 1, message: "Success", data: {client: client, user: user}}, status: 200 if user.save!
           end
         end
@@ -26,7 +26,7 @@ class Api::V1::Managements::ClientsController < ApplicationController
 
   def index
     return render json: {code: 2, data: "No permission"} unless current_user.admin_deel?
-    clients = Client.ransack(name_cont: params[:name]).result
+    clients = Client.ransack(name_cont: params[:name], plan_eq: params[:plan]).result
     total = clients.size
     clients = clients.select(:id, :logo_url, :name, :plan, :price, :subscription_start_at, :subscription_end_at, :address).page(params[:page])
     render json: {code: 1, data: {clients: clients, total: total}}
