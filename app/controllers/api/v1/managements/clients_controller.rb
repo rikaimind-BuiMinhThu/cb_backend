@@ -6,12 +6,21 @@ class Api::V1::Managements::ClientsController < ApplicationController
       render json: {:code => 2, message: t("devise.registrations.username")}
       return
     end
-    client = Client.new(client_params)
-    if client.save
-      render json: {code: 1, message: "Success", data: client},
-        status: 200
-    else
-      render json: {:code => 2, message: "Fail"}
+    begin
+      Client.transaction do
+        User.transaction do
+          client = Client.new(client_params)
+          if client.save!
+            user = User.new(email: client_params[:email],
+                            password: user_params[:password],
+                            password_confirmation: user_params[:password_confirmation],
+                            role: 'admin_client')
+            return render json: {code: 1, message: "Success", data: {client: client, user: user}}, status: 200 if user.save!
+          end
+        end
+      end
+    rescue Exception => e
+      return render json: {code: 2, message: e}
     end
   end
 
@@ -50,8 +59,14 @@ class Api::V1::Managements::ClientsController < ApplicationController
   private
 
   def client_params
-    params.require(:client).permit(:name, :address, :phone_number, :status, :plan, :price, :subscription_start_at, :subscription_end_at,
-                                   :is_instagram, :is_line, :is_tiktok, :is_web, :note, :enterprise_type, :enterprise_type_2, :department_name,
-                                   :title, :responsible_person, :logo_url, :url, :zip_code, :prefecture, :municipality, :building_name, :email)
+    params.require(:client).permit(:name, :address, :phone_number, :status, :plan,
+      :price, :subscription_start_at, :subscription_end_at, :is_instagram, :is_line,
+      :is_tiktok, :is_web, :note, :enterprise_type, :enterprise_type_2, :department_name,
+      :title, :responsible_person, :logo_url, :url, :zip_code, :prefecture,
+      :municipality, :building_name, :email)
+  end
+
+  def user_params
+    params.require(:client).permit(:password, :password_confirmation)
   end
 end
