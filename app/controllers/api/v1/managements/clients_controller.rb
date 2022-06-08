@@ -1,4 +1,5 @@
 class Api::V1::Managements::ClientsController < ApplicationController
+  skip_before_action :verify_authenticity_token
 
   def create
     return render json: {code: 2, data: "No permission"} unless current_user.admin_deel?
