@@ -9,18 +9,18 @@ class Api::V1::Managements::ClientsController < ApplicationController
     begin
       Client.transaction do
         User.transaction do
-          client = Client.new(client_params)
-          if client.save!
-            user = User.new(email: client_params[:email],
+          @client = Client.new(client_params)
+          if @client.save!
+            @user = User.new(email: client_params[:email],
                             password: user_params[:password],
                             password_confirmation: user_params[:password_confirmation],
-                            role: 'admin_client', client_id: client.id)
-            render json: {code: 1, message: "Success", data: {client: client, user: user}}, status: 200 if user.save!
+                            role: 'admin_client', client_id: @client.id)
+            @user.save!
           end
         end
       end
     rescue Exception => e
-      render json: {code: 2, message: e}
+      return render json: {code: 2, message: e}
     end
   end
 
@@ -67,6 +67,6 @@ class Api::V1::Managements::ClientsController < ApplicationController
   end
 
   def user_params
-    params.require(:client).permit(:password, :password_confirmation)
+    params.require(:user).permit(:password, :password_confirmation)
   end
 end

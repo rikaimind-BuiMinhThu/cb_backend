@@ -41,7 +41,10 @@ namespace :users_demo do
         client_id: i%10 + 1
       })
     end
-    users.each {|user| User.create(user)}
+    users.each do |user|
+      u = User.new(user)
+      u.save(validate: false)
+    end
 
     puts 'done'
   end
