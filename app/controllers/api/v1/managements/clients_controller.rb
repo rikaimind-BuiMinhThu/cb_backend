@@ -63,7 +63,7 @@ class Api::V1::Managements::ClientsController < ApplicationController
       :price, :subscription_start_at, :subscription_end_at, :is_instagram, :is_line,
       :is_tiktok, :is_web, :note, :enterprise_type, :enterprise_type_2, :department_name,
       :title, :responsible_person, :logo_url, :url, :zip_code, :prefecture,
-      :municipality, :building_name, :email)
+      :municipality, :building_name, :email, :name_katakana, :responsible_person_katakana)
   end
 
   def user_params
