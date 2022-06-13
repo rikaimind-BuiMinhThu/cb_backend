@@ -14,12 +14,10 @@ class Api::V1::ChatbotsController < ApplicationController
     return head :forbidden unless mode && token
 
     return head :forbidden unless mode === 'subscribe' && token === VERIFY_TOKEN
-    puts "Success"
     render html: challenge.html_safe
   end
 
   def webhook_callback
-    puts params
     return head 404 unless params[:object] === 'page'
     params[:entry].each do |entry|
       webhook_event = entry[:messaging][0]
@@ -31,9 +29,7 @@ class Api::V1::ChatbotsController < ApplicationController
         handlePostback(sender_psid, webhook_event[:postback]);
       end
     end
-    res.status(200).send('EVENT_RECEIVED');
     render html: "EVENT_RECEIVED".html_safe
-    # render json: {code: 1, message: "EVENT_RECEIVED"}
   end
 
   private
