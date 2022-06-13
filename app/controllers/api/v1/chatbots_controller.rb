@@ -51,7 +51,7 @@ class Api::V1::ChatbotsController < ApplicationController
       message: response
     }
 
-    post_request "https://graph.facebook.com/v14.0/me/messages?access_token=EAAYoYLoNogABAJcctIYRWEmhNgWNu57dsjCptZC2ZCUqmZB4AvDJ4y5ihN6rcQZAhglsLbo4pwUq7fiWZAM1ZCtyPPxM06rpUdxVp75hDz9FihtKDNJnts3Lkae97Kss6AxyvcFR7Lk5ZBgarM0BEd21vZBm5zQr4BUILDCB7Cog2cSV5gvqooZCEZADy0bMosSSkZD", request_body
+    post_request "https://graph.facebook.com/v14.0/me/messages?access_token=EAAYoYLoNogABAGV3nuNx1ioF2xerZBWOrmekKzIPycWc2GK72ZBJY0umEntnoQRPYixG6sZCs1MgF2JpE4J9xOMvL4Ujg3smmcnqsurn7eyRYrPI17RU350vjm3aG4mU2H6ZCQ0mM3DuhXPPDFvg4lhQ7amsPcGM5fXiyQiaE7N6xwMZC20Om8EmRSekZA9iAZD", request_body
   end
 
   def post_request url, data
