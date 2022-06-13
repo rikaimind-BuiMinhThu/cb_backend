@@ -20,10 +20,10 @@ class Api::V1::ChatbotsController < ApplicationController
 
   def webhook_callback
     puts params
-    return render json: {code: 2, message: "error"} unless params[:object] === 'page'
+    return head 404 unless params[:object] === 'page'
     params[:entry].each do |entry|
       webhook_event = entry[:messaging][0]
-      sender_psid = webhook_event.sender.id
+      sender_psid = webhook_event[:sender][:id]
 
       if webhook_event[:message].present?
         handleMessage(sender_psid, webhook_event[:message]);
@@ -31,7 +31,9 @@ class Api::V1::ChatbotsController < ApplicationController
         handlePostback(sender_psid, webhook_event[:postback]);
       end
     end
-    render json: {code: 1, message: "EVENT_RECEIVED"}
+    res.status(200).send('EVENT_RECEIVED');
+    render html: "EVENT_RECEIVED".html_safe
+    # render json: {code: 1, message: "EVENT_RECEIVED"}
   end
 
   private
