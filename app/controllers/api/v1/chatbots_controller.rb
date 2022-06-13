@@ -4,7 +4,7 @@ class Api::V1::ChatbotsController < ApplicationController
 
   # respond_to :json
 
-  VERIFY_TOKEN = Settings.webhook.page_access_token.freeze
+  VERIFY_TOKEN = Settings.webhook.verify_token.freeze
 
   def webhook
     mode = params['hub.mode'];
