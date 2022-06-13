@@ -14,10 +14,12 @@ class Api::V1::ChatbotsController < ApplicationController
     return head :forbidden unless mode && token
 
     return head :forbidden unless mode === 'subscribe' && token === VERIFY_TOKEN
+    puts "Success"
     render html: challenge.html_safe
   end
 
   def webhook_callback
+    puts params
     return render json: {code: 2, message: "error"} unless params[:object] === 'page'
     params[:entry].each do |entry|
       webhook_event = entry[:messaging][0]
@@ -51,7 +53,7 @@ class Api::V1::ChatbotsController < ApplicationController
       message: response
     }
 
-    post_request "https://graph.facebook.com/v2.6/me/messages?access_token=EAAYoYLoNogABAJcctIYRWEmhNgWNu57dsjCptZC2ZCUqmZB4AvDJ4y5ihN6rcQZAhglsLbo4pwUq7fiWZAM1ZCtyPPxM06rpUdxVp75hDz9FihtKDNJnts3Lkae97Kss6AxyvcFR7Lk5ZBgarM0BEd21vZBm5zQr4BUILDCB7Cog2cSV5gvqooZCEZADy0bMosSSkZD", request_body
+    post_request "https://graph.facebook.com/v14.0/me/messages?access_token=EAAYoYLoNogABAJcctIYRWEmhNgWNu57dsjCptZC2ZCUqmZB4AvDJ4y5ihN6rcQZAhglsLbo4pwUq7fiWZAM1ZCtyPPxM06rpUdxVp75hDz9FihtKDNJnts3Lkae97Kss6AxyvcFR7Lk5ZBgarM0BEd21vZBm5zQr4BUILDCB7Cog2cSV5gvqooZCEZADy0bMosSSkZD", request_body
   end
 
   def post_request url, data
