@@ -2,7 +2,7 @@ class Api::V1::ChatbotsController < ApplicationController
   skip_before_action :permision
   skip_before_action :verify_authenticity_token
 
-  respond_to :json
+  # respond_to :json
 
   VERIFY_TOKEN = "hahant".freeze
 
@@ -11,10 +11,10 @@ class Api::V1::ChatbotsController < ApplicationController
     token = params['hub.verify_token'];
     challenge = params['hub.challenge'];
 
-    return render json: {code: 2, message: "error"} unless mode && token
+    return head :forbidden unless mode && token
 
-    return render json: {code: 2, message: "error"} unless mode === 'subscribe' && token === VERIFY_TOKEN
-    render json: {code: 1, message: "OK"}
+    return head :forbidden unless mode === 'subscribe' && token === VERIFY_TOKEN
+    render html: challenge.html_safe
   end
 
   def webhook_callback
