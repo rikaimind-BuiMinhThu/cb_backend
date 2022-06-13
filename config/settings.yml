@@ -3,3 +3,6 @@ api:
   time_refresh_token: 30
   company: rikai
   client_name: chatbot
+webhook:
+  verify_token: 937227c494272127b7ddfdbe7ed6e723a792f0aae8f48d80f26f7d27e61d6da7a1fb71ef9e99706d279f9ca6582ad73db15d4196e4a385d272c464ca07283add
+  page_access_token: EAAYoYLoNogABAGV3nuNx1ioF2xerZBWOrmekKzIPycWc2GK72ZBJY0umEntnoQRPYixG6sZCs1MgF2JpE4J9xOMvL4Ujg3smmcnqsurn7eyRYrPI17RU350vjm3aG4mU2H6ZCQ0mM3DuhXPPDFvg4lhQ7amsPcGM5fXiyQiaE7N6xwMZC20Om8EmRSekZA9iAZD

@@ -4,7 +4,7 @@ class Api::V1::ChatbotsController < ApplicationController
 
   # respond_to :json
 
-  VERIFY_TOKEN = "hahant".freeze
+  VERIFY_TOKEN = Settings.webhook.page_access_token.freeze
 
   def webhook
     mode = params['hub.mode'];
@@ -50,7 +50,7 @@ class Api::V1::ChatbotsController < ApplicationController
       },
       "message": response
     }
-    a = post_request "https://graph.facebook.com/v2.6/me/messages?access_token=EAAYoYLoNogABAGV3nuNx1ioF2xerZBWOrmekKzIPycWc2GK72ZBJY0umEntnoQRPYixG6sZCs1MgF2JpE4J9xOMvL4Ujg3smmcnqsurn7eyRYrPI17RU350vjm3aG4mU2H6ZCQ0mM3DuhXPPDFvg4lhQ7amsPcGM5fXiyQiaE7N6xwMZC20Om8EmRSekZA9iAZD", request_body
+    a = post_request "https://graph.facebook.com/v2.6/me/messages?access_token=#{Settings.webhook.page_access_token}", request_body
     puts a
   end
 
