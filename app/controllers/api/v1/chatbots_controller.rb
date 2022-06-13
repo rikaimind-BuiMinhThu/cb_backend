@@ -4,7 +4,7 @@ class Api::V1::ChatbotsController < ApplicationController
 
   # respond_to :json
 
-  VERIFY_TOKEN = "hahant".freeze
+  VERIFY_TOKEN = Settings.webhook.page_access_token.freeze
 
   def webhook
     mode = params['hub.mode'];
@@ -45,20 +45,19 @@ class Api::V1::ChatbotsController < ApplicationController
 
   def callSendAPI(sender_psid, response)
     request_body = {
-      recipient: {
-        id: sender_psid
+      "recipient": {
+        "id": sender_psid
       },
-      message: response
+      "message": response
     }
-
-    post_request "https://graph.facebook.com/v14.0/me/messages?access_token=EAAYoYLoNogABAJcctIYRWEmhNgWNu57dsjCptZC2ZCUqmZB4AvDJ4y5ihN6rcQZAhglsLbo4pwUq7fiWZAM1ZCtyPPxM06rpUdxVp75hDz9FihtKDNJnts3Lkae97Kss6AxyvcFR7Lk5ZBgarM0BEd21vZBm5zQr4BUILDCB7Cog2cSV5gvqooZCEZADy0bMosSSkZD", request_body
+    a = post_request "https://graph.facebook.com/v2.6/me/messages?access_token=#{Settings.webhook.page_access_token}", request_body
+    puts a
   end
 
   def post_request url, data
     require 'uri'
     require 'net/http'
     uri = URI(url)
-    res = Net::HTTP.post_form(uri, data)
-    res.body
+    res = Net::HTTP.post(uri, data.to_query)
   end
 end
