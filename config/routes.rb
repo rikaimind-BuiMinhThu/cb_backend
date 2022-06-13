@@ -17,6 +17,8 @@ Rails.application.routes.draw do
         resources :users, except: [:new, :edit]
         resources :clients, except: [:new, :edit]
       end
+      get "webhook", :to => 'chatbots#webhook'
+      post "webhook", :to => 'chatbots#webhook_callback'
     end
   end
 end
