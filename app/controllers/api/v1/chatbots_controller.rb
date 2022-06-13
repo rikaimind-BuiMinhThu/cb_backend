@@ -45,20 +45,19 @@ class Api::V1::ChatbotsController < ApplicationController
 
   def callSendAPI(sender_psid, response)
     request_body = {
-      recipient: {
-        id: sender_psid
+      "recipient": {
+        "id": sender_psid
       },
-      message: response
+      "message": response
     }
-
-    post_request "https://graph.facebook.com/v2.6/me/messages?access_token=EAAYoYLoNogABAGV3nuNx1ioF2xerZBWOrmekKzIPycWc2GK72ZBJY0umEntnoQRPYixG6sZCs1MgF2JpE4J9xOMvL4Ujg3smmcnqsurn7eyRYrPI17RU350vjm3aG4mU2H6ZCQ0mM3DuhXPPDFvg4lhQ7amsPcGM5fXiyQiaE7N6xwMZC20Om8EmRSekZA9iAZD", request_body
+    a = post_request "https://graph.facebook.com/v2.6/me/messages?access_token=EAAYoYLoNogABAGV3nuNx1ioF2xerZBWOrmekKzIPycWc2GK72ZBJY0umEntnoQRPYixG6sZCs1MgF2JpE4J9xOMvL4Ujg3smmcnqsurn7eyRYrPI17RU350vjm3aG4mU2H6ZCQ0mM3DuhXPPDFvg4lhQ7amsPcGM5fXiyQiaE7N6xwMZC20Om8EmRSekZA9iAZD", request_body
+    puts a
   end
 
   def post_request url, data
     require 'uri'
     require 'net/http'
     uri = URI(url)
-    res = Net::HTTP.post_form(uri, data)
-    res.body
+    res = Net::HTTP.post(uri, data.to_query)
   end
 end
