@@ -21,7 +21,44 @@ class Api::V1::ChatbotsController < ApplicationController
     return render json: {code: 2, message: "error"} unless params[:object] === 'page'
     params[:entry].each do |entry|
       webhook_event = entry[:messaging][0]
+      sender_psid = webhook_event.sender.id
+
+      if webhook_event[:message].present?
+        handleMessage(sender_psid, webhook_event[:message]);
+      elsif webhook_event[:postback].present?
+        handlePostback(sender_psid, webhook_event[:postback]);
+      end
     end
     render json: {code: 1, message: "EVENT_RECEIVED"}
+  end
+
+  private
+
+  def handleMessage(sender_psid, received_message)
+    if received_message[:text]
+      response = {
+        "text": "You sent the message: #{received_message.text}. Now send me an image!"
+      }
+    end
+    callSendAPI(sender_psid, response);
+  end
+
+  def callSendAPI(sender_psid, response) {
+    request_body = {
+      recipient: {
+        id: sender_psid
+      },
+      message: response
+    }
+
+    post_request "https://graph.facebook.com/v2.6/me/messages?access_token=EAAYoYLoNogABACZATS2tZCm7dZBObs0ZAY7jyHten3YxAkZBquIDy10KpZBacgICroZB66l8SeJmVSjI1580kBtp52GZCKZCZB2PZAfAixqvXPiO5kEgr3ggTZCuLMS028MsXNcM5AyCONnnaIgBOcR39ZA9gqAZBs0qO5ZBfsuCedXzMiR7qojgkYwhrV1qTpHAfJuxd4ZD", request_body
+  end
+
+  def post_request url, data
+    require 'uri'
+    require 'net/http'
+    uri = URI(url)
+    res = Net::HTTP.post_form(uri, data)
+    res.body
   end
 end
