@@ -43,7 +43,7 @@ class Api::V1::ChatbotsController < ApplicationController
     callSendAPI(sender_psid, response);
   end
 
-  def callSendAPI(sender_psid, response) {
+  def callSendAPI(sender_psid, response)
     request_body = {
       recipient: {
         id: sender_psid
