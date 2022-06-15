@@ -44,7 +44,7 @@ class Api::V1::ChatbotsController < ApplicationController
     user_info = get_request "https://graph.facebook.com/#{sender_psid}", query
     user_full_name = params[:object] == 'instagram' ? user_info["name"] : user_info["first_name"] + " " + user_info["last_name"]
     if received_message[:text]
-      message = Message.find_by(message_key: received_message[:text])
+      message = Message.where(message_key: received_message[:text]).last
       text_sent_to_user = message.present? ? message.message_value : "Hello #{user_full_name}! Welcome to the instagram chatbot!"
       response = {
         "text": text_sent_to_user
