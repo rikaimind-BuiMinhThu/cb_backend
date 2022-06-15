@@ -18,7 +18,8 @@ class Api::V1::ChatbotsController < ApplicationController
   end
 
   def webhook_callback
-    return head 404 unless params[:object] === 'page'
+    return head 404 unless ['page', 'instagram'].include? params[:object]
+    @page_access_token = params[:object] == 'instagram' ? Settings.webhook.page_instagram_access_token : Settings.webhook.page_facebook_access_token
     params[:entry].each do |entry|
       webhook_event = entry[:messaging][0]
       sender_psid = webhook_event[:sender][:id]
@@ -35,9 +36,16 @@ class Api::V1::ChatbotsController < ApplicationController
   private
 
   def handleMessage(sender_psid, received_message)
+    query_field = params[:object] == 'instagram' ? "name,username,profile_pic" : "first_name,last_name,profile_pic"
+    query = {
+      fields: query_field,
+      access_token: @page_access_token
+    }
+    user_info = get_request "https://graph.facebook.com/#{sender_psid}", query
+    user_full_name = params[:object] == 'instagram' ? user_info["name"] : user_info["first_name"] + " " + user_info["last_name"]
     if received_message[:text]
       response = {
-        "text": "You sent the message: #{received_message[:text]}. Now send me an image!"
+        "text": "Hello #{user_full_name}! Welcome to the instagram chatbot!"
       }
     end
     callSendAPI(sender_psid, response);
@@ -50,7 +58,7 @@ class Api::V1::ChatbotsController < ApplicationController
       },
       "message": response
     }
-    a = post_request "https://graph.facebook.com/v2.6/me/messages?access_token=#{Settings.webhook.page_access_token}", request_body
+    a = post_request "https://graph.facebook.com/v2.6/me/messages?access_token=#{@page_access_token}", request_body
     puts a
   end
 
@@ -59,5 +67,13 @@ class Api::V1::ChatbotsController < ApplicationController
     require 'net/http'
     uri = URI(url)
     res = Net::HTTP.post(uri, data.to_query)
+  end
+
+  def get_request url, query
+    require 'uri'
+    require 'net/http'
+    uri = URI(url + "?" + query.to_query)
+    res = Net::HTTP.get(uri)
+    JSON.parse(res)
   end
 end
