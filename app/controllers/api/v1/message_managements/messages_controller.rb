@@ -3,8 +3,8 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
   skip_before_action :verify_authenticity_token
 
   def create
-    message = Message.create(message_params)
-    render json: {code: 1, data: message}
+    Message.insert_all(params[:messages])
+    render json: {code: 1, data: "success"}
   end
 
   def show
