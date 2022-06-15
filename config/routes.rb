@@ -17,6 +17,11 @@ Rails.application.routes.draw do
         resources :users, except: [:new, :edit]
         resources :clients, except: [:new, :edit]
       end
+      namespace :message_managements do
+        resources :message_groups, except: [:new, :edit]
+        resources :message_bags, except: [:index, :new, :edit]
+        resources :messages, except: [:index, :new, :edit]
+      end
       get "webhook", :to => 'chatbots#webhook'
       post "webhook", :to => 'chatbots#webhook_callback'
     end
