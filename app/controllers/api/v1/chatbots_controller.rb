@@ -36,46 +36,14 @@ class Api::V1::ChatbotsController < ApplicationController
   private
 
   def handleMessage(sender_psid, received_message)
-    query_field = params[:object] == 'instagram' ? "name,username,profile_pic" : "first_name,last_name,profile_pic"
-    query = {
-      fields: query_field,
-      access_token: @page_access_token
-    }
-    user_info = get_request "https://graph.facebook.com/#{sender_psid}", query
-    user_full_name = params[:object] == 'instagram' ? user_info["name"] : user_info["first_name"] + " " + user_info["last_name"]
-    if received_message[:text]
-      message = Message.where(message_key: received_message[:text]).last
-      text_sent_to_user = message.present? ? message.message_value : "Hello #{user_full_name}! Welcome to the instagram chatbot!"
-      response = {
-        "text": text_sent_to_user
-      }
+    return if received_message[:text].blank?
+    chatbot_manager = FacebookManager::ChatbotManager.new sender_psid
+    messages = Message.where(received_message: received_message[:text]).last
+    messages.each do |message|
+      quick_replies = message.quick_replies.pluck(:title) if message.quick_reply?
+      chatbot_manager.message = chatbot_manager.message_value
+      chatbot_manager.quick_replies = chatbot_manager.quick_replies
+      chatbot_manager.call_graph_api
     end
-    callSendAPI(sender_psid, response);
-  end
-
-  def callSendAPI(sender_psid, response)
-    request_body = {
-      "recipient": {
-        "id": sender_psid
-      },
-      "message": response
-    }
-    a = post_request "https://graph.facebook.com/v2.6/me/messages?access_token=#{@page_access_token}", request_body
-    puts a
-  end
-
-  def post_request url, data
-    require 'uri'
-    require 'net/http'
-    uri = URI(url)
-    res = Net::HTTP.post(uri, data.to_query)
-  end
-
-  def get_request url, query
-    require 'uri'
-    require 'net/http'
-    uri = URI(url + "?" + query.to_query)
-    res = Net::HTTP.get(uri)
-    JSON.parse(res)
   end
 end
