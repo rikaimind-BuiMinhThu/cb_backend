@@ -38,7 +38,7 @@ class Api::V1::ChatbotsController < ApplicationController
   def handleMessage(sender_psid, received_message)
     return if received_message[:text].blank?
     chatbot_manager = FacebookManager::ChatbotManager.new sender_psid
-    messages = Message.where(received_message: received_message[:text]).last
+    messages = Message.where(received_message: received_message[:text])
     messages.each do |message|
       quick_replies = message.quick_replies.pluck(:title) if message.quick_reply?
       chatbot_manager.message = chatbot_manager.message_value
