@@ -14,8 +14,7 @@ module FacebookManager
       page_access_token = @platform == 'instagram' ? Settings.webhook.page_instagram_access_token : Settings.webhook.page_facebook_access_token
       text_sent_to_user = @message.present? ? @message : "Hello! Welcome to the instagram chatbot!"
       response = {
-        "text": text_sent_to_user,
-        "quick_replies": []
+        "text": text_sent_to_user
       }
       request_body = {
         "recipient": {
@@ -23,14 +22,20 @@ module FacebookManager
         },
         "message": response
       }
-      quick_replies.each do |quick_reply|
-        request_body[:message][:quick_replies].push({
-          "content_type": "text",
-          "title": quick_reply[0, 19],
-          "payload": "OK"
-        })
+      if quick_replies.present?
+        request_body[:message][:quick_replies] = []
+        @quick_replies.each do |quick_reply|
+          request_body[:message][:quick_replies].push({
+            "content_type": "text",
+            "title": quick_reply[0, 19],
+            "payload": "OK"
+          })
+        end
       end
+      Rails.logger.debug(request_body)
       post_request "https://graph.facebook.com/v2.6/me/messages?access_token=#{page_access_token}", request_body
+      Rails.logger.debug(a)
+      Rails.logger.debug(JSON.parse(a.body))
     end
 
     private
