@@ -45,5 +45,6 @@ class Api::V1::ChatbotsController < ApplicationController
       chatbot_manager.quick_replies = quick_replies
       chatbot_manager.call_graph_api
     end
+    chatbot_manager.call_graph_api if messages.length == 0
   end
 end
