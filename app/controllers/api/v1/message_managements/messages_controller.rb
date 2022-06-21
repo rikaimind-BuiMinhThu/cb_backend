@@ -4,7 +4,8 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
 
   def create
     Message.insert_all(params[:messages])
-    render json: {code: 1, data: "success"}
+    QuickReplyForm.new(params[:quick_reply_messages]).call
+    render json: {code: 1, message: "success"}
   end
 
   def show
