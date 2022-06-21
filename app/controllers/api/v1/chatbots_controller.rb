@@ -19,7 +19,7 @@ class Api::V1::ChatbotsController < ApplicationController
 
   def webhook_callback
     return head 404 unless ['page', 'instagram'].include? params[:object]
-    @page_access_token = params[:object] == 'instagram' ? Settings.webhook.page_instagram_access_token : Settings.webhook.page_facebook_access_token
+
     params[:entry].each do |entry|
       webhook_event = entry[:messaging][0]
       sender_psid = webhook_event[:sender][:id]
@@ -37,12 +37,12 @@ class Api::V1::ChatbotsController < ApplicationController
 
   def handleMessage(sender_psid, received_message)
     return if received_message[:text].blank?
-    chatbot_manager = FacebookManager::ChatbotManager.new sender_psid
+    chatbot_manager = FacebookManager::ChatbotManager.new sender_psid, params[:object]
     messages = Message.where(received_message: received_message[:text])
     messages.each do |message|
-      quick_replies = message.quick_replies.pluck(:title) if message.quick_reply?
-      chatbot_manager.message = chatbot_manager.message_value
-      chatbot_manager.quick_replies = chatbot_manager.quick_replies
+      quick_replies = message.quick_replies.pluck(:title)
+      chatbot_manager.message = message.message_value
+      chatbot_manager.quick_replies = quick_replies
       chatbot_manager.call_graph_api
     end
   end
