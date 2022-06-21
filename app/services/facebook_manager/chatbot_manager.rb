@@ -33,7 +33,7 @@ module FacebookManager
         end
       end
       Rails.logger.debug(request_body)
-      post_request "https://graph.facebook.com/v2.6/me/messages?access_token=#{page_access_token}", request_body
+      a = post_request "https://graph.facebook.com/v2.6/me/messages?access_token=#{page_access_token}", request_body
       Rails.logger.debug(a)
       Rails.logger.debug(JSON.parse(a.body))
     end
