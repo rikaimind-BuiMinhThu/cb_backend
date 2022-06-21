@@ -21,7 +21,7 @@ module FacebookManager
       }
       request_body["quick_replies"] = []
       quick_replies.each do |quick_reply|
-        request_body["quick_replies"].push {"content_type": "text", title: quick_reply}
+        request_body["quick_replies"].push({"content_type": "text", title: quick_reply})
       end
       post_request "https://graph.facebook.com/v2.6/me/messages?access_token=#{@page_access_token}", request_body
     end
