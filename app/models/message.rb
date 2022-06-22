@@ -7,7 +7,7 @@ class Message < ApplicationRecord
   mount_base64_uploader :img_value, ImageMessageUploader
 
   validates :message_bag, presence: true
-  validates :message_value, presence: true
   validates :received_message, presence: true
+  # validates :message_value, presence: true
   validates :message_type, presence: true
 end
