@@ -11,7 +11,7 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
   def show
     message = Message.find_by(id: params[:id])
     return render json: {code: 2, data: "Cannot find message bag"} if message.blank?
-    render json: {code: 1, data: messages}
+    render json: {code: 1, data: message}
   end
 
   def update
@@ -31,6 +31,6 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
   private
 
   def message_params
-    params.require(:message).permit(:message_bag_id, :received_message, :message_value, :message_type)
+    params.require(:message).permit(:message_bag_id, :received_message, :message_value, :message_type, :img_value)
   end
 end
