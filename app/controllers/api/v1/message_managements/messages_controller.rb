@@ -3,8 +3,8 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
   skip_before_action :verify_authenticity_token
 
   def create
-    Message.insert_all(params[:messages])
-    QuickReplyForm.new(params[:quick_reply_messages]).call
+    quick_reply_create = QuickReplyForm.new(params[:messages]).call
+    return render json: {code: 2, message: quick_reply_create.to_s} if quick_reply_create != 1
     render json: {code: 1, message: "success"}
   end
 
