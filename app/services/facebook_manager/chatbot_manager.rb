@@ -18,7 +18,7 @@ module FacebookManager
     private
 
     def send_message_to_user page_access_token
-      text_sent_to_user = (@message.blank? || (@message.message_value.blank? && @message.img_value.blank?)) ? "Hello! Welcome to the instagram chatbot!" : @message.message_value
+      text_sent_to_user = (@message&.message_value.blank? && @message&.img_value.blank?) ? "Hello! Welcome to the instagram chatbot!" : @message.message_value
       response = {
         "text": text_sent_to_user
       }
@@ -28,7 +28,7 @@ module FacebookManager
         },
         "message": response
       }
-      quick_replies = @message.quick_replies.pluck(:title)
+      quick_replies = @message&.quick_replies&.pluck(:title)
       if quick_replies.present?
         request_body[:message][:quick_replies] = []
         @quick_replies.each do |quick_reply|
@@ -46,6 +46,7 @@ module FacebookManager
     end
 
     def send_image_to_user page_access_token
+      return if @message&.img_value.blank?
       response = {
         "attachment":{
           "type": "image",
