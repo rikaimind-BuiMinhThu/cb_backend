@@ -1,27 +1,26 @@
 module FacebookManager
   class ChatbotManager
-    attr_accessor :message, :sender_psid, :quick_replies
+    attr_accessor :message, :sender_psid
     attr_reader :platform
 
-    def initialize(sender_psid, platform = 'instagram', message = nil, quick_replies = [])
+    def initialize(sender_psid, platform = 'instagram', message = nil)
       @platform = platform
       @message = message
       @sender_psid = sender_psid
-      @quick_replies = quick_replies
     end
 
     def call_graph_api
       page_access_token = @platform == 'instagram' ? Settings.webhook.page_instagram_access_token : Settings.webhook.page_facebook_access_token
+      send_message_to_user(page_access_token)
+      send_image_to_user(page_access_token)
+    end
+
+    private
+
+    def send_message_to_user page_access_token
       text_sent_to_user = (@message.blank? || (@message.message_value.blank? && @message.img_value.blank?)) ? "Hello! Welcome to the instagram chatbot!" : @message.message_value
       response = {
-        "text": text_sent_to_user,
-        "attachment":{
-          "type":"image",
-          "payload":{
-            "url": @message.img_value,
-            "is_reusable": true
-          }
-        }
+        "text": text_sent_to_user
       }
       request_body = {
         "recipient": {
@@ -29,7 +28,8 @@ module FacebookManager
         },
         "message": response
       }
-      if quick_replies.present?
+      quick_replies = @message.quick_replies.pluck(:title)
+      if @message.quick_replies.present?
         request_body[:message][:quick_replies] = []
         @quick_replies.each do |quick_reply|
           request_body[:message][:quick_replies].push({
@@ -45,7 +45,27 @@ module FacebookManager
       Rails.logger.debug(JSON.parse(a.body))
     end
 
-    private
+    def send_image_to_user page_access_token
+      response = {
+        "attachment":{
+          "type": "image",
+          "payload":{
+            "url": request.original_url + @message.img_value.url,
+            "is_reusable": true
+          }
+        }
+      }
+      request_body = {
+        "recipient": {
+          "id": @sender_psid
+        },
+        "message": response
+      }
+      Rails.logger.debug(request_body)
+      a = post_request "https://graph.facebook.com/v2.6/me/messages?access_token=#{page_access_token}", request_body
+      Rails.logger.debug(a)
+      Rails.logger.debug(JSON.parse(a.body))
+    end
 
     def post_request url, data
       require 'uri'
