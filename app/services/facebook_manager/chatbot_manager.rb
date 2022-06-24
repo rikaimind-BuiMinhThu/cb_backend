@@ -18,7 +18,7 @@ module FacebookManager
     private
 
     def send_message_to_user page_access_token
-      text_sent_to_user = (@message&.message_value.blank? && @message&.img_value.blank?) ? "Hello! Welcome to the instagram chatbot!" : @message.message_value
+      text_sent_to_user = (@message&.message_value.blank? && @message&.img_value&.url.blank?) ? "Hello! Welcome to the instagram chatbot!" : @message.message_value
       response = {
         "text": text_sent_to_user
       }
