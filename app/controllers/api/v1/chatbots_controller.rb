@@ -40,9 +40,9 @@ class Api::V1::ChatbotsController < ApplicationController
     chatbot_manager = FacebookManager::ChatbotManager.new sender_psid, params[:object]
     messages = Message.where(received_message: received_message[:text])
     messages.each do |message|
-      quick_replies = message.quick_replies.pluck(:title)
+      # quick_replies = message.quick_replies.pluck(:title)
       chatbot_manager.message = message
-      chatbot_manager.quick_replies = quick_replies
+      # chatbot_manager.quick_replies = quick_replies
       chatbot_manager.call_graph_api
     end
     chatbot_manager.call_graph_api if messages.length == 0
