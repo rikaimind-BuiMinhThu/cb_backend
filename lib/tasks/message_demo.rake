@@ -10,5 +10,7 @@ namespace :message_demo do
     QuickReply.create message: message, title: "Learn more"
     Message.create message_bag: message_bag, received_message: "What is EC Chatbot?", message_value: "EC Chatbot is super bot"
     Message.create message_bag: message_bag, received_message: "Learn more", message_value: "EC Chatbot is on progress. Please stay tune!"
+    Message.create message_bag: message_bag, received_message: "image", img_value: "https://ecchatbot-dev.ddns.net/uploads/message/16/1655912775.png"
+    Message.create message_bag: message_bag, received_message: "image message", message_value: "https://ecchatbot-dev.ddns.net/uploads/message/16/1655912775.png", img_value: "https://ecchatbot-dev.ddns.net/uploads/message/16/1655912775.png"
   end
 end
