@@ -12,9 +12,16 @@ module FacebookManager
 
     def call_graph_api
       page_access_token = @platform == 'instagram' ? Settings.webhook.page_instagram_access_token : Settings.webhook.page_facebook_access_token
-      text_sent_to_user = @message.present? ? @message : "Hello! Welcome to the instagram chatbot!"
+      text_sent_to_user = (@message.blank? || (@message.message_value.blank? && @message.img_value.blank?)) ? "Hello! Welcome to the instagram chatbot!" : @message.message_value
       response = {
-        "text": text_sent_to_user
+        "text": text_sent_to_user,
+        "attachment":{
+          "type":"image",
+          "payload":{
+            "url": @message.img_value,
+            "is_reusable": true
+          }
+        }
       }
       request_body = {
         "recipient": {

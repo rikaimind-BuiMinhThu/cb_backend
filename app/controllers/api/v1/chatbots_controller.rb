@@ -41,7 +41,7 @@ class Api::V1::ChatbotsController < ApplicationController
     messages = Message.where(received_message: received_message[:text])
     messages.each do |message|
       quick_replies = message.quick_replies.pluck(:title)
-      chatbot_manager.message = message.message_value
+      chatbot_manager.message = message
       chatbot_manager.quick_replies = quick_replies
       chatbot_manager.call_graph_api
     end
