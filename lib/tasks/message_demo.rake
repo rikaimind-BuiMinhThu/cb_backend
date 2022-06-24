@@ -14,7 +14,7 @@ namespace :message_demo do
       {message_bag_id: message_bag.id, received_message: "image", message_type: 1, img_value: "1655912775.png", created_at: Time.current, updated_at: Time.current}
     )
     Message.insert(
-      {message_bag_id: message_bag.id, received_message: "image", message_type: 1, message_value: "https://ecchatbot-dev.ddns.net/uploads/message/16/1655912775.png", img_value: "1655912775.png", created_at: Time.current, updated_at: Time.current}
+      {message_bag_id: message_bag.id, received_message: "image message", message_type: 1, message_value: "https://ecchatbot-dev.ddns.net/uploads/message/16/1655912775.png", img_value: "1655912775.png", created_at: Time.current, updated_at: Time.current}
     )
   end
 end
