@@ -29,7 +29,7 @@ module FacebookManager
         "message": response
       }
       quick_replies = @message.quick_replies.pluck(:title)
-      if @message.quick_replies.present?
+      if quick_replies.present?
         request_body[:message][:quick_replies] = []
         @quick_replies.each do |quick_reply|
           request_body[:message][:quick_replies].push({
