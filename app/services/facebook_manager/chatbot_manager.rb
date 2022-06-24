@@ -50,7 +50,7 @@ module FacebookManager
         "attachment":{
           "type": "image",
           "payload":{
-            "url": request.original_url + @message.img_value.url,
+            "url": Settings.chatbot_domain + @message.img_value.url,
             "is_reusable": true
           }
         }
