@@ -18,6 +18,7 @@ module FacebookManager
     private
 
     def send_message_to_user page_access_token
+      return if @message&.message_value.blank? && @message&.img_value&.url.present?
       text_sent_to_user = (@message&.message_value.blank? && @message&.img_value&.url.blank?) ? "Hello! Welcome to the instagram chatbot!" : @message.message_value
       response = {
         "text": text_sent_to_user
@@ -46,7 +47,7 @@ module FacebookManager
     end
 
     def send_image_to_user page_access_token
-      return if @message&.img_value.blank?
+      return if @message&.img_value&.url.blank?
       response = {
         "attachment":{
           "type": "image",
