@@ -24,6 +24,7 @@ Rails.application.routes.draw do
       end
       get "webhook", :to => 'chatbots#webhook'
       post "webhook", :to => 'chatbots#webhook_callback'
+      post "instagram_connect", :to => 'instagram_settings#connect'
     end
   end
 end

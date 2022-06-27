@@ -1,14 +1,14 @@
 class User < ApplicationRecord
   acts_as_paranoid
   belongs_to :client, optional: true
+  has_many :identities
+  has_many :instagram_accounts
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable and :omniauthable
   devise :database_authenticatable, :registerable, :validatable, :trackable,
          :omniauthable, :omniauth_providers => [:facebook]
 
   enum role: [:admin_deel, :admin_client, :client]
-
-  has_many :identities
 
   validates :client, presence: true
   validates :email, presence: true, uniqueness: true
