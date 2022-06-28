@@ -41,9 +41,8 @@ module FacebookManager
         end
       end
       Rails.logger.debug(request_body)
-      a = post_request "https://graph.facebook.com/v2.6/me/messages?access_token=#{page_access_token}", request_body
+      a = HttpManager.new("https://graph.facebook.com/v2.6/me/messages?access_token=#{page_access_token}", request_body).post_request
       Rails.logger.debug(a)
-      Rails.logger.debug(JSON.parse(a.body))
     end
 
     def send_image_to_user page_access_token
@@ -64,21 +63,10 @@ module FacebookManager
         "message": response
       }
       Rails.logger.debug(request_body)
-      a = post_request "https://graph.facebook.com/v2.6/me/messages?access_token=#{page_access_token}", request_body
+      a = HttpManager.new("https://graph.facebook.com/v2.6/me/messages?access_token=#{page_access_token}", request_body).post_request
       Rails.logger.debug(a)
       Rails.logger.debug(JSON.parse(a.body))
     end
 
-    def post_request url, data
-      require 'uri'
-      require 'net/http'
-      uri = URI(url)
-      header = {'Content-Type' => 'application/json', 'Accept' => 'application/json'}
-      request = Net::HTTP::Post.new(uri.request_uri, header)
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = true
-      request.body = data.to_json
-      http.request(request)
-    end
   end
 end
