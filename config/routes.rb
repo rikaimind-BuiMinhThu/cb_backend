@@ -21,6 +21,14 @@ Rails.application.routes.draw do
         resources :message_groups, except: [:new, :edit]
         resources :message_bags, except: [:index, :new, :edit]
         resources :messages, except: [:index, :new, :edit]
+        resources :ice_breakers, except: [:new, :edit]
+        get "/ice_breakers_status" => "ice_breakers#status"
+        get "/ice_breakers_turn_on" => "ice_breakers#turn_on"
+        get "/ice_breakers_turn_off" => "ice_breakers#turn_off"
+        resources :persistent_menus, except: [:new, :edit]
+        get "/persistent_menus_status" => "persistent_menus#status"
+        get "/persistent_menus_turn_on" => "persistent_menus#turn_on"
+        get "/persistent_menus_turn_off" => "persistent_menus#turn_off"
       end
       get "webhook", :to => 'chatbots#webhook'
       post "webhook", :to => 'chatbots#webhook_callback'

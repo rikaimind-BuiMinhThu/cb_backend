@@ -1,0 +1,2 @@
+class PersistentMenu < ApplicationRecord
+end

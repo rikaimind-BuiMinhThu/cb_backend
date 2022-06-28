@@ -1,0 +1,2 @@
+class IceBreaker < ApplicationRecord
+end
