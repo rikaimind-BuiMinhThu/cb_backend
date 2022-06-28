@@ -77,7 +77,7 @@ module FacebookManager
     def send_payload_to_user page_access_token
       return if @payload.blank?
       response = {
-        "text": text_sent_to_user
+        "text": @payload
       }
       request_body = {
         "recipient": {
