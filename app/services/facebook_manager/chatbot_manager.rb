@@ -1,18 +1,24 @@
 module FacebookManager
   class ChatbotManager
-    attr_accessor :message, :sender_psid
+    attr_accessor :message, :sender_psid, :payload
     attr_reader :platform
 
-    def initialize(sender_psid, platform = 'instagram', message = nil)
+    def initialize(sender_psid, platform = 'instagram', message = nil, payload = nil)
       @platform = platform
       @message = message
       @sender_psid = sender_psid
+      @payload = payload
     end
 
     def call_graph_api
-      page_access_token = @platform == 'instagram' ? Settings.webhook.page_instagram_access_token : Settings.webhook.page_facebook_access_token
+      page_access_token = InstagramAccount.find_by(ig_id: "17841453981073051").page_access_token
       send_message_to_user(page_access_token)
       send_image_to_user(page_access_token)
+    end
+
+    def call_postback_api
+      page_access_token = InstagramAccount.find_by(ig_id: "17841453981073051").page_access_token
+      send_payload_to_user(page_access_token)
     end
 
     private
@@ -68,5 +74,20 @@ module FacebookManager
       Rails.logger.debug(JSON.parse(a.body))
     end
 
+    def send_payload_to_user page_access_token
+      return if @payload.blank?
+      response = {
+        "text": text_sent_to_user
+      }
+      request_body = {
+        "recipient": {
+          "id": @sender_psid
+        },
+        "message": response
+      }
+      Rails.logger.debug(request_body)
+      a = HttpManager.new("https://graph.facebook.com/v2.6/me/messages?access_token=#{page_access_token}", request_body).post_request
+      Rails.logger.debug(a)
+    end
   end
 end
