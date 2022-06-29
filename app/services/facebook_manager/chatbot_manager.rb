@@ -110,6 +110,3 @@ module FacebookManager
     end
   end
 end
-
-
-{"object"=>"instagram", "entry"=>[{"id"=>"17841453981073051", "time"=>1656509943, "changes"=>[{"value"=>{"from"=>{"id"=>"5105085919538441", "username"=>"linhvu9740"}, "media"=>{"id"=>"18249001213102121", "media_product_type"=>"FEED"}, "id"=>"18003412993420314", "text"=>"What is EC Chatbot?"}, "field"=>"live_comments"}]}], "format"=>:json, "controller"=>"api/v1/chatbots", "action"=>"webhook_callback", "chatbot"=>{"object"=>"instagram", "entry"=>[{"id"=>"17841453981073051", "time"=>1656509943, "changes"=>[{"value"=>{"from"=>{"id"=>"5105085919538441", "username"=>"linhvu9740"}, "media"=>{"id"=>"18249001213102121", "media_product_type"=>"FEED"}, "id"=>"18003412993420314", "text"=>"What is EC Chatbot?"}, "field"=>"live_comments"}]}]}}
