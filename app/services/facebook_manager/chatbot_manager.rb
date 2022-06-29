@@ -3,11 +3,12 @@ module FacebookManager
     attr_accessor :message, :sender_psid, :payload
     attr_reader :platform
 
-    def initialize(sender_psid, platform = 'instagram', message = nil, payload = nil)
+    def initialize(sender_psid, platform = 'instagram', message = nil, payload = nil, message_type = 'message')
       @platform = platform
       @message = message
       @sender_psid = sender_psid
       @payload = payload
+      @message_type = message_type
     end
 
     def call_graph_api
@@ -29,13 +30,21 @@ module FacebookManager
       response = {
         "text": text_sent_to_user
       }
-      request_body = {
-        "recipient": {
-          "id": @sender_psid,
-          "comment_id": @sender_psid
-        },
-        "message": response
-      }
+      if message_type == 'comment'
+        request_body = {
+          "recipient": {
+            "comment_id": @sender_psid
+          },
+          "message": response
+        }
+      else
+        request_body = {
+          "recipient": {
+            "id": @sender_psid
+          },
+          "message": response
+        }
+      end
       quick_replies = @message&.quick_replies&.pluck(:title)
       if quick_replies.present?
         request_body[:message][:quick_replies] = []
@@ -63,12 +72,21 @@ module FacebookManager
           }
         }
       }
-      request_body = {
-        "recipient": {
-          "id": @sender_psid
-        },
-        "message": response
-      }
+      if message_type == 'comment'
+        request_body = {
+          "recipient": {
+            "id": @sender_psid
+          },
+          "message": response
+        }
+      else
+        request_body = {
+          "recipient": {
+            "comment_id": @sender_psid
+          },
+          "message": response
+        }
+      end
       Rails.logger.debug(request_body)
       a = HttpManager.new("https://graph.facebook.com/v2.6/me/messages?access_token=#{page_access_token}", request_body).post_request
       Rails.logger.debug(a)
