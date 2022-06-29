@@ -21,13 +21,19 @@ class Api::V1::ChatbotsController < ApplicationController
     return head 404 unless ['page', 'instagram'].include? params[:object]
 
     params[:entry].each do |entry|
-      webhook_event = entry[:messaging][0]
-      sender_psid = webhook_event[:sender][:id]
+      if entry[:messaging].present?
+        webhook_event = entry[:messaging][0]
+        sender_psid = webhook_event[:sender][:id]
 
-      if webhook_event[:message].present?
-        handleMessage(sender_psid, webhook_event[:message]);
-      elsif webhook_event[:postback].present?
-        handlePostback(sender_psid, webhook_event[:postback]);
+        if webhook_event[:message].present?
+          handleMessage(sender_psid, webhook_event[:message])
+        elsif webhook_event[:postback].present?
+          handlePostback(sender_psid, webhook_event[:postback])
+        end
+      elsif entry[:changes].present?
+        webhook_event = entry[:changes][0][:value]
+        comment_id = webhook_event[:from][:id]
+        handleMessage(comment_id, webhook_event[:text])
       end
     end
     render html: "EVENT_RECEIVED".html_safe

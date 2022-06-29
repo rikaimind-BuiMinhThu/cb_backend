@@ -31,7 +31,8 @@ module FacebookManager
       }
       request_body = {
         "recipient": {
-          "id": @sender_psid
+          "id": @sender_psid,
+          "comment_id": @sender_psid
         },
         "message": response
       }
