@@ -45,17 +45,17 @@ module FacebookManager
           "message": response
         }
       end
-      quick_replies = @message&.quick_replies&.pluck(:title)
-      if quick_replies.present?
-        request_body[:message][:quick_replies] = []
-        @quick_replies.each do |quick_reply|
-          request_body[:message][:quick_replies].push({
-            "content_type": "text",
-            "title": quick_reply[0, 19],
-            "payload": "OK"
-          })
-        end
-      end
+      # quick_replies = @message&.quick_replies&.pluck(:title)
+      # if quick_replies.present?
+      #   request_body[:message][:quick_replies] = []
+      #   @quick_replies.each do |quick_reply|
+      #     request_body[:message][:quick_replies].push({
+      #       "content_type": "text",
+      #       "title": quick_reply[0, 19],
+      #       "payload": "OK"
+      #     })
+      #   end
+      # end
       Rails.logger.debug(request_body)
       a = HttpManager.new("https://graph.facebook.com/v2.6/me/messages?access_token=#{page_access_token}", request_body).post_request
       Rails.logger.debug(a)
