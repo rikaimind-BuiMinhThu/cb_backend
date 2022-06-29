@@ -33,7 +33,7 @@ class Api::V1::ChatbotsController < ApplicationController
       elsif entry[:changes].present?
         webhook_event = entry[:changes][0][:value]
         comment_id = webhook_event[:from][:id]
-        handleMessage(comment_id, webhook_event[:text])
+        handleMessage(comment_id, webhook_event[:text], "comment")
       end
     end
     render html: "EVENT_RECEIVED".html_safe
@@ -41,13 +41,14 @@ class Api::V1::ChatbotsController < ApplicationController
 
   private
 
-  def handleMessage(sender_psid, received_message)
+  def handleMessage(sender_psid, received_message, message_type = "message")
     return if received_message[:text].blank?
     chatbot_manager = FacebookManager::ChatbotManager.new sender_psid, params[:object]
     messages = Message.where(received_message: received_message[:text])
     messages.each do |message|
       # quick_replies = message.quick_replies.pluck(:title)
       chatbot_manager.message = message
+      chatbot_manager.message_type = message_type
       # chatbot_manager.quick_replies = quick_replies
       chatbot_manager.call_graph_api
     end
