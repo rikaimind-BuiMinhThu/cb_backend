@@ -33,7 +33,7 @@ class Api::V1::ChatbotsController < ApplicationController
       elsif entry[:changes].present?
         webhook_event = entry[:changes][0][:value]
         comment_id = webhook_event[:from][:id]
-        handleMessage(comment_id, webhook_event[:text], "comment")
+        handleMessage(comment_id, webhook_event, "comment")
       end
     end
     render html: "EVENT_RECEIVED".html_safe
