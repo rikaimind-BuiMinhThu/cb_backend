@@ -1,6 +1,6 @@
 module FacebookManager
   class ChatbotManager
-    attr_accessor :message, :sender_psid, :payload
+    attr_accessor :message, :sender_psid, :payload, :message_type
     attr_reader :platform
 
     def initialize(sender_psid, platform = 'instagram', message = nil, payload = nil, message_type = 'message')
@@ -30,7 +30,7 @@ module FacebookManager
       response = {
         "text": text_sent_to_user
       }
-      if message_type == 'comment'
+      if @message_type == 'comment'
         request_body = {
           "recipient": {
             "comment_id": @sender_psid
@@ -72,7 +72,7 @@ module FacebookManager
           }
         }
       }
-      if message_type == 'comment'
+      if @message_type == 'comment'
         request_body = {
           "recipient": {
             "id": @sender_psid
@@ -110,3 +110,6 @@ module FacebookManager
     end
   end
 end
+
+
+{"object"=>"instagram", "entry"=>[{"id"=>"17841453981073051", "time"=>1656509943, "changes"=>[{"value"=>{"from"=>{"id"=>"5105085919538441", "username"=>"linhvu9740"}, "media"=>{"id"=>"18249001213102121", "media_product_type"=>"FEED"}, "id"=>"18003412993420314", "text"=>"What is EC Chatbot?"}, "field"=>"live_comments"}]}], "format"=>:json, "controller"=>"api/v1/chatbots", "action"=>"webhook_callback", "chatbot"=>{"object"=>"instagram", "entry"=>[{"id"=>"17841453981073051", "time"=>1656509943, "changes"=>[{"value"=>{"from"=>{"id"=>"5105085919538441", "username"=>"linhvu9740"}, "media"=>{"id"=>"18249001213102121", "media_product_type"=>"FEED"}, "id"=>"18003412993420314", "text"=>"What is EC Chatbot?"}, "field"=>"live_comments"}]}]}}
