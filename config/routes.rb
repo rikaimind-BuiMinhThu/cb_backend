@@ -30,6 +30,7 @@ Rails.application.routes.draw do
         get "/persistent_menus_turn_on" => "persistent_menus#turn_on"
         get "/persistent_menus_turn_off" => "persistent_menus#turn_off"
       end
+      resources :instagram_settings, only: [:index, :show, :destroy]
       get "webhook", :to => 'chatbots#webhook'
       post "webhook", :to => 'chatbots#webhook_callback'
       post "instagram_connect", :to => 'instagram_settings#connect'
