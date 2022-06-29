@@ -32,7 +32,7 @@ class Api::V1::ChatbotsController < ApplicationController
         end
       elsif entry[:changes].present?
         webhook_event = entry[:changes][0][:value]
-        comment_id = entry[:id]
+        comment_id = webhook_event[:id]
         handleMessage(comment_id, webhook_event, "comment")
       end
     end
