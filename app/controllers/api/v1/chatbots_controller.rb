@@ -26,13 +26,13 @@ class Api::V1::ChatbotsController < ApplicationController
         sender_psid = webhook_event[:sender][:id]
 
         if webhook_event[:message].present?
-          handleMessage(sender_psid, webhook_event[:message])
+          handleMessage(sender_psid, webhook_event[:message], "message")
         elsif webhook_event[:postback].present?
           handlePostback(sender_psid, webhook_event[:postback])
         end
       elsif entry[:changes].present?
         webhook_event = entry[:changes][0][:value]
-        comment_id = webhook_event[:from][:id]
+        comment_id = entry[:id]
         handleMessage(comment_id, webhook_event, "comment")
       end
     end
@@ -41,7 +41,7 @@ class Api::V1::ChatbotsController < ApplicationController
 
   private
 
-  def handleMessage(sender_psid, received_message, message_type = "message")
+  def handleMessage(sender_psid, received_message, message_type)
     return if received_message[:text].blank?
     chatbot_manager = FacebookManager::ChatbotManager.new sender_psid, params[:object]
     messages = Message.where(received_message: received_message[:text])
