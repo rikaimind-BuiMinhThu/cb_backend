@@ -9,6 +9,7 @@ class Api::V1::InstagramSettingsController < ApplicationController
   def show
     instagram_account = InstagramAccount.find_by(id: params[:id])
     return render json: {code: 2, data: "Cannot find instagram setting"} if instagram_account.blank?
+    return render json: {code: 2, data: "User can't permission"} if instagram_account.user_id != current_user.id
     render json: {code: 1, data: instagram_account}
   end
 
