@@ -7,6 +7,10 @@ class CreateInstagramAccounts < ActiveRecord::Migration[7.0]
       t.string :fb_user_id
       t.string :page_access_token
       t.boolean :status, default: false
+      t.integer :dm_bag_id
+      t.integer :post_comment_bag_id
+      t.integer :story_comment_bag_id
+      t.integer :live_comment_bag_id
 
       t.timestamps
     end
