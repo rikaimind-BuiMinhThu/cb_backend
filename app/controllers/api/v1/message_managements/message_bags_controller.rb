@@ -1,5 +1,4 @@
 class Api::V1::MessageManagements::MessageBagsController < ApplicationController
-  skip_before_action :permision
   skip_before_action :verify_authenticity_token
 
   def create
@@ -9,23 +8,26 @@ class Api::V1::MessageManagements::MessageBagsController < ApplicationController
 
   def show
     message_bag = MessageBag.find_by(id: params[:id])
-    return render json: {code: 2, data: "Cannot find message bag"} if message_bag.blank?
+    return render json: {code: 2, message: "Cannot find message bag"} if message_bag.blank?
     messages = Message.where(message_bag: message_bag)
     render json: {code: 1, data: {message_bag: message_bag, messages: messages}}
   end
 
   def update
     message_bag = MessageBag.find_by(id: params[:id])
-    return render json: {code: 2, data: "Cannot find message bag"} if message_bag.blank?
+    return render json: {code: 2, message: "Cannot find message bag"} if message_bag.blank?
     message_bag.update message_bag_params
     render json: {code: 1, data: message_bag}
   end
 
   def destroy
     message_bag = MessageBag.find_by(id: params[:id])
-    return render json: {code: 2, data: "Cannot find message bag"} if message_bag.blank?
-    message_bag.destroy
-    render json: {code: 1, data: message_bag}
+    return render json: {code: 2, message: "Cannot find message bag"} if message_bag.blank?
+    if message_bag.destroy
+      render json: {code: 1, message: "Success!"}
+    else
+      render json: {code: 2, message: "Something went wrong!"}
+    end
   end
 
   private
