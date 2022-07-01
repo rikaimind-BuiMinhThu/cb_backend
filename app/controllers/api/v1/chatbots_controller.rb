@@ -49,11 +49,6 @@ class Api::V1::ChatbotsController < ApplicationController
     render html: "EVENT_RECEIVED".html_safe
   end
 
-  dm_bag = MessageBag.find_by(id: params[:instagram_setting][:dm_bag_id])
-    post_comment_bag = MessageBag.find_by(id: params[:instagram_setting][:post_comment_bag_id])
-    story_comment_bag = MessageBag.find_by(id: params[:instagram_setting][:story_comment_bag_id])
-    live_comment_bag = MessageBag.find_by(id: params[:instagram_setting][:live_comment_bag_id])
-
   private
 
   def handleMessage(sender_psid, ig_id, received_message, message_bag_type)
