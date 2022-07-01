@@ -36,7 +36,7 @@ class Api::V1::ChatbotsController < ApplicationController
         end
       elsif entry[:changes].present?
         webhook_event = entry[:changes][0][:value]
-        comment_id = webhook_event[:id]
+        comment_id = webhook_event[:from][:id]
         if entry[:changes][0][:field] == "comments"
           message_bag_type = "post_comment_bag"
         elsif entry[:changes][0][:field] == "live_comments"
@@ -57,7 +57,8 @@ class Api::V1::ChatbotsController < ApplicationController
     return if instagram_account.blank?
     chatbot_manager = FacebookManager::ChatbotManager.new sender_psid, params[:object]
     message_bag = instagram_account.send(message_bag_type)
-    messages = message_bag&.messages.where(received_message: received_message[:text])
+    messages = message_bag&.messages&.where(received_message: received_message[:text])
+    chatbot_manager.call_graph_api if messages.blank?
     messages.each do |message|
       # quick_replies = message.quick_replies.pluck(:title)
       chatbot_manager.message = message
@@ -65,7 +66,6 @@ class Api::V1::ChatbotsController < ApplicationController
       # chatbot_manager.quick_replies = quick_replies
       chatbot_manager.call_graph_api
     end
-    chatbot_manager.call_graph_api if messages.length == 0
   end
 
   def handlePostback(sender_psid, postback)
