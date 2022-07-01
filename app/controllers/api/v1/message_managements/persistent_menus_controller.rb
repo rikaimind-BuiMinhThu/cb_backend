@@ -2,6 +2,8 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
   skip_before_action :permision
   skip_before_action :verify_authenticity_token
 
+  IGACCESSTOKEN = InstagramAccount.find_by(ig_id: "17841453981073051").page_access_token
+
   def index
     render json: {code: 1, data: PersistentMenu.all}
   end
@@ -32,7 +34,7 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
   end
 
   def status
-    instagram_persistent_menus = HttpManager.new("https://graph.facebook.com/v11.0/me/messenger_profile?fields=persistent_menu&platform=instagram&access_token=#{Settings.webhook.page_instagram_access_token}")
+    instagram_persistent_menus = HttpManager.new("https://graph.facebook.com/v11.0/me/messenger_profile?fields=persistent_menu&platform=instagram&access_token=#{IGACCESSTOKEN}")
       .get_request
     render json: {code: 1, instagram_persistent_menus: instagram_persistent_menus}
   end
@@ -44,7 +46,7 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
       call_to_actions.push({"type": "postback", "title": persistent_menu.title, "payload": persistent_menu.payload}) if persistent_menu.url.blank? && persistent_menu.payload.present?
     end
     instagram_persistent_menu = HttpManager.new(
-      "https://graph.facebook.com/v11.0/me/messenger_profile?platform=instagram&access_token=#{Settings.webhook.page_instagram_access_token}",
+      "https://graph.facebook.com/v11.0/me/messenger_profile?platform=instagram&access_token=#{IGACCESSTOKEN}",
       {
         "persistent_menu": [{
           "locale": "default",
@@ -57,7 +59,7 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
 
   def turn_off
     instagram_persistent_menu = HttpManager.new(
-      "https://graph.facebook.com/v11.0/me/messenger_profile?fields=['persistent_menu']&platform=instagram&access_token=#{Settings.webhook.page_instagram_access_token}",
+      "https://graph.facebook.com/v11.0/me/messenger_profile?fields=['persistent_menu']&platform=instagram&access_token=#{IGACCESSTOKEN}",
     ).delete_request
     render json: {code: 1, instagram_persistent_menu: instagram_persistent_menu}
   end
