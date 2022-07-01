@@ -68,7 +68,7 @@ class Api::V1::ChatbotsController < ApplicationController
     end
   end
 
-  def handlePostback(sender_psid, postback)
+  def handlePostback(sender_psid, ig_id, postback)
     return if postback[:payload].blank?
     chatbot_manager = FacebookManager::ChatbotManager.new sender_psid, params[:object]
     chatbot_manager.payload = postback[:payload]
