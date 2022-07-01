@@ -26,25 +26,43 @@ class Api::V1::ChatbotsController < ApplicationController
         sender_psid = webhook_event[:sender][:id]
 
         if webhook_event[:message].present?
-          handleMessage(sender_psid, webhook_event[:message], "message")
+          message_bag_type = "dm_bag"
+          if webhook_event[:message][:reply_to].present? && webhook_event[:message][:reply_to][:story].present?
+            message_bag_type = "story_comment_bag"
+          end
+          handleMessage(sender_psid, entry[:id], webhook_event[:message], message_type)
         elsif webhook_event[:postback].present?
-          handlePostback(sender_psid, webhook_event[:postback])
+          handlePostback(sender_psid, entry[:id], webhook_event[:postback])
         end
       elsif entry[:changes].present?
         webhook_event = entry[:changes][0][:value]
         comment_id = webhook_event[:id]
-        handleMessage(comment_id, webhook_event, "comment")
+        if entry[:changes][0][:field] == "comments"
+          message_bag_type = "post_comment_bag"
+        elsif entry[:changes][0][:field] == "live_comments"
+          message_bag_type = "live_comment_bag"
+        end
+        return if message_bag_type.blank?
+        handleMessage(comment_id, entry[:id], webhook_event, message_bag_type)
       end
     end
     render html: "EVENT_RECEIVED".html_safe
   end
 
+  dm_bag = MessageBag.find_by(id: params[:instagram_setting][:dm_bag_id])
+    post_comment_bag = MessageBag.find_by(id: params[:instagram_setting][:post_comment_bag_id])
+    story_comment_bag = MessageBag.find_by(id: params[:instagram_setting][:story_comment_bag_id])
+    live_comment_bag = MessageBag.find_by(id: params[:instagram_setting][:live_comment_bag_id])
+
   private
 
-  def handleMessage(sender_psid, received_message, message_type)
+  def handleMessage(sender_psid, ig_id, received_message, message_bag_type)
     return if received_message[:text].blank?
+    instagram_account = InstagramAccount.find_by(ig_id: ig_id)
+    return if instagram_account.blank?
     chatbot_manager = FacebookManager::ChatbotManager.new sender_psid, params[:object]
-    messages = Message.where(received_message: received_message[:text])
+    message_bag = instagram_account.send(message_bag_type)
+    messages = message_bag&.messages.where(received_message: received_message[:text])
     messages.each do |message|
       # quick_replies = message.quick_replies.pluck(:title)
       chatbot_manager.message = message
