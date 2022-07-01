@@ -30,7 +30,7 @@ class Api::V1::ChatbotsController < ApplicationController
           if webhook_event[:message][:reply_to].present? && webhook_event[:message][:reply_to][:story].present?
             message_bag_type = "story_comment_bag"
           end
-          handleMessage(sender_psid, entry[:id], webhook_event[:message], message_type)
+          handleMessage(sender_psid, entry[:id], webhook_event[:message], message_bag_type)
         elsif webhook_event[:postback].present?
           handlePostback(sender_psid, entry[:id], webhook_event[:postback])
         end
@@ -61,7 +61,7 @@ class Api::V1::ChatbotsController < ApplicationController
     messages.each do |message|
       # quick_replies = message.quick_replies.pluck(:title)
       chatbot_manager.message = message
-      chatbot_manager.message_type = message_type
+      chatbot_manager.message_type = message_bag_type
       # chatbot_manager.quick_replies = quick_replies
       chatbot_manager.call_graph_api
     end

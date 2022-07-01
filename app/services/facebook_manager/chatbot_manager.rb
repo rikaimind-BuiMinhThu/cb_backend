@@ -30,7 +30,7 @@ module FacebookManager
       response = {
         "text": text_sent_to_user
       }
-      if @message_type == 'comment'
+      if ['comments', 'live_comments'].include?(@message_type)
         request_body = {
           "recipient": {
             "comment_id": @sender_psid
@@ -72,7 +72,7 @@ module FacebookManager
           }
         }
       }
-      if @message_type == 'comment'
+      if ['comments', 'live_comments'].include?(@message_type)
         request_body = {
           "recipient": {
             "id": @sender_psid
