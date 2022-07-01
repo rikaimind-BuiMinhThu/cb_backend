@@ -1,5 +1,4 @@
 class Api::V1::InstagramSettingsController < ApplicationController
-  skip_before_action :permision, only: :update
   skip_before_action :verify_authenticity_token
 
   def index
@@ -17,6 +16,7 @@ class Api::V1::InstagramSettingsController < ApplicationController
   def update
     instagram_account = InstagramAccount.find_by(id: params[:id])
     return render json: {code: 2, data: "Cannot find instagram account"} if instagram_account.blank?
+    return render json: {code: 2, data: "User can't permission"} if instagram_account.user_id != current_user.id
     dm_bag = MessageBag.find_by(id: params[:instagram_setting][:dm_bag_id])
     post_comment_bag = MessageBag.find_by(id: params[:instagram_setting][:post_comment_bag_id])
     story_comment_bag = MessageBag.find_by(id: params[:instagram_setting][:story_comment_bag_id])
