@@ -8,9 +8,13 @@ class CreateInstagramAccounts < ActiveRecord::Migration[7.0]
       t.string :page_access_token
       t.boolean :status, default: false
       t.integer :dm_bag_id
+      t.boolean :dm_bag_status, null: false, default: false
       t.integer :post_comment_bag_id
+      t.boolean :post_comment_bag_status, null: false, default: false
       t.integer :story_comment_bag_id
+      t.boolean :story_comment_bag_status, null: false, default: false
       t.integer :live_comment_bag_id
+      t.boolean :live_comment_bag_status, null: false, default: false
 
       t.timestamps
     end

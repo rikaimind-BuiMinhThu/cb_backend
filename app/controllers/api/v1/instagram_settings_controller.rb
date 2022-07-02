@@ -25,6 +25,20 @@ class Api::V1::InstagramSettingsController < ApplicationController
     render json: {code: 1, data: instagram_account}
   end
 
+  def change_status
+    instagram_account = InstagramAccount.find_by(id: params[:id])
+    return render json: {code: 2, data: "Cannot find instagram account"} if instagram_account.blank?
+    return render json: {code: 2, data: "User can't permission"} if instagram_account.user_id != current_user.id
+    bag_type = params[:instagram_setting][:bag_type]
+    return render json: {code: 2, data: "Invalid bag type"} unless ["dm_bag", "post_comment_bag", "story_comment_bag", "live_comment_bag"].include?(bag_type)
+    message_bag = instagram_account.send(bag_type)
+    return render json: {code: 2, data: "Need select bag"} if message_bag.blank? && params[:instagram_setting][:bag_status].present?
+    bag_type_status_sym = (params[:instagram_setting][:bag_type] + "_status").to_sym
+    instagram_account[bag_type_status_sym] = params[:instagram_setting][:bag_status]
+    instagram_account.save
+    render json: {code: 1, data: instagram_account}
+  end
+
   def connect
     result = FacebookManager::InstagramSetting.new(params[:fb_AuthResponse], params[:page_id], params[:ig_id], 1).connect
     return render json: {code: 2, message: result.to_s} if result != 1
