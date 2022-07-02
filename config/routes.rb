@@ -34,6 +34,7 @@ Rails.application.routes.draw do
       get "webhook", :to => 'chatbots#webhook'
       post "webhook", :to => 'chatbots#webhook_callback'
       post "instagram_connect", :to => 'instagram_settings#connect'
+      patch "instagram_setting_change_status/:id", :to => 'instagram_settings#change_status'
     end
   end
 end
