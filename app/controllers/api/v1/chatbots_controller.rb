@@ -58,7 +58,7 @@ class Api::V1::ChatbotsController < ApplicationController
     chatbot_manager = FacebookManager::ChatbotManager.new sender_psid, params[:object]
     message_bag = instagram_account.send(message_bag_type) if instagram_account.send(message_bag_type + "_status?").present?
     messages = message_bag&.messages&.where(received_message: received_message[:text])
-    chatbot_manager.call_graph_api if messages.blank?
+    return chatbot_manager.call_graph_api if messages.blank?
     messages.each do |message|
       # quick_replies = message.quick_replies.pluck(:title)
       chatbot_manager.message = message
