@@ -59,7 +59,7 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
 
   def turn_off
     instagram_persistent_menu = HttpManager.new(
-      "https://graph.facebook.com/v11.0/me/messenger_profile?fields=['persistent_menu']&platform=instagram&access_token=#{IGACCESSTOKEN}",
+      "https://graph.facebook.com/v11.0/me/messenger_profile?fields=%5B'persistent_menu'%5D&platform=instagram&access_token=#{IGACCESSTOKEN}"
     ).delete_request
     render json: {code: 1, instagram_persistent_menu: instagram_persistent_menu}
   end

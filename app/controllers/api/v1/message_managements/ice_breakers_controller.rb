@@ -60,12 +60,7 @@ class Api::V1::MessageManagements::IceBreakersController < ApplicationController
 
   def turn_off
     instagram_ice_breaker = HttpManager.new(
-      "https://graph.facebook.com/v11.0/me/messenger_profile?platform=instagram&access_token=#{IGACCESSTOKEN}",
-      {
-        "fields": [
-          "ice_breakers"
-        ]
-      }
+      "https://graph.facebook.com/v11.0/me/messenger_profile?fields=%5B'ice_breakers'%5Dplatform=instagram&access_token=#{IGACCESSTOKEN}"
     ).delete_request
     render json: {code: 1, instagram_ice_breaker: instagram_ice_breaker}
   end
