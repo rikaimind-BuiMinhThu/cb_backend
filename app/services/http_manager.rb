@@ -29,7 +29,7 @@ class HttpManager
   def delete_request
     uri = URI(@url)
     header = {'Content-Type' => 'application/json', 'Accept' => 'application/json'}
-    request = Net::HTTP::Delete.new(uri.path)
+    request = Net::HTTP::Delete.new(uri.path + "?" + uri.query)
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
     request.body = @data.to_json
