@@ -16,10 +16,10 @@ namespace :message_demo do
     Message.insert(
       {message_bag_id: message_bag.id, received_message: "image message", message_type: 1, message_value: "I sent you an image", img_value: "1655912775.png", created_at: Time.current, updated_at: Time.current}
     )
-    IceBreaker.create question: "How can I help you", answer: "Please chat with EC Chatbot"
-    IceBreaker.create question: "Where are you from", answer: "I'm from facebook and instagram"
-    PersistentMenu.create title: "How can I help you", payload: "Please chat with EC Chatbot"
-    PersistentMenu.create title: "Where are you from", payload: "I'm from facebook and instagram"
-    PersistentMenu.create title: "Extend url", url: "https://example.com/"
+    # IceBreaker.create question: "How can I help you", answer: "Please chat with EC Chatbot"
+    # IceBreaker.create question: "Where are you from", answer: "I'm from facebook and instagram"
+    # PersistentMenu.create title: "How can I help you", payload: "Please chat with EC Chatbot"
+    # PersistentMenu.create title: "Where are you from", payload: "I'm from facebook and instagram"
+    # PersistentMenu.create title: "Extend url", url: "https://example.com/"
   end
 end
