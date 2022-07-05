@@ -29,6 +29,8 @@ Rails.application.routes.draw do
         get "/persistent_menus_status" => "persistent_menus#status"
         get "/persistent_menus_turn_on" => "persistent_menus#turn_on"
         get "/persistent_menus_turn_off" => "persistent_menus#turn_off"
+        resources :keyword_settings, except: [:new, :edit]
+        get "/keyword_settings_active" => "keywords#active"
       end
       resources :instagram_settings, only: [:index, :show, :update, :destroy]
       get "webhook", :to => 'chatbots#webhook'
