@@ -56,15 +56,18 @@ class Api::V1::ChatbotsController < ApplicationController
     instagram_account = InstagramAccount.find_by(ig_id: ig_id)
     return if instagram_account.blank?
     chatbot_manager = FacebookManager::ChatbotManager.new sender_psid, params[:object]
-    message_bag = instagram_account.send(message_bag_type) if instagram_account.send(message_bag_type + "_status?").present?
-    messages = message_bag&.messages&.where(received_message: received_message[:text])
-    return chatbot_manager.call_graph_api if messages.blank?
-    messages.each do |message|
-      # quick_replies = message.quick_replies.pluck(:title)
-      chatbot_manager.message = message
-      chatbot_manager.message_type = message_bag_type
-      # chatbot_manager.quick_replies = quick_replies
-      chatbot_manager.call_graph_api
+    message_bags = MessageBag.where(id: find_message_bag_ids(instagram_account, message_bag_type, received_message[:text]))
+    message_bags.each do |message_bag|
+      message_bag = instagram_account.send(message_bag_type) if instagram_account.send(message_bag_type + "_status?").present?
+      messages = message_bag&.messages&.where(received_message: received_message[:text])
+      return chatbot_manager.call_graph_api if messages.blank?
+      messages.each do |message|
+        # quick_replies = message.quick_replies.pluck(:title)
+        chatbot_manager.message = message
+        chatbot_manager.message_type = message_bag_type
+        # chatbot_manager.quick_replies = quick_replies
+        chatbot_manager.call_graph_api
+      end
     end
   end
 
@@ -73,5 +76,24 @@ class Api::V1::ChatbotsController < ApplicationController
     chatbot_manager = FacebookManager::ChatbotManager.new sender_psid, params[:object]
     chatbot_manager.payload = postback[:payload]
     chatbot_manager.call_postback_api
+  end
+
+  def find_message_bag_ids(instagram_account, message_bag_type, received_message_text)
+    message_bag_ids = []
+    if message_bag_type == "dm_bag"
+      keywords = KeywordSetting.where(instagram_account: instagram_account, is_active: true).is_dm.each do |keyword_setting|
+        keyword_setting.keyword.split("|").each {|keyword| message_bag_ids.push(keyword_setting.message_bag_id) if received_message_text.include?(keyword)}
+      end
+    else
+      status_type = instagram_account.send(message_bag_type + "_status")
+      if status_type == "direct_message"
+        message_bag_ids.push(instagram_account.send(message_bag_type + "_id"))
+      elsif status_type == "keyword"
+        keywords = KeywordSetting.where(instagram_account: instagram_account, is_active: true).send("is_" + message_bag_type.split("_bag")[0]).each do |keyword_setting|
+          keyword_setting.keyword.split("|").each {|keyword| message_bag_ids.push(keyword_setting.message_bag_id) if received_message_text.include?(keyword)}
+        end
+      end
+    end
+    message_bag_ids
   end
 end

@@ -17,11 +17,10 @@ class Api::V1::InstagramSettingsController < ApplicationController
     instagram_account = InstagramAccount.find_by(id: params[:id])
     return render json: {code: 2, data: "Cannot find instagram account"} if instagram_account.blank?
     return render json: {code: 2, data: "User can't permission"} if instagram_account.user_id != current_user.id
-    dm_bag = MessageBag.find_by(id: params[:instagram_setting][:dm_bag_id])
     post_comment_bag = MessageBag.find_by(id: params[:instagram_setting][:post_comment_bag_id])
     story_comment_bag = MessageBag.find_by(id: params[:instagram_setting][:story_comment_bag_id])
     live_comment_bag = MessageBag.find_by(id: params[:instagram_setting][:live_comment_bag_id])
-    instagram_account.update dm_bag: dm_bag, post_comment_bag: post_comment_bag, story_comment_bag: story_comment_bag, live_comment_bag: live_comment_bag
+    instagram_account.update post_comment_bag: post_comment_bag, story_comment_bag: story_comment_bag, live_comment_bag: live_comment_bag
     render json: {code: 1, data: instagram_account}
   end
 
@@ -32,13 +31,18 @@ class Api::V1::InstagramSettingsController < ApplicationController
 
     instagram_setting = params[:instagram_setting]
 
-    instagram_account.dm_bag_status = instagram_setting[:dm_bag_status] unless instagram_setting[:dm_bag_status].nil?
+    return render json: {code: 2, data: "Invalid data"} \
+      if instagram_setting[:post_comment_bag_status].present? && InstagramAccount.post_comment_bag_statuses.exclude?(instagram_setting[:post_comment_bag_status])
+    return render json: {code: 2, data: "Invalid data"} \
+      if instagram_setting[:story_comment_bag_status].present? && InstagramAccount.story_comment_bag_statuses.exclude?(instagram_setting[:story_comment_bag_status])
+    return render json: {code: 2, data: "Invalid data"} \
+      if instagram_setting[:live_comment_bag_status].present? && InstagramAccount.live_comment_bag_statuses.exclude?(instagram_setting[:live_comment_bag_status])
+
     instagram_account.post_comment_bag_status = instagram_setting[:post_comment_bag_status] unless instagram_setting[:post_comment_bag_status].nil?
     instagram_account.story_comment_bag_status = instagram_setting[:story_comment_bag_status] unless instagram_setting[:story_comment_bag_status].nil?
     instagram_account.live_comment_bag_status = instagram_setting[:live_comment_bag_status] unless instagram_setting[:live_comment_bag_status].nil?
-    instagram_account.save
-
-    render json: {code: 1, data: instagram_account}
+    return render json: {code: 1, data: instagram_account} if instagram_account.save
+    render json: {code: 2, data: "error"}
   end
 
   def connect
