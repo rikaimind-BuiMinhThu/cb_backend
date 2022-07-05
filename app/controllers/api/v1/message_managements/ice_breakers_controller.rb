@@ -1,5 +1,6 @@
 class Api::V1::MessageManagements::IceBreakersController < ApplicationController
   skip_before_action :verify_authenticity_token
+  before_action :check_instagram_connect
 
   IGACCESSTOKEN = InstagramAccount.find_by(ig_id: "17841453981073051").page_access_token
 
@@ -11,6 +12,7 @@ class Api::V1::MessageManagements::IceBreakersController < ApplicationController
   def create
     ice_breaker = IceBreaker.new(ice_breaker_params)
     ice_breaker.instagram_account_id = current_user.instagram_account.id
+    return render json: {code: 2, message: "Cannot create more"} unless IceBreaker.validate_size!(ice_breaker.instagram_account_id)
     return render json: {code: 1, data: ice_breaker} if ice_breaker.save
     render json: {code: 2, message: "Something went wrong!"}
   end
@@ -83,5 +85,9 @@ class Api::V1::MessageManagements::IceBreakersController < ApplicationController
 
   def ice_breaker_params
     params.require(:ice_breaker).permit(:question, :answer)
+  end
+
+  def check_instagram_connect
+    return render json: {code: 2, message: "You need connect instagram account first"} if current_user.instagram_account.blank?
   end
 end

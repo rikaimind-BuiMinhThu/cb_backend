@@ -1,5 +1,6 @@
 class Api::V1::MessageManagements::PersistentMenusController < ApplicationController
   skip_before_action :verify_authenticity_token
+  before_action :check_instagram_connect
 
   IGACCESSTOKEN = InstagramAccount.find_by(ig_id: "17841453981073051").page_access_token
 
@@ -11,6 +12,7 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
   def create
     persistent_menu = PersistentMenu.new(persistent_menu_params)
     persistent_menu.instagram_account_id = current_user.instagram_account.id
+    return render json: {code: 2, message: "Cannot create more"} unless PersistentMenu.validate_size!(persistent_menu.instagram_account_id)
     return render json: {code: 1, data: persistent_menu} if persistent_menu.save
     render json: {code: 2, message: "Something went wrong!"}
   end
@@ -82,5 +84,9 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
 
   def persistent_menu_params
     params.require(:persistent_menu).permit(:title, :payload, :url)
+  end
+
+  def check_instagram_connect
+    return render json: {code: 2, message: "You need connect instagram account first"} if current_user.instagram_account.blank?
   end
 end
