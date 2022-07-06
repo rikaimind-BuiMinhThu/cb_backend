@@ -59,8 +59,7 @@ class Api::V1::ChatbotsController < ApplicationController
     message_bags = MessageBag.where(id: find_message_bag_ids(instagram_account, message_bag_type, received_message[:text]))
     message_bags.each do |message_bag|
       message_bag = instagram_account.send(message_bag_type) if instagram_account.send(message_bag_type + "_status?").present?
-      messages = message_bag&.messages&.where(received_message: received_message[:text])
-      return chatbot_manager.call_graph_api if messages.blank?
+      messages = message_bag&.messages
       messages.each do |message|
         # quick_replies = message.quick_replies.pluck(:title)
         chatbot_manager.message = message
@@ -81,7 +80,7 @@ class Api::V1::ChatbotsController < ApplicationController
   def find_message_bag_ids(instagram_account, message_bag_type, received_message_text)
     message_bag_ids = []
     if message_bag_type == "dm_bag"
-      keywords = KeywordSetting.where(instagram_account: instagram_account, is_active: true).is_dm.each do |keyword_setting|
+      keywords = KeywordSetting.where(instagram_account: instagram_account, is_active: true, is_dm: true).each do |keyword_setting|
         keyword_setting.keyword.split("|").each {|keyword| message_bag_ids.push(keyword_setting.message_bag_id) if received_message_text.include?(keyword)}
       end
     else
@@ -89,7 +88,7 @@ class Api::V1::ChatbotsController < ApplicationController
       if status_type == "direct_message"
         message_bag_ids.push(instagram_account.send(message_bag_type + "_id"))
       elsif status_type == "keyword"
-        keywords = KeywordSetting.where(instagram_account: instagram_account, is_active: true).send("is_" + message_bag_type.split("_bag")[0]).each do |keyword_setting|
+        keywords = KeywordSetting.where(instagram_account: instagram_account, is_active: true, "is_" + message_bag_type.split("_bag")[0] => true).each do |keyword_setting|
           keyword_setting.keyword.split("|").each {|keyword| message_bag_ids.push(keyword_setting.message_bag_id) if received_message_text.include?(keyword)}
         end
       end
