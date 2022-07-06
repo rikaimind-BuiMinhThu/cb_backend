@@ -33,6 +33,6 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
   private
 
   def message_params
-    params.require(:message).permit(:message_bag_id, :received_message, :message_value, :message_type, :img_value)
+    params.require(:message).permit(:message_bag_id, :message_value, :message_type, :img_value)
   end
 end
