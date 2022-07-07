@@ -14,17 +14,16 @@ class QuickReplyForm
           list_messages = []
           @messages.each do |message|
             message_tmp = Message.create!(message_bag_id: message[:message_bag_id],
-                                         received_message: message[:received_message],
                                          message_value: message[:message_value],
                                          message_type: message[:message_type],
                                          img_value: message[:img_value])
-            next if message[:title].blank?
-            message[:title].each do |msg|
-              QuickReply.create!(message_id: message_tmp.id, title: msg[:received_message])
-              Message.create!(message_bag_id: msg[:message_bag_id],
-                             received_message: msg[:received_message],
-                             message_value: msg[:message_value],
-                             message_type: msg[:message_type])
+            # next if message[:title].blank?
+            # message[:title].each do |msg|
+            #   QuickReply.create!(message_id: message_tmp.id, title: msg[:received_message])
+            #   Message.create!(message_bag_id: msg[:message_bag_id],
+            #                  received_message: msg[:received_message],
+            #                  message_value: msg[:message_value],
+            #                  message_type: msg[:message_type])
             end
           end
         end
