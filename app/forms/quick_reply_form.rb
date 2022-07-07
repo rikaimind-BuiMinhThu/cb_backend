@@ -24,7 +24,7 @@ class QuickReplyForm
             #                  received_message: msg[:received_message],
             #                  message_value: msg[:message_value],
             #                  message_type: msg[:message_type])
-            end
+            # end
           end
         end
       end
