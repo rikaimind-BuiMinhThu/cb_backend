@@ -2,8 +2,6 @@ class Api::V1::MessageManagements::IceBreakersController < ApplicationController
   skip_before_action :verify_authenticity_token
   before_action :check_instagram_connect
 
-  IGACCESSTOKEN = InstagramAccount.find_by(ig_id: "17841453981073051").page_access_token
-
   def index
     ice_breakers = IceBreaker.where(instagram_account_id: current_user.instagram_account.id)
     render json: {code: 1, data: ice_breakers}
@@ -48,19 +46,21 @@ class Api::V1::MessageManagements::IceBreakersController < ApplicationController
 
   def status
     return render json: {code: 2, message: "User can't permission"} if current_user.instagram_account.ig_id != params[:ig_id]
-    instagram_ice_breakers = HttpManager.new("https://graph.facebook.com/v11.0/me/messenger_profile?fields=ice_breakers&platform=instagram&access_token=#{IGACCESSTOKEN}")
+    ig_access_token = InstagramAccount.find_by(ig_id: params[:ig_id]).page_access_token
+    instagram_ice_breakers = HttpManager.new("https://graph.facebook.com/v11.0/me/messenger_profile?fields=ice_breakers&platform=instagram&access_token=#{ig_access_token}")
       .get_request
     render json: {code: 1, instagram_ice_breakers: instagram_ice_breakers}
   end
 
   def turn_on
     return render json: {code: 2, message: "User can't permission"} if current_user.instagram_account.ig_id != params[:ig_id]
+    ig_access_token = InstagramAccount.find_by(ig_id: params[:ig_id]).page_access_token
     call_to_actions = []
     IceBreaker.all.each do |ice_breaker|
       call_to_actions.push({"question": ice_breaker.question, "payload": ice_breaker.answer})
     end
     instagram_ice_breaker = HttpManager.new(
-      "https://graph.facebook.com/v11.0/me/messenger_profile?platform=instagram&access_token=#{IGACCESSTOKEN}",
+      "https://graph.facebook.com/v11.0/me/messenger_profile?platform=instagram&access_token=#{ig_access_token}",
       {
         "platform": "instagram",
         "ice_breakers": [
@@ -75,8 +75,9 @@ class Api::V1::MessageManagements::IceBreakersController < ApplicationController
 
   def turn_off
     return render json: {code: 2, message: "User can't permission"} if current_user.instagram_account.ig_id != params[:ig_id]
+    ig_access_token = InstagramAccount.find_by(ig_id: params[:ig_id]).page_access_token
     instagram_ice_breaker = HttpManager.new(
-      "https://graph.facebook.com/v11.0/me/messenger_profile?fields=%5B'ice_breakers'%5D&platform=instagram&access_token=#{IGACCESSTOKEN}"
+      "https://graph.facebook.com/v11.0/me/messenger_profile?fields=%5B'ice_breakers'%5D&platform=instagram&access_token=#{ig_access_token}"
     ).delete_request
     render json: {code: 1, instagram_ice_breaker: instagram_ice_breaker}
   end
