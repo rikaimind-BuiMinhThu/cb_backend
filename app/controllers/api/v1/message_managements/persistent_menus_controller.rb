@@ -2,8 +2,6 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
   skip_before_action :verify_authenticity_token
   before_action :check_instagram_connect
 
-  IGACCESSTOKEN = InstagramAccount.find_by(ig_id: "17841453981073051").page_access_token
-
   def index
     persistent_menus = PersistentMenu.where(instagram_account_id: current_user.instagram_account.id)
     render json: {code: 1, data: persistent_menus}
@@ -48,7 +46,8 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
 
   def status
     return render json: {code: 2, message: "User can't permission"} if current_user.instagram_account.ig_id != params[:ig_id]
-    instagram_persistent_menus = HttpManager.new("https://graph.facebook.com/v11.0/me/messenger_profile?fields=persistent_menu&platform=instagram&access_token=#{IGACCESSTOKEN}")
+    ig_access_token = InstagramAccount.find_by(ig_id: params[:ig_id]).page_access_token
+    instagram_persistent_menus = HttpManager.new("https://graph.facebook.com/v11.0/me/messenger_profile?fields=persistent_menu&platform=instagram&access_token=#{ig_access_token}")
       .get_request
     render json: {code: 1, instagram_persistent_menus: instagram_persistent_menus}
   end
@@ -60,8 +59,9 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
       call_to_actions.push({"type": "web_url", "title": persistent_menu.title, "url": persistent_menu.url}) if persistent_menu.url.present?
       call_to_actions.push({"type": "postback", "title": persistent_menu.title, "payload": persistent_menu.payload}) if persistent_menu.url.blank? && persistent_menu.payload.present?
     end
+    ig_access_token = InstagramAccount.find_by(ig_id: params[:ig_id]).page_access_token
     instagram_persistent_menu = HttpManager.new(
-      "https://graph.facebook.com/v11.0/me/messenger_profile?platform=instagram&access_token=#{IGACCESSTOKEN}",
+      "https://graph.facebook.com/v11.0/me/messenger_profile?platform=instagram&access_token=#{page_access_token}",
       {
         "persistent_menu": [{
           "locale": "default",
@@ -74,8 +74,9 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
 
   def turn_off
     return render json: {code: 2, message: "User can't permission"} if current_user.instagram_account.ig_id != params[:ig_id]
+    ig_access_token = InstagramAccount.find_by(ig_id: params[:ig_id]).page_access_token
     instagram_persistent_menu = HttpManager.new(
-      "https://graph.facebook.com/v11.0/me/messenger_profile?fields=%5B'persistent_menu'%5D&platform=instagram&access_token=#{IGACCESSTOKEN}"
+      "https://graph.facebook.com/v11.0/me/messenger_profile?fields=%5B'persistent_menu'%5D&platform=instagram&access_token=#{ig_access_token}"
     ).delete_request
     render json: {code: 1, instagram_persistent_menu: instagram_persistent_menu}
   end
