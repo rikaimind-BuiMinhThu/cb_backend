@@ -15,6 +15,7 @@ module FacebookManager
       page_access_token = InstagramAccount.find_by(ig_id: "17841453981073051").page_access_token
       send_message_to_user(page_access_token)
       send_image_to_user(page_access_token)
+      share_post_to_user(page_access_token)
     end
 
     def call_postback_api
@@ -90,7 +91,7 @@ module FacebookManager
       Rails.logger.debug(request_body)
       a = HttpManager.new("https://graph.facebook.com/v2.6/me/messages?access_token=#{page_access_token}", request_body).post_request
       Rails.logger.debug(a)
-      Rails.logger.debug(JSON.parse(a.body))
+      Rails.logger.debug(JSON.parse(a.body)) if a.body.present?
     end
 
     def send_payload_to_user page_access_token
@@ -106,6 +107,24 @@ module FacebookManager
       }
       Rails.logger.debug(request_body)
       a = HttpManager.new("https://graph.facebook.com/v2.6/me/messages?access_token=#{page_access_token}", request_body).post_request
+      Rails.logger.debug(a)
+    end
+
+    def share_post_to_user page_access_token
+      return if @message&.message_value.blank? || @message.message_type != "past_post"
+      request_body = {
+        "recipient": {
+          "id": @sender_psid
+        },
+        "message": {
+          "attachment":{
+            "type": "MEDIA_SHARE",
+            "payload": {"id": @message.message_value}
+          }
+        }
+      }
+      Rails.logger.debug(request_body)
+      a = HttpManager.new("https://graph.facebook.com/v14.0/me/messages?access_token=#{page_access_token}", request_body).post_request
       Rails.logger.debug(a)
     end
   end
