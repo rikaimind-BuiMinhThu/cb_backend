@@ -15,7 +15,7 @@ module FacebookManager
       page_access_token = InstagramAccount.find_by(ig_id: "17841453981073051").page_access_token
       send_message_to_user(page_access_token)
       send_image_to_user(page_access_token)
-      share_post_to_user(page_access_token) if @message&.message_type == "past_post"
+      share_post_to_user(page_access_token)
     end
 
     def call_postback_api
@@ -26,6 +26,7 @@ module FacebookManager
     private
 
     def send_message_to_user page_access_token
+      return if @message&.message_type == "past_post"
       return if @message&.message_value.blank? && @message&.img_value&.url.present?
       text_sent_to_user = (@message&.message_value.blank? && @message&.img_value&.url.blank?) ? "Hello! Welcome to the instagram chatbot!" : @message.message_value
       response = {
