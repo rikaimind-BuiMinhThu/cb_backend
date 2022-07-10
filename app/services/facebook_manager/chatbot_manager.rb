@@ -1,6 +1,6 @@
 module FacebookManager
   class ChatbotManager
-    attr_accessor :message, :sender_psid, :payload, :message_type, instagram_account
+    attr_accessor :message, :sender_psid, :payload, :message_type, :instagram_account
     attr_reader :platform
 
     def initialize(sender_psid, instagram_account, platform = 'instagram', message = nil, payload = nil, message_type = 'message')
