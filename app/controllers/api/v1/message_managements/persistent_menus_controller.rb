@@ -59,7 +59,7 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
       call_to_actions.push({"type": "web_url", "title": persistent_menu.title, "url": persistent_menu.url}) if persistent_menu.url.present?
       call_to_actions.push({"type": "postback", "title": persistent_menu.title, "payload": persistent_menu.payload}) if persistent_menu.url.blank? && persistent_menu.payload.present?
     end
-    render json: {code: 2, instagram_persistent_menu: "persistent_menu is blank"} if call_to_actions.blank?
+    return render json: {code: 2, instagram_persistent_menu: "persistent_menu is blank"} if call_to_actions.blank?
     ig_access_token = InstagramAccount.find_by(ig_id: params[:ig_id]).page_access_token
     instagram_persistent_menu = HttpManager.new(
       "https://graph.facebook.com/v11.0/me/messenger_profile?platform=instagram&access_token=#{page_access_token}",
