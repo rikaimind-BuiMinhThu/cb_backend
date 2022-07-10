@@ -1,25 +1,26 @@
 module FacebookManager
   class ChatbotManager
-    attr_accessor :message, :sender_psid, :payload, :message_type
+    attr_accessor :message, :sender_psid, :payload, :message_type, instagram_account
     attr_reader :platform
 
-    def initialize(sender_psid, platform = 'instagram', message = nil, payload = nil, message_type = 'message')
+    def initialize(sender_psid, instagram_account, platform = 'instagram', message = nil, payload = nil, message_type = 'message')
       @platform = platform
       @message = message
       @sender_psid = sender_psid
+      @instagram_account = instagram_account
       @payload = payload
       @message_type = message_type
     end
 
     def call_graph_api
-      page_access_token = InstagramAccount.find_by(ig_id: "17841453981073051").page_access_token
+      page_access_token = @instagram_account.page_access_token
       send_message_to_user(page_access_token)
       send_image_to_user(page_access_token)
       share_post_to_user(page_access_token)
     end
 
     def call_postback_api
-      page_access_token = InstagramAccount.find_by(ig_id: "17841453981073051").page_access_token
+      page_access_token = @instagram_account.page_access_token
       send_payload_to_user(page_access_token)
     end
 

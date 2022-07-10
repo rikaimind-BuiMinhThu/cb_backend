@@ -56,9 +56,10 @@ class Api::V1::MessageManagements::IceBreakersController < ApplicationController
     return render json: {code: 2, message: "User can't permission"} if current_user.instagram_account.ig_id != params[:ig_id]
     ig_access_token = InstagramAccount.find_by(ig_id: params[:ig_id]).page_access_token
     call_to_actions = []
-    IceBreaker.all.each do |ice_breaker|
+    IceBreaker.where(instagram_account: current_user.instagram_account).each do |ice_breaker|
       call_to_actions.push({"question": ice_breaker.question, "payload": ice_breaker.answer})
     end
+    render json: {code: 2, instagram_persistent_menu: "ice_breaker is blank"} if call_to_actions.blank?
     instagram_ice_breaker = HttpManager.new(
       "https://graph.facebook.com/v11.0/me/messenger_profile?platform=instagram&access_token=#{ig_access_token}",
       {
