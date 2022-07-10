@@ -55,12 +55,13 @@ class Api::V1::ChatbotsController < ApplicationController
     return if received_message[:text].blank?
     instagram_account = InstagramAccount.find_by(ig_id: ig_id)
     return if instagram_account.blank?
+    return if SupportingUser.find_by(instagram_account: instagram_account, sender_id: sender_psid).present?
     chatbot_manager = FacebookManager::ChatbotManager.new sender_psid, instagram_account, params[:object]
     if received_message[:text].include?('support') && message_bag_type == "dm_bag"
       PageMailer.request_support_email(instagram_account.user).deliver
-      chatbot_manager.message = "We will send supporter to help you. Please wait!"
-      chatbot_manager.message_type = message_bag_type
-      chatbot_manager.call_graph_api
+      # chatbot_manager.message = "We will send supporter to help you. Please wait!"
+      # chatbot_manager.message_type = message_bag_type
+      # chatbot_manager.call_graph_api
       SupportingUser.create instagram_account: instagram_account, sender_id: sender_psid
       return
     end
