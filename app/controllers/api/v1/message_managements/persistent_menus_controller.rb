@@ -55,10 +55,11 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
   def turn_on
     return render json: {code: 2, message: "User can't permission"} if current_user.instagram_account.ig_id != params[:ig_id]
     call_to_actions = []
-    PersistentMenu.all.each do |persistent_menu|
+    PersistentMenu.where(instagram_account: current_user.instagram_account).each do |persistent_menu|
       call_to_actions.push({"type": "web_url", "title": persistent_menu.title, "url": persistent_menu.url}) if persistent_menu.url.present?
       call_to_actions.push({"type": "postback", "title": persistent_menu.title, "payload": persistent_menu.payload}) if persistent_menu.url.blank? && persistent_menu.payload.present?
     end
+    render json: {code: 2, instagram_persistent_menu: "persistent_menu is blank"} if call_to_actions.blank?
     ig_access_token = InstagramAccount.find_by(ig_id: params[:ig_id]).page_access_token
     instagram_persistent_menu = HttpManager.new(
       "https://graph.facebook.com/v11.0/me/messenger_profile?platform=instagram&access_token=#{page_access_token}",
