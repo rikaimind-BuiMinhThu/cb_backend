@@ -75,14 +75,14 @@ module FacebookManager
       if ['comments', 'live_comments'].include?(@message_type)
         request_body = {
           "recipient": {
-            "id": @sender_psid
+            "comment_id": @sender_psid
           },
           "message": response
         }
       else
         request_body = {
           "recipient": {
-            "comment_id": @sender_psid
+            "id": @sender_psid
           },
           "message": response
         }
