@@ -62,7 +62,7 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
     return render json: {code: 2, instagram_persistent_menu: "persistent_menu is blank"} if call_to_actions.blank?
     ig_access_token = InstagramAccount.find_by(ig_id: params[:ig_id]).page_access_token
     instagram_persistent_menu = HttpManager.new(
-      "https://graph.facebook.com/v11.0/me/messenger_profile?platform=instagram&access_token=#{page_access_token}",
+      "https://graph.facebook.com/v11.0/me/messenger_profile?platform=instagram&access_token=#{ig_access_token}",
       {
         "persistent_menu": [{
           "locale": "default",
