@@ -27,23 +27,23 @@ class Api::V1::ChatbotsController < ApplicationController
 
         if webhook_event[:message].present?
           message_bag_type = "dm_bag"
-          if webhook_event[:message][:reply_to].present? && webhook_event[:message][:reply_to][:story].present?
-            message_bag_type = "story_comment_bag"
-          end
-          handleMessage(sender_psid, entry[:id], webhook_event[:message], message_bag_type)
+          message_bag_type = "story_comment_bag" if webhook_event[:message][:reply_to].present? && webhook_event[:message][:reply_to][:story].present?
+
+          handleMessage(sender_psid, entry[:id], webhook_event[:message], message_bag_type, "")
         elsif webhook_event[:postback].present?
           handlePostback(sender_psid, entry[:id], webhook_event[:postback])
         end
       elsif entry[:changes].present?
         webhook_event = entry[:changes][0][:value]
         comment_id = webhook_event[:from][:id]
+        media_id = webhook_event[:media][:id]
         if entry[:changes][0][:field] == "comments"
           message_bag_type = "post_comment_bag"
         elsif entry[:changes][0][:field] == "live_comments"
           message_bag_type = "live_comment_bag"
         end
         return if message_bag_type.blank?
-        handleMessage(comment_id, entry[:id], webhook_event, message_bag_type)
+        handleMessage(comment_id, entry[:id], webhook_event, message_bag_type, media_id)
       end
     end
     render html: "EVENT_RECEIVED".html_safe
@@ -51,7 +51,7 @@ class Api::V1::ChatbotsController < ApplicationController
 
   private
 
-  def handleMessage(sender_psid, ig_id, received_message, message_bag_type)
+  def handleMessage(sender_psid, ig_id, received_message, message_bag_type, media_id)
     return if received_message[:text].blank?
     instagram_account = InstagramAccount.find_by(ig_id: ig_id)
     return if instagram_account.blank?
@@ -64,6 +64,11 @@ class Api::V1::ChatbotsController < ApplicationController
       SupportingUser.create instagram_account: instagram_account, sender_id: sender_psid
       return
     end
+    usage_type = message_bag_type.split("bag")[0] + "received"
+    media_query = HttpManager.new("https://graph.facebook.com/#{media_id}?fields=id,timestamp&access_token=#{page_access_token}", request_body).get_request
+    chatbot_usage = ChatbotUsage.new(sender_id: sender_psid, usage_type: usage_type, content: received_message[:text], instagram_account: instagram_account,media_id: media_id, media_start_at: media_start_at)
+    chatbot_usage.media_start_at = media_query["timestamp"].to_datetime if media_query["timestamp"].present?
+    chatbot_usage.save
     message_bags = MessageBag.where(id: find_message_bag_ids(instagram_account, message_bag_type, received_message[:text]))
     message_bags.each do |message_bag|
       messages = message_bag&.messages
