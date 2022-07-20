@@ -6,7 +6,7 @@ class Api::V1::Analytics::ChatbotUsagesController < ApplicationController
     @q[:instagram_account_eq] = current_user.instagram_account if current_user.admin_client?
     return get_stats_live if params[:id] == "live"
     counts = ChatbotUsage.where(usage_type: [:dm_received, :dm_sent, :post_comment_sent, :story_comment_sent, :live_comment_sent]).ransack(@q).result
-    counts = (params[:id] == "message") ? counts.count : counts.group(:sender_id).count
+    counts = (params[:id] == "message") ? counts.count : counts.pluck(:sender_id).uniq.length
     render json: {code: 1, counts: counts}
   end
 
@@ -19,9 +19,9 @@ class Api::V1::Analytics::ChatbotUsagesController < ApplicationController
       live_usage = {}
       live_usage[:media_start_at] = ChatbotUsage.live_comment_received.where(media_id: media_id).first.media_start_at
       live_usage[:comment_count] = ChatbotUsage.live_comment_received.where(media_id: media_id).count
-      live_usage[:user_count] = ChatbotUsage.live_comment_received.where(media_id: media_id).group(:sender_id).count
+      live_usage[:user_count] = ChatbotUsage.live_comment_received.where(media_id: media_id).pluck(:sender_id).uniq.length
       live_usages.push(live_usage)
     end
-    render json: {code: 1, live_usages: live_usage}
+    render json: {code: 1, live_usages: live_usages}
   end
 end
