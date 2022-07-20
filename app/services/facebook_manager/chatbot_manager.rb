@@ -60,8 +60,10 @@ module FacebookManager
       #   end
       # end
       Rails.logger.debug(request_body)
-      a = HttpManager.new("https://graph.facebook.com/v2.6/me/messages?access_token=#{page_access_token}", request_body).post_request
-      Rails.logger.debug(a)
+      message_response = HttpManager.new("https://graph.facebook.com/v2.6/me/messages?access_token=#{page_access_token}", request_body).post_request
+      Rails.logger.debug(message_response)
+      usage_type = @message_type.split("bag")[0] + "sent"
+      ChatbotUsage.create(sender_id: @sender_psid, usage_type: usage_type, content: text_sent_to_user, instagram_account: @instagram_account) if message_response["recipient_id"].present?
     end
 
     def send_image_to_user page_access_token
@@ -91,8 +93,10 @@ module FacebookManager
         }
       end
       Rails.logger.debug(request_body)
-      a = HttpManager.new("https://graph.facebook.com/v2.6/me/messages?access_token=#{page_access_token}", request_body).post_request
-      Rails.logger.debug(a)
+      message_response = HttpManager.new("https://graph.facebook.com/v2.6/me/messages?access_token=#{page_access_token}", request_body).post_request
+      Rails.logger.debug(message_response)
+      usage_type = @message_type.split("bag")[0] + "sent"
+      ChatbotUsage.create(sender_id: @sender_psid, usage_type: usage_type, content: Settings.chatbot_domain + @message.img_value.url, instagram_account: @instagram_account) if message_response["recipient_id"].present?
     end
 
     def send_payload_to_user page_access_token
@@ -107,8 +111,9 @@ module FacebookManager
         "message": response
       }
       Rails.logger.debug(request_body)
-      a = HttpManager.new("https://graph.facebook.com/v2.6/me/messages?access_token=#{page_access_token}", request_body).post_request
-      Rails.logger.debug(a)
+      message_response = HttpManager.new("https://graph.facebook.com/v2.6/me/messages?access_token=#{page_access_token}", request_body).post_request
+      Rails.logger.debug(message_response)
+      ChatbotUsage.create(sender_id: @sender_psid, instagram_account: @instagram_account) if message_response["recipient_id"].present?
     end
 
     def share_post_to_user page_access_token
@@ -125,8 +130,9 @@ module FacebookManager
         }
       }
       Rails.logger.debug(request_body)
-      a = HttpManager.new("https://graph.facebook.com/v14.0/me/messages?access_token=#{page_access_token}", request_body).post_request
-      Rails.logger.debug(a)
+      message_response = HttpManager.new("https://graph.facebook.com/v14.0/me/messages?access_token=#{page_access_token}", request_body).post_request
+      Rails.logger.debug(message_response)
+      ChatbotUsage.create(sender_id: @sender_psid, instagram_account: @instagram_account) if message_response["recipient_id"].present?
     end
   end
 end
