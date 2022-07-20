@@ -19,7 +19,9 @@ Rails.application.routes.draw do
       end
       namespace :message_managements do
         resources :message_groups, except: [:new, :edit]
+        post "message_groups/:id/copy", :to => 'message_groups#copy'
         resources :message_bags, except: [:index, :new, :edit]
+        post "message_bags/:id/copy", :to => 'message_bags#copy'
         resources :messages, except: [:index, :new, :edit]
         resources :ice_breakers, except: [:new, :edit]
         get "/ice_breakers_status" => "ice_breakers#status"
