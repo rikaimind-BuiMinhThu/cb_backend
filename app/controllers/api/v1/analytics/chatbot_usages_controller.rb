@@ -20,6 +20,7 @@ class Api::V1::Analytics::ChatbotUsagesController < ApplicationController
       live_usage[:media_start_at] = ChatbotUsage.live_comment_received.where(media_id: media_id).first.media_start_at
       live_usage[:comment_count] = ChatbotUsage.live_comment_received.where(media_id: media_id).count
       live_usage[:user_count] = ChatbotUsage.live_comment_received.where(media_id: media_id).pluck(:sender_id).uniq.length
+      live_usage[:comment_lives] = ChatbotUsage.live_comment_received.where(media_id: media_id).pluck(:content)
       live_usages.push(live_usage)
     end
     render json: {code: 1, live_usages: live_usages}
