@@ -11,14 +11,14 @@ class MessageGroupForm
 
   def check_delete
     return false if @instagram_account.blank?
+    list_setting_ids = KeywordSetting.where(instagram_account_id: @instagram_account.id).pluck(:message_bag_id)
+    list_setting_ids.push(@instagram_account.post_comment_bag_id) if @instagram_account.post_comment_bag_id.present?
+    list_setting_ids.push(@instagram_account.story_comment_bag_id) if @instagram_account.story_comment_bag_id.present?
+    list_setting_ids.push(@instagram_account.live_comment_bag_id) if @instagram_account.live_comment_bag_id.present?
     list_bag_ids = @message_group.message_bags.pluck(:id)
     if list_bag_ids.present?
-      if @instagram_account.post_comment_bag_id.present?
-        return false if list_bag_ids.include?(@instagram_account.post_comment_bag_id)
-      elsif  @instagram_account.story_comment_bag_id.present?
-        return false if list_bag_ids.include?(@instagram_account.story_comment_bag_id)
-      elsif @instagram_account.live_comment_bag_id.present?
-        return false if list_bag_ids.include?(@instagram_account.live_comment_bag_id)
+      list_bag_ids.each do |bag_id|
+        return false if list_setting_ids.include?(bag_id)
       end
     end
     return true
