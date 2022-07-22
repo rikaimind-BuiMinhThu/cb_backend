@@ -2,11 +2,41 @@ class Api::V1::Analytics::ChatbotUsagesController < ApplicationController
   def show
     return render json: {code: 2, message: "No permission"} unless ["admin_deel", "admin_client"].include?(current_user.role)
     return render json: {code: 2, message: "Invalid parameter"} unless ["message", "user", "live"].include?(params[:id])
-    @q = {created_at_lteq: params[:to_date].to_datetime, created_at_gteq: params[:from_date].to_datetime}
-    @q[:instagram_account_eq] = current_user.instagram_account if current_user.admin_client?
+    end_date = Date.current
+    case params[:date]
+    when "5d"
+      begin_date = Date.current - 5.days
+    when "10d"
+      begin_date = Date.current - 10.days
+    when "15d"
+      begin_date = Date.current - 15.days
+    when "30d"
+      begin_date = Date.current - 30.days
+    when "3m"
+      begin_date = (Date.current - 2.months).at_beginning_of_month
+    when "6m"
+      begin_date = (Date.current - 5.months).at_beginning_of_month
+    else
+      return render json: {code: 2, message: "Please enter date"}
+    end
+    @q = {created_at_lteq: end_date, created_at_gteq: begin_date}
+    @q[:instagram_account_eq] = current_user.instagram_account
     return get_stats_live if params[:id] == "live"
-    counts = ChatbotUsage.where(usage_type: [:dm_received, :dm_sent, :post_comment_sent, :story_comment_sent, :live_comment_sent]).ransack(@q).result
-    counts = (params[:id] == "message") ? counts.count : counts.pluck(:sender_id).uniq.length
+    counts = ChatbotUsage.ransack(@q).result
+    if params[:id] == "user"
+      counts = counts.where(usage_type: [:dm_received, :dm_sent, :post_comment_sent, :story_comment_sent, :live_comment_sent])
+      if ["3m", "6m"].include?(params[:date])
+        counts = counts.group("DATE_FORMAT(created_at, '%m/%Y')").select("DATE_FORMAT(created_at, '%m/%Y') as log_date, count(DISTINCT sender_id) as user_count")
+      else
+        counts = counts.group("DATE_FORMAT(created_at, '%d/%m/%Y')").select("DATE_FORMAT(created_at, '%d/%m/%Y') as log_date, count(DISTINCT sender_id) as user_count")
+      end
+    else
+      counts = counts.where(usage_type: [:dm_received, :post_comment_sent, :story_comment_sent, :live_comment_sent])
+      if ["3m", "6m"].include?(params[:date])
+        counts = counts.group("DATE_FORMAT(created_at, '%m/%Y')").select("DATE_FORMAT(created_at, '%m/%Y') as log_date, count(*) as message_count")
+      else
+        counts = counts.group("DATE_FORMAT(created_at, '%d/%m/%Y')").select("DATE_FORMAT(created_at, '%d/%m/%Y') as log_date, count(*) as message_count")
+      end
     render json: {code: 1, counts: counts}
   end
 
@@ -17,7 +47,7 @@ class Api::V1::Analytics::ChatbotUsagesController < ApplicationController
     live_usages = []
     media_ids.each do |media_id|
       live_usage = {}
-      live_usage[:media_start_at] = ChatbotUsage.live_comment_received.where(media_id: media_id).first.media_start_at
+      live_usage[:media_start_at] = ChatbotUsage.live_comment_received.where(media_id: media_id).where.not(media_start_at: nil).first.media_start_at
       live_usage[:comment_count] = ChatbotUsage.live_comment_received.where(media_id: media_id).count
       live_usage[:user_count] = ChatbotUsage.live_comment_received.where(media_id: media_id).pluck(:sender_id).uniq.length
       live_usage[:comment_lives] = ChatbotUsage.live_comment_received.where(media_id: media_id).pluck(:content)
