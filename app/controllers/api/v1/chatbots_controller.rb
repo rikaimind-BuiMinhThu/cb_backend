@@ -65,7 +65,7 @@ class Api::V1::ChatbotsController < ApplicationController
       return
     end
     usage_type = message_bag_type.split("bag")[0] + "received"
-    if ChatbotUsage.where.not(media_start_at: media_start_at, media_id: media_id).blank?
+    if ChatbotUsage.where(media_id: media_id).not(media_start_at: nil).blank?
       media_query = HttpManager.new("https://graph.facebook.com/#{media_id}?fields=id,timestamp&access_token=#{instagram_account.page_access_token}").get_request
       chatbot_usage = ChatbotUsage.new(sender_id: sender_psid, usage_type: usage_type, content: received_message[:text], instagram_account: instagram_account,media_id: media_id)
       chatbot_usage.media_start_at = media_query["timestamp"].to_datetime if media_query["timestamp"].present?
@@ -97,7 +97,7 @@ class Api::V1::ChatbotsController < ApplicationController
     message_bag_ids = []
     if message_bag_type == "dm_bag"
       keywords = KeywordSetting.where(instagram_account: instagram_account, is_active: true, is_dm: true).each do |keyword_setting|
-        keyword_setting.keyword.split("|").each {|keyword| message_bag_ids.push(keyword_setting.message_bag_id) if received_message_text.include?(keyword)}
+        keyword_setting.keyword.split("|").each {|keyword| message_bag_ids.push(keyword_setting.message_bag_id) if received_message_text.downcase.include?(keyword.downcase)}
       end
     else
       status_type = instagram_account.send(message_bag_type + "_status")
@@ -105,7 +105,7 @@ class Api::V1::ChatbotsController < ApplicationController
         message_bag_ids.push(instagram_account.send(message_bag_type + "_id"))
       elsif status_type == "keyword"
         keywords = KeywordSetting.where(instagram_account: instagram_account, is_active: true, "is_" + message_bag_type.split("_bag")[0] => true).each do |keyword_setting|
-          keyword_setting.keyword.split("|").each {|keyword| message_bag_ids.push(keyword_setting.message_bag_id) if received_message_text.include?(keyword)}
+          keyword_setting.keyword.split("|").each {|keyword| message_bag_ids.push(keyword_setting.message_bag_id) if received_message_text.downcase.include?(keyword.downcase)}
         end
       end
     end
