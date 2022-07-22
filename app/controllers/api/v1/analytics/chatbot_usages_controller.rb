@@ -37,6 +37,7 @@ class Api::V1::Analytics::ChatbotUsagesController < ApplicationController
       else
         counts = counts.group("DATE_FORMAT(created_at, '%d/%m/%Y')").select("DATE_FORMAT(created_at, '%d/%m/%Y') as log_date, count(*) as message_count")
       end
+    end
     render json: {code: 1, counts: counts}
   end
 
