@@ -20,7 +20,7 @@ class Api::V1::Analytics::UsersController < ApplicationController
     end
     q = {created_at_lteq: end_date, created_at_gteq: begin_date}
     q[:client_id_eq] = current_user.client_id if current_user.admin_client?
-    user_counts = User.ransack(q).result.count
+    user_counts = User.ransack(q).result
     if ["3m", "6m"].include?(params[:date])
       user_counts = user_counts.group("DATE_FORMAT(created_at, '%m/%Y')").select("DATE_FORMAT(created_at, '%m/%Y') as log_date, count(*) as user_count")
     else

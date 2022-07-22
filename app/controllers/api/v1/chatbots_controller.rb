@@ -65,7 +65,7 @@ class Api::V1::ChatbotsController < ApplicationController
       return
     end
     usage_type = message_bag_type.split("bag")[0] + "received"
-    if ChatbotUsage.where.not(media_start_at: media_start_at, media_id).blank?
+    if ChatbotUsage.where.not(media_start_at: media_start_at, media_id: media_id).blank?
       media_query = HttpManager.new("https://graph.facebook.com/#{media_id}?fields=id,timestamp&access_token=#{instagram_account.page_access_token}").get_request
       chatbot_usage = ChatbotUsage.new(sender_id: sender_psid, usage_type: usage_type, content: received_message[:text], instagram_account: instagram_account,media_id: media_id)
       chatbot_usage.media_start_at = media_query["timestamp"].to_datetime if media_query["timestamp"].present?
