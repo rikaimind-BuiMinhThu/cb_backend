@@ -2,7 +2,7 @@ class Api::V1::Analytics::ChatbotUsagesController < ApplicationController
   def show
     return render json: {code: 2, message: "No permission"} unless ["admin_deel", "admin_client"].include?(current_user.role)
     return render json: {code: 2, message: "Invalid parameter"} unless ["message", "user", "live"].include?(params[:id])
-    end_date = Date.current
+    end_date = Time.current
     case params[:date]
     when "5d"
       begin_date = Date.current - 5.days
@@ -58,7 +58,7 @@ class Api::V1::Analytics::ChatbotUsagesController < ApplicationController
     live_usages = []
     media_ids.each do |media_id|
       live_usage = {}
-      live_usage[:media_start_at] = ChatbotUsage.live_comment_received.where(media_id: media_id).where.not(media_start_at: nil).first.media_start_at
+      live_usage[:media_start_at] = ChatbotUsage.live_comment_received.where(media_id: media_id).where.not(media_start_at: nil).first.media_start_at.strftime("%H:%m %d/%m/%Y")
       live_usage[:comment_count] = ChatbotUsage.live_comment_received.where(media_id: media_id).count
       live_usage[:user_count] = ChatbotUsage.live_comment_received.where(media_id: media_id).pluck(:sender_id).uniq.length
       live_usage[:comment_lives] = ChatbotUsage.live_comment_received.where(media_id: media_id).pluck(:content)

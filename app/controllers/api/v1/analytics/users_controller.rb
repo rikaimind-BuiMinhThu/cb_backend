@@ -1,7 +1,7 @@
 class Api::V1::Analytics::UsersController < ApplicationController
   def index
     return render json: {code: 2, message: "No permission"} unless ["admin_deel", "admin_client"].include?(current_user.role)
-    end_date = Date.current
+    end_date = Time.current
     case params[:date]
     when "5d"
       begin_date = Date.current - 5.days
