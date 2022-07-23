@@ -58,7 +58,7 @@ class Api::V1::Analytics::ChatbotUsagesController < ApplicationController
     live_usages = []
     media_ids.each do |media_id|
       live_usage = {}
-      live_usage[:media_start_at] = ChatbotUsage.live_comment_received.where(media_id: media_id).where.not(media_start_at: nil).first.media_start_at.strftime("%H:%m %d/%m/%Y")
+      live_usage[:media_start_at] = ChatbotUsage.live_comment_received.where(media_id: media_id).where.not(media_start_at: nil).first.media_start_at.strftime("%d/%m/%Y %H:%m:%S")
       live_usage[:comment_count] = ChatbotUsage.live_comment_received.where(media_id: media_id).count
       live_usage[:user_count] = ChatbotUsage.live_comment_received.where(media_id: media_id).pluck(:sender_id).uniq.length
       live_usage[:comment_lives] = ChatbotUsage.live_comment_received.where(media_id: media_id).pluck(:content)
