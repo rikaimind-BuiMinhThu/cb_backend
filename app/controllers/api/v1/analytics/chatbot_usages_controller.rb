@@ -38,7 +38,17 @@ class Api::V1::Analytics::ChatbotUsagesController < ApplicationController
         counts = counts.group("DATE_FORMAT(created_at, '%d/%m/%Y')").select("DATE_FORMAT(created_at, '%d/%m/%Y') as log_date, count(*) as message_count")
       end
     end
-    render json: {code: 1, counts: counts}
+    date_arr = create_date_arr(begin_date, end_date)
+    counts.each do |date_hash|
+      date_arr.map do |x|
+        if params[:id] == "user"
+          x[:user_count] = (x[:log_date] == date_hash.log_date) ? date_hash.user_count : x[:user_count]
+        else
+          x[:message_count] = (x[:log_date] == date_hash.log_date) ? date_hash.message_count : x[:message_count]
+        end
+      end
+    end
+    render json: {code: 1, counts: date_arr}
   end
 
   private
@@ -55,5 +65,25 @@ class Api::V1::Analytics::ChatbotUsagesController < ApplicationController
       live_usages.push(live_usage)
     end
     render json: {code: 1, live_usages: live_usages}
+  end
+
+  def create_date_arr(start_date, end_date)
+    date_arr = []
+    id_param = params[:id] + "_count"
+    if ["3m", "6m"].include?(params[:date])
+      count_times = (params[:date] == "3m") ? 3 : 6
+      count_times.times do |m|
+        date_hash = {log_date: (start_date + m.months).strftime("%m/%Y")}
+        date_hash[id_param] = 0
+        date_arr.push(date_hash)
+      end
+    else
+      (start_date..end_date).each do |datee|
+        date_hash = {log_date: datee.strftime("%d/%m/%Y")}
+        date_hash[id_param] = 0
+        date_arr.push(date_hash)
+      end
+    end
+    date_arr
   end
 end
