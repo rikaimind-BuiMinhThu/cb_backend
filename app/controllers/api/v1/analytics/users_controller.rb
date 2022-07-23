@@ -26,6 +26,30 @@ class Api::V1::Analytics::UsersController < ApplicationController
     else
       user_counts = user_counts.group("DATE_FORMAT(created_at, '%d/%m/%Y')").select("DATE_FORMAT(created_at, '%d/%m/%Y') as log_date, count(*) as user_count")
     end
+    date_arr = create_date_arr(begin_date, end_date)
+    user_counts.each do |date_hash|
+      date_arr.map { |x| x[:user_count] = (x[:log_date] == date_hash.log_date) ? date_hash.user_count : x[:user_count]
+    end
     render json: {code: 1, user_counts: user_counts}
+  end
+
+  private
+
+  def create_date_arr(start_date, end_date)
+    date_arr = []
+    if ["3m", "6m"].include?(params[:date])
+      count_times = (params[:date] == "3m") ? 3 : 6
+      count_times.times do |m|
+        date_hash = {log_date: (start_date + m.months).strftime("%m/%Y"), user_count: 0}
+        date_hash[:user_count] = 0
+        date_arr.push(date_hash)
+      end
+    else
+      (start_date..end_date).each do |datee|
+        date_hash = {log_date: datee.strftime("%d/%m/%Y"), user_count: 0}
+        date_arr.push(date_hash)
+      end
+    end
+    date_arr
   end
 end
