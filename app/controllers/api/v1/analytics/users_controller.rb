@@ -28,7 +28,7 @@ class Api::V1::Analytics::UsersController < ApplicationController
     end
     date_arr = create_date_arr(begin_date, end_date)
     user_counts.each do |date_hash|
-      date_arr.map { |x| x[:user_count] = (x[:log_date] == date_hash.log_date) ? date_hash.user_count : x[:user_count]
+      date_arr.map { |x| x[:user_count] = (x[:log_date] == date_hash.log_date) ? date_hash.user_count : x[:user_count] }
     end
     render json: {code: 1, user_counts: user_counts}
   end
