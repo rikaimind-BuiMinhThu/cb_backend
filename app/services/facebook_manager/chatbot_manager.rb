@@ -70,7 +70,7 @@ module FacebookManager
       return if @message&.img_value&.url.blank?
       response = {
         "attachment":{
-          "type": "image",
+          "type": "IMAGE",
           "payload":{
             "url": Settings.chatbot_domain + @message.img_value.url,
             "is_reusable": true
