@@ -30,9 +30,45 @@ module FacebookManager
       return if @message&.message_type == "past_post"
       return if @message&.message_value.blank?
       text_sent_to_user =  @message.message_value
-      response = {
-        "text": text_sent_to_user
-      }
+
+      if @message.message_buttons.present?
+        buttons = []
+        @message.message_buttons.each do |message_button|
+          if message_button.web_url?
+            buttons.push({
+              "type": "web_url",
+              "title": message_button.title,
+              "url": message_button.content,
+            })
+          else
+            buttons.push({
+              "type": "postback",
+              "title": message_button.title,
+              "payload": message_button.content,
+            })
+          end
+        end
+
+        response = {
+          "attachment":{
+            "type": "template",
+            "payload":{
+              "template_type": "generic",
+              "elements": [
+                {
+                  "title": text_sent_to_user,
+                  "buttons": buttons
+                }
+              ]
+            }
+          }
+        }
+      else
+        response = {
+          "text": text_sent_to_user
+        }
+      end
+
       if ['comments', 'live_comments'].include?(@message_type)
         request_body = {
           "recipient": {
