@@ -9,7 +9,7 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
       message = Message.create(message_params)
       if params[:message][:message_buttons].present?
         params[:message][:message_buttons].each do |message_button|
-          message_button = MessageButton.create(message: message, button_type: message_button[:button_type], title: message_button[:title], content: message_button[:content])
+          message_button = MessageButton.create(message: message, button_type: message_button[:button_type], title: message_button[:title], content: message_button[:content], message_bag: message_button[:message_bag_id])
           if message_button[:message_button_labels].present?
             message_button[:message_button_labels].each do |message_button_label|
               MessageButtonLabel.create(message_button: message_button, label_name: message_button_label[:label_name])
