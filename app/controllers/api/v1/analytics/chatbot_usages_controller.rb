@@ -22,15 +22,15 @@ class Api::V1::Analytics::ChatbotUsagesController < ApplicationController
     @q = {created_at_lteq: end_date, created_at_gteq: begin_date}
     @q[:instagram_account_eq] = current_user.instagram_account
     return get_stats_live if params[:id] == "live"
-    counts = ChatbotUsage.ransack(@q).result
     if params[:id] == "user"
-      counts = counts.where(usage_type: [:dm_received, :dm_sent, :post_comment_sent, :story_comment_sent, :live_comment_sent])
+      counts = InstagramUser.ransack(@q).result
       if ["3m", "6m"].include?(params[:date])
-        counts = counts.group("DATE_FORMAT(created_at, '%m/%Y')").select("DATE_FORMAT(created_at, '%m/%Y') as log_date, count(DISTINCT sender_id) as user_count")
+        counts = counts.group("DATE_FORMAT(created_at, '%m/%Y')").select("DATE_FORMAT(created_at, '%m/%Y') as log_date, count(*) as user_count")
       else
-        counts = counts.group("DATE_FORMAT(created_at, '%d/%m/%Y')").select("DATE_FORMAT(created_at, '%d/%m/%Y') as log_date, count(DISTINCT sender_id) as user_count")
+        counts = counts.group("DATE_FORMAT(created_at, '%d/%m/%Y')").select("DATE_FORMAT(created_at, '%d/%m/%Y') as log_date, count(*) as user_count")
       end
     else
+      counts = ChatbotUsage.ransack(@q).result
       counts = counts.where(usage_type: [:dm_received, :post_comment_sent, :story_comment_sent, :live_comment_sent])
       if ["3m", "6m"].include?(params[:date])
         counts = counts.group("DATE_FORMAT(created_at, '%m/%Y')").select("DATE_FORMAT(created_at, '%m/%Y') as log_date, count(*) as message_count")
@@ -60,7 +60,7 @@ class Api::V1::Analytics::ChatbotUsagesController < ApplicationController
       live_usage = {}
       live_usage[:media_start_at] = ChatbotUsage.live_comment_received.where(media_id: media_id).where.not(media_start_at: nil).first.media_start_at.strftime("%d/%m/%Y %H:%m:%S")
       live_usage[:comment_count] = ChatbotUsage.live_comment_received.where(media_id: media_id).count
-      live_usage[:user_count] = ChatbotUsage.live_comment_received.where(media_id: media_id).pluck(:sender_id).uniq.length
+      live_usage[:user_count] = ChatbotUsage.live_comment_received.where(media_id: media_id).pluck(:instagram_user_id).uniq.length
       live_usage[:comment_lives] = ChatbotUsage.live_comment_received.where(media_id: media_id).pluck(:content)
       live_usages.push(live_usage)
     end
