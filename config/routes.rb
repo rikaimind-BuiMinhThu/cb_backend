@@ -16,7 +16,7 @@ Rails.application.routes.draw do
       namespace :managements do
         resources :users, except: [:new, :edit]
         resources :clients, except: [:new, :edit]
-        resources :instagram_user, only: [:index, :show]
+        resources :instagram_users, only: [:index, :show]
       end
       namespace :message_managements do
         resources :message_groups, except: [:new, :edit]

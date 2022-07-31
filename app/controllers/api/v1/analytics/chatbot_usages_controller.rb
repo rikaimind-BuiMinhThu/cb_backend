@@ -62,7 +62,7 @@ class Api::V1::Analytics::ChatbotUsagesController < ApplicationController
       live_usage[:media_start_at] = chatbot_lives.where.not(media_start_at: nil).first.media_start_at.strftime("%d/%m/%Y %H:%m:%S")
       live_usage[:comment_count] = chatbot_lives.count
       live_usage[:user_count] = chatbot_lives.pluck(:instagram_user_id).uniq.length
-      live_usage[:comment_lives] = chatbot_lives.pluck(:content).select(:id, :content, :full_name, "DATE_FORMAT(chatbot_usages.created_at, '%d/%m/%Y %H:%m:%S')")
+      live_usage[:comment_lives] = chatbot_lives.joins(:instagram_user).select(:id, :content, :full_name, "DATE_FORMAT(chatbot_usages.created_at, '%d/%m/%Y %H:%m:%S') as created_at")
       live_usages.push(live_usage)
     end
     render json: {code: 1, live_usages: live_usages}
