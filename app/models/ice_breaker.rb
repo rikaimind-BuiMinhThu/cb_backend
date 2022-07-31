@@ -1,5 +1,6 @@
 class IceBreaker < ApplicationRecord
   belongs_to :instagram_account
+  belongs_to :message_bag, optional: true
 
   private
 

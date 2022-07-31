@@ -57,7 +57,8 @@ class Api::V1::MessageManagements::IceBreakersController < ApplicationController
     ig_access_token = InstagramAccount.find_by(ig_id: params[:ig_id]).page_access_token
     call_to_actions = []
     IceBreaker.where(instagram_account: current_user.instagram_account).each do |ice_breaker|
-      call_to_actions.push({"question": ice_breaker.question, "payload": ice_breaker.answer})
+      payload_hash = {message_bag_id: ice_breaker.message_bag_id}
+      call_to_actions.push({"question": ice_breaker.question, "payload": payload_hash.to_json})
     end
     return render json: {code: 2, instagram_persistent_menu: "ice_breaker is blank"} if call_to_actions.blank?
     instagram_ice_breaker = HttpManager.new(
@@ -86,7 +87,7 @@ class Api::V1::MessageManagements::IceBreakersController < ApplicationController
   private
 
   def ice_breaker_params
-    params.require(:ice_breaker).permit(:question, :answer)
+    params.require(:ice_breaker).permit(:question, :message_bag_id)
   end
 
   def check_instagram_connect

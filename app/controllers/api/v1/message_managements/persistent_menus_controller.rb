@@ -57,7 +57,8 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
     call_to_actions = []
     PersistentMenu.where(instagram_account: current_user.instagram_account).each do |persistent_menu|
       call_to_actions.push({"type": "web_url", "title": persistent_menu.title, "url": persistent_menu.url}) if persistent_menu.url.present?
-      call_to_actions.push({"type": "postback", "title": persistent_menu.title, "payload": persistent_menu.payload}) if persistent_menu.url.blank? && persistent_menu.payload.present?
+      payload_hash = {message_bag_id: persistent_menu.message_bag_id}
+      call_to_actions.push({"type": "postback", "title": persistent_menu.title, "payload": payload_hash.to_json}) if persistent_menu.url.blank? && persistent_menu.payload.present?
     end
     return render json: {code: 2, instagram_persistent_menu: "persistent_menu is blank"} if call_to_actions.blank?
     ig_access_token = InstagramAccount.find_by(ig_id: params[:ig_id]).page_access_token
@@ -85,7 +86,7 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
   private
 
   def persistent_menu_params
-    params.require(:persistent_menu).permit(:title, :payload, :url)
+    params.require(:persistent_menu).permit(:title, :message_bag_id, :url)
   end
 
   def check_instagram_connect

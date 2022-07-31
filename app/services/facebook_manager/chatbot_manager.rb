@@ -41,10 +41,11 @@ module FacebookManager
               "url": message_button.content,
             })
           else
+            payload_hash = {message_bag_id: message_button.message_bag_id, message_button_id: message_button.id}
             buttons.push({
               "type": "postback",
               "title": message_button.title,
-              "payload": message_button.content,
+              "payload": payload_hash.to_json,
             })
           end
         end
@@ -84,17 +85,6 @@ module FacebookManager
           "message": response
         }
       end
-      # quick_replies = @message&.quick_replies&.pluck(:title)
-      # if quick_replies.present?
-      #   request_body[:message][:quick_replies] = []
-      #   @quick_replies.each do |quick_reply|
-      #     request_body[:message][:quick_replies].push({
-      #       "content_type": "text",
-      #       "title": quick_reply[0, 19],
-      #       "payload": "OK"
-      #     })
-      #   end
-      # end
       Rails.logger.debug(request_body)
       message_response = HttpManager.new("https://graph.facebook.com/v2.6/me/messages?access_token=#{page_access_token}", request_body).post_request
       Rails.logger.debug(message_response)
