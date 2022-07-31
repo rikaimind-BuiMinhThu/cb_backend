@@ -84,7 +84,7 @@ class Api::V1::ChatbotsController < ApplicationController
     instagram_account = InstagramAccount.find_by(ig_id: ig_id)
     chatbot_manager = FacebookManager::ChatbotManager.new sender_psid, instagram_account, params[:object]
 
-    create_instagram_log(sender_psid, "dm_received", postback[:title], instagram_account, media_id, postback_payload[:message_button_id])
+    create_instagram_log(sender_psid, "dm_received", postback[:title], instagram_account, nil, postback_payload[:message_button_id])
 
     message_bag = MessageBag.find_by(id: postback_payload[:message_bag_id])
     return if message_bag.message_group.user_id != instagram_account.user_id
