@@ -7,11 +7,11 @@ class Api::V1::MessageManagements::MessageBagsController < ApplicationController
   end
 
   def show
-    message_bag = MessageBag.find_by(id: params[:id])
-    return render json: {code: 2, message: "Cannot find message bag"} if message_bag.blank?
-    return render json: {code: 2, message: "User can't permission"} if message_bag.message_group.user_id != current_user.id
-    messages = Message.where(message_bag: message_bag)
-    render json: {code: 1, data: {message_bag: message_bag, messages: messages}}
+    @message_bag = MessageBag.find_by(id: params[:id])
+    return render json: {code: 2, message: "Cannot find message bag"} if @message_bag.blank?
+    return render json: {code: 2, message: "User can't permission"} if @message_bag.message_group.user_id != current_user.id
+    @messages = Message.where(message_bag: @message_bag)
+    # render json: {code: 1, data: {message_bag: message_bag, messages: messages}}
   end
 
   def update

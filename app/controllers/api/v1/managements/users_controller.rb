@@ -3,7 +3,8 @@ class Api::V1::Managements::UsersController < ApplicationController
     return render json: {code: 2, data: "Not have permission"} if current_user.client?
     q = {full_name_cont: params[:name], client_id_eq: params[:client_id]} if current_user.admin_deel?
     q = {full_name_cont: params[:name], client_id_eq: current_user.client_id} if current_user.admin_client?
-    @users = User.client.ransack(q).result
+    q[:user_labels_label_eq] = params[:user_labels]
+    @users = User.includes(:user_labels).ransack(q).result.group("users.id")
     @total = @users.size
     @users = @users.page(params[:page])
     # render json: {code: 1, data: {users: users, total: total}}

@@ -65,22 +65,13 @@ class Api::V1::ChatbotsController < ApplicationController
       return
     end
     usage_type = message_bag_type.split("bag")[0] + "received"
-    if ChatbotUsage.where(media_id: media_id).where.not(media_start_at: nil).blank?
-      media_query = HttpManager.new("https://graph.facebook.com/#{media_id}?fields=id,timestamp&access_token=#{instagram_account.page_access_token}").get_request
-      chatbot_usage = ChatbotUsage.new(sender_id: sender_psid, usage_type: usage_type, content: received_message[:text], instagram_account: instagram_account,media_id: media_id)
-      chatbot_usage.media_start_at = media_query["timestamp"].to_datetime if media_query["timestamp"].present?
-      chatbot_usage.save
-    else
-      ChatbotUsage.create(sender_id: sender_psid, usage_type: usage_type, content: received_message[:text], instagram_account: instagram_account,media_id: media_id)
-    end
+    create_instagram_log(sender_psid, usage_type, received_message[:text], instagram_account, media_id, nil)
     message_bags = MessageBag.where(id: find_message_bag_ids(instagram_account, message_bag_type, received_message[:text]))
     message_bags.each do |message_bag|
       messages = message_bag&.messages
       messages.each do |message|
-        # quick_replies = message.quick_replies.pluck(:title)
         chatbot_manager.message = message
         chatbot_manager.message_type = message_bag_type
-        # chatbot_manager.quick_replies = quick_replies
         chatbot_manager.call_graph_api
       end
     end
@@ -88,10 +79,21 @@ class Api::V1::ChatbotsController < ApplicationController
 
   def handlePostback(sender_psid, ig_id, postback)
     return if postback[:payload].blank?
+    postback_payload = JSON.parse(postback[:payload]).deep_symbolize_keys
     instagram_account = InstagramAccount.find_by(ig_id: ig_id)
     chatbot_manager = FacebookManager::ChatbotManager.new sender_psid, instagram_account, params[:object]
-    chatbot_manager.payload = postback[:payload]
-    chatbot_manager.call_postback_api
+
+    create_instagram_log(sender_psid, "dm_received", postback[:title], instagram_account, media_id, postback_payload[:message_button_id])
+
+    message_bag = MessageBag.find_by(id: postback_payload[:message_bag_id])
+    return if message_bag.message_group.user_id != instagram_account.user_id
+
+    messages = message_bag&.messages
+    messages.each do |message|
+      chatbot_manager.message = message
+      chatbot_manager.message_type = "dm_bag"
+      chatbot_manager.call_graph_api
+    end
   end
 
   def find_message_bag_ids(instagram_account, message_bag_type, received_message_text)
@@ -111,5 +113,27 @@ class Api::V1::ChatbotsController < ApplicationController
       end
     end
     message_bag_ids
+  end
+
+  def create_instagram_log(sender_psid, usage_type, content, instagram_account, media_id, message_button_id)
+    instagram_user = InstagramUser.find_or_create_by(instagram_id: sender_psid)
+    instagram_user_query = HttpManager.new("https://graph.facebook.com/v14.0/#{sender_psid}?fields=name,username,follower_count,is_user_follow_business,is_business_follow_user&access_token=#{instagram_account.page_access_token}").get_request
+    instagram_user.update(username: instagram_user_query["username"], full_name: instagram_user_query["name"], follower_count: instagram_user_query["follower_count"], is_verified_user: instagram_user_query["is_verified_user"], is_user_follow_business: instagram_user_query["is_user_follow_business"], is_business_follow_user: instagram_user_query["is_business_follow_user"], instagram_account: instagram_account)
+
+    if message_button_id.present?
+      message_button_labels = MessageButton.find_by(id: postback_payload[:message_button_id])&.message_button_labels
+      if message_button_labels.present?
+        message_button_labels.each do |message_button_label|
+          InstagramUserMessageButtonLabel.create(message_button_label: message_button_label, instagram_user: instagram_user)
+        end
+      end
+    end
+
+    chatbot_usage = ChatbotUsage.new(instagram_user: instagram_user, usage_type: usage_type, content: received_message[:text], instagram_account: instagram_account, media_id: media_id)
+    if ChatbotUsage.where(media_id: media_id).where.not(media_start_at: nil).blank?
+      media_query = HttpManager.new("https://graph.facebook.com/#{media_id}?fields=id,timestamp&access_token=#{instagram_account.page_access_token}").get_request
+      chatbot_usage.media_start_at = media_query["timestamp"].to_datetime if media_query["timestamp"].present?
+    end
+    chatbot_usage.save
   end
 end
