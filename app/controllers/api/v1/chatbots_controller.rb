@@ -123,7 +123,7 @@ class Api::V1::ChatbotsController < ApplicationController
       instagram_user.update(username: instagram_user_query["username"], full_name: instagram_user_query["name"], follower_count: instagram_user_query["follower_count"], is_verified_user: instagram_user_query["is_verified_user"], is_user_follow_business: instagram_user_query["is_user_follow_business"], is_business_follow_user: instagram_user_query["is_business_follow_user"], instagram_account: instagram_account)
 
       if message_button_id.present?
-        message_button_labels = MessageButton.find_by(id: postback_payload[:message_button_id])&.message_button_labels
+        message_button_labels = MessageButton.find_by(id: message_button_id)&.message_button_labels
         if message_button_labels.present?
           message_button_labels.each do |message_button_label|
             InstagramUserMessageButtonLabel.create(message_button_label: message_button_label, instagram_user: instagram_user)
