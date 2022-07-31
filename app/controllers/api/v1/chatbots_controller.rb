@@ -24,6 +24,7 @@ class Api::V1::ChatbotsController < ApplicationController
       if entry[:messaging].present?
         webhook_event = entry[:messaging][0]
         sender_psid = webhook_event[:sender][:id]
+        return if InstagramAccount.find_by(ig_id: sender_psid).present?
 
         if webhook_event[:message].present?
           message_bag_type = "dm_bag"
