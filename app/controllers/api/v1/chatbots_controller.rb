@@ -87,7 +87,7 @@ class Api::V1::ChatbotsController < ApplicationController
     create_instagram_log(sender_psid, "dm_received", postback[:title], instagram_account, nil, postback_payload[:message_button_id])
 
     message_bag = MessageBag.find_by(id: postback_payload[:message_bag_id])
-    return if message_bag.message_group.user_id != instagram_account.user_id
+    return if message_bag&.message_group&.user_id != instagram_account.user_id
 
     messages = message_bag&.messages
     messages.each do |message|
