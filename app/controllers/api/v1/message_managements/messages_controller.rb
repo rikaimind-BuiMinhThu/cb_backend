@@ -17,6 +17,17 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
           end
         end
       end
+
+      if params[:message][:message_buttons].blank? && params[:message][:free_input].present?
+        free_input_params = params[:message][:free_input]
+        free_input = FreeInput.create(message: message, message_bag_id: free_input_params[:message_bag_id], format_check: free_input_params[:format_check], format_check_message: free_input_params[:format_check_message])
+        if free_input_params[:free_input_labels].present?
+          free_input_params[:free_input_labels].each do |free_input_label|
+            FreeInputLabel.create(free_input: free_input, label_name: free_input_label[:label_name])
+          end
+        end
+      end
+
     rescue StandardError => error
       Rails.logger.debug(error)
       return render json: {code: 2, message: error}
@@ -41,6 +52,13 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
         message_buttons.message_button_labels.delete_all
       end
       message_buttons.delete_all
+
+      free_inputs = FreeInput.where(message: message)
+      free_inputs.each do |free_input|
+        free_input.free_input_labels.delete_all
+      end
+      free_inputs.delete_all
+
       if params[:message][:message_buttons].present?
         params[:message][:message_buttons].each do |message_button_data|
           message_button = MessageButton.create(message: message, button_type: message_button_data[:button_type], title: message_button_data[:title], content: message_button_data[:content], message_bag_id: message_button_data[:message_bag_id])
@@ -48,6 +66,16 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
             message_button_data[:message_button_labels].each do |message_button_label|
               MessageButtonLabel.create(message_button: message_button, label_name: message_button_label[:label_name])
             end
+          end
+        end
+      end
+
+      if params[:message][:message_buttons].blank? && params[:message][:free_input].present?
+        free_input_params = params[:message][:free_input]
+        free_input = FreeInput.create(message: message, message_bag_id: free_input_params[:message_bag_id], format_check: free_input_params[:format_check], format_check_message: free_input_params[:format_check_message])
+        if free_input_params[:free_input_labels].present?
+          free_input_params[:free_input_labels].each do |free_input_label|
+            FreeInputLabel.create(free_input: free_input, label_name: free_input_label[:label_name])
           end
         end
       end
@@ -69,6 +97,12 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
       end
       message_buttons.delete_all
       message.destroy
+
+      free_inputs = FreeInput.where(message: message)
+      free_inputs.each do |free_input|
+        free_input.free_input_labels.delete_all
+      end
+      free_inputs.delete_all
     rescue StandardError => error
       Rails.logger.debug(error)
       return render json: {code: 2, message: error}
