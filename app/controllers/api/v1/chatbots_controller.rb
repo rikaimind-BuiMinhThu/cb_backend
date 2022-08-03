@@ -57,20 +57,45 @@ class Api::V1::ChatbotsController < ApplicationController
     instagram_account = InstagramAccount.find_by(ig_id: ig_id)
     return if instagram_account.blank?
     return if SupportingUser.find_by(instagram_account: instagram_account, sender_id: sender_psid).present?
+
+    usage_type = message_bag_type.split("bag")[0] + "received"
+    instagram_user = create_instagram_user(sender_psid, usage_type, received_message[:text], instagram_account, media_id, nil)
     chatbot_manager = FacebookManager::ChatbotManager.new sender_psid, instagram_account, params[:object]
-    if received_message[:text].include?('support') && message_bag_type == "dm_bag"
+    return if instagram_user.pending_message&.free_input&.need_pending_check? && !check_user_message(instagram_user, received_message[:text], chatbot_manager)
+
+    need_pending = instagram_user.pending_message&.free_input&.need_pending_check?
+
+    if need_pending
+      message_bags = MessageBag.where(id: instagram_user.pending_message)
+      message_bags.each do |message_bag|
+        messages = message_bag&.messages
+        messages.each do |message|
+          chatbot_manager.message = message
+          chatbot_manager.message_type = message_bag_type
+          chatbot_manager.call_graph_api
+        end
+      end
+    end
+
+    if received_message[:text].include?('support') && message_bag_type == "dm_bag" && !need_pending
       PageMailer.request_support_email(instagram_account.user).deliver
       chatbot_manager.payload = "We will send supporter to help you. Please wait!"
       chatbot_manager.call_postback_api
       SupportingUser.create instagram_account: instagram_account, sender_id: sender_psid
       return
     end
-    usage_type = message_bag_type.split("bag")[0] + "received"
-    create_instagram_log(sender_psid, usage_type, received_message[:text], instagram_account, media_id, nil)
-    message_bags = MessageBag.where(id: find_message_bag_ids(instagram_account, message_bag_type, received_message[:text]))
+
+    if need_pending
+      message_bags = [instagram_user.pending_message.message_bag]
+    else
+      message_bags = MessageBag.where(id: find_message_bag_ids(instagram_account, message_bag_type, received_message[:text]))
+    end
+    instagram_user.update(pending_message_id: nil)
     message_bags.each do |message_bag|
       messages = message_bag&.messages
+      messages = messages.where("id > ?", instagram_user.pending_message.id) if need_pending
       messages.each do |message|
+        return if instagram_user.pending_message.present?
         chatbot_manager.message = message
         chatbot_manager.message_type = message_bag_type
         chatbot_manager.call_graph_api
@@ -84,7 +109,8 @@ class Api::V1::ChatbotsController < ApplicationController
     instagram_account = InstagramAccount.find_by(ig_id: ig_id)
     chatbot_manager = FacebookManager::ChatbotManager.new sender_psid, instagram_account, params[:object]
 
-    create_instagram_log(sender_psid, "dm_received", postback[:title], instagram_account, nil, postback_payload[:message_button_id])
+    instagram_user = create_instagram_user(sender_psid, "dm_received", postback[:title], instagram_account, nil, postback_payload[:message_button_id])
+    return if instagram_user.pending_message&.free_input&.need_pending_check? && !check_user_message(instagram_user, received_message[:text], chatbot_manager)
 
     message_bag = MessageBag.find_by(id: postback_payload[:message_bag_id])
     return if message_bag&.message_group&.user_id != instagram_account.user_id
@@ -116,11 +142,11 @@ class Api::V1::ChatbotsController < ApplicationController
     message_bag_ids
   end
 
-  def create_instagram_log(sender_psid, usage_type, content, instagram_account, media_id, message_button_id)
+  def create_instagram_user(sender_psid, usage_type, content, instagram_account, media_id, message_button_id)
     ActiveRecord::Base.transaction do
-      instagram_user = InstagramUser.find_or_create_by(instagram_id: sender_psid)
+      instagram_user = InstagramUser.find_or_create_by(instagram_id: sender_psid, instagram_account: instagram_account)
       instagram_user_query = HttpManager.new("https://graph.facebook.com/v14.0/#{sender_psid}?fields=name,username,follower_count,is_user_follow_business,is_business_follow_user&access_token=#{instagram_account.page_access_token}").get_request
-      instagram_user.update(username: instagram_user_query["username"], full_name: instagram_user_query["name"], follower_count: instagram_user_query["follower_count"], is_verified_user: instagram_user_query["is_verified_user"], is_user_follow_business: instagram_user_query["is_user_follow_business"], is_business_follow_user: instagram_user_query["is_business_follow_user"], instagram_account: instagram_account)
+      instagram_user.update(username: instagram_user_query["username"], full_name: instagram_user_query["name"], follower_count: instagram_user_query["follower_count"], is_verified_user: instagram_user_query["is_verified_user"], is_user_follow_business: instagram_user_query["is_user_follow_business"], is_business_follow_user: instagram_user_query["is_business_follow_user"])
 
       if message_button_id.present?
         message_button_labels = MessageButton.find_by(id: message_button_id)&.message_button_labels
@@ -137,8 +163,26 @@ class Api::V1::ChatbotsController < ApplicationController
         chatbot_usage.media_start_at = media_query["timestamp"].to_datetime if media_query["timestamp"].present?
       end
       chatbot_usage.save
-    rescue StandardError => error
-      Rails.logger.debug(error)
     end
+    instagram_user
+  end
+
+  def check_user_message(instagram_user, received_message_text, chatbot_manager)
+    return false if received_message_text.blank?
+
+    ActiveRecord::Base.transaction do
+      if instagram_user.pending_message&.free_input&.format_check_email? && instagram_user.update(email: received_message_text)
+        instagram_user.update(pending_message_id: nil)
+        return true
+      end
+      if instagram_user.pending_message&.free_input&.format_check_phone_number? && instagram_user.update(phone_number: received_message_text)
+        instagram_user.update(pending_message_id: nil)
+        return true
+      end
+    end
+
+    chatbot_manager.payload = instagram_user.pending_message&.free_input&.format_check_message
+    chatbot_manager.call_postback_api
+    return false
   end
 end
