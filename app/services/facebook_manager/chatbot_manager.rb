@@ -164,18 +164,18 @@ module FacebookManager
 
     def create_instagram_log sender_psid, usage_type, content, instagram_account, media_id, message_button_id
       ActiveRecord::Base.transaction do
-        instagram_user = InstagramUser.find_or_create_by(instagram_id: sender_psid, instagram_account: instagram_account)
+        instagram_user = InstagramUser.find_or_create_by!(instagram_id: sender_psid, instagram_account: instagram_account)
         instagram_user_query = HttpManager.new("https://graph.facebook.com/v14.0/#{sender_psid}?fields=name,username,follower_count,is_user_follow_business,is_business_follow_user&access_token=#{instagram_account.page_access_token}").get_request
-        instagram_user.update(username: instagram_user_query["username"], full_name: instagram_user_query["name"], follower_count: instagram_user_query["follower_count"], is_verified_user: instagram_user_query["is_verified_user"], is_user_follow_business: instagram_user_query["is_user_follow_business"], is_business_follow_user: instagram_user_query["is_business_follow_user"], instagram_account: instagram_account)
+        instagram_user.update!(username: instagram_user_query["username"], full_name: instagram_user_query["name"], follower_count: instagram_user_query["follower_count"], is_verified_user: instagram_user_query["is_verified_user"], is_user_follow_business: instagram_user_query["is_user_follow_business"], is_business_follow_user: instagram_user_query["is_business_follow_user"], instagram_account: instagram_account)
 
         chatbot_usage = ChatbotUsage.new(instagram_user: instagram_user, usage_type: usage_type, content: content, media_id: media_id)
         if ChatbotUsage.where(media_id: media_id).where.not(media_start_at: nil).blank?
           media_query = HttpManager.new("https://graph.facebook.com/#{media_id}?fields=id,timestamp&access_token=#{instagram_account.page_access_token}").get_request
           chatbot_usage.media_start_at = media_query["timestamp"].to_datetime if media_query["timestamp"].present?
         end
-        chatbot_usage.save
+        chatbot_usage.save!
 
-        instagram_user.update(pending_message: @message) if @message.free_input.need_pending_check?
+        instagram_user.update!(pending_message: @message) if @message.free_input&.need_pending_check?
       rescue StandardError => error
         Rails.logger.debug(error)
       end
