@@ -1,6 +1,5 @@
 class Message < ApplicationRecord
   belongs_to :message_bag
-  has_many :quick_replies
   has_many :message_buttons
   has_one :free_input
 

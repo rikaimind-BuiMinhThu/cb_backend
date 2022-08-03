@@ -6,8 +6,6 @@ namespace :message_demo do
     message_bag = MessageBag.create bag_name: "Message Bag", message_group: message_group
     Message.create message_bag: message_bag, message_value: "Hello. This is the EC Chatbot. How can I help you?"
     message = Message.create message_bag: message_bag, message_value: "Here the FAQ. How can I help you?"
-    # QuickReply.create message: message, title: "What is EC Chatbot?"
-    # QuickReply.create message: message, title: "Learn more"
     Message.create message_bag: message_bag, message_value: "EC Chatbot is super bot"
     Message.create message_bag: message_bag, message_value: "EC Chatbot is on progress. Please stay tune!"
     # IceBreaker.create question: "How can I help you", answer: "Please chat with EC Chatbot"
