@@ -2,9 +2,6 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
   skip_before_action :verify_authenticity_token
 
   def create
-    # quick_reply_create = QuickReplyForm.new(params[:messages]).call
-    # return render json: {code: 2, message: quick_reply_create.to_s} if quick_reply_create != 1
-
     ActiveRecord::Base.transaction do
       message = Message.create(message_params)
       if params[:message][:message_buttons].present?
