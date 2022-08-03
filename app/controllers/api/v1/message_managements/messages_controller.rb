@@ -46,18 +46,18 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
     message = Message.find_by(id: params[:id])
     return render json: {code: 2, message: "Cannot find message bag"} if message.blank?
     ActiveRecord::Base.transaction do
-      message = Message.update(message_params)
       message_buttons = MessageButton.where(message: message)
       message_buttons.each do |message_button|
-        message_buttons.message_button_labels.delete_all
+        MessageButtonLabel.where(message_button_id: message_button.id).delete_all
       end
       message_buttons.delete_all
 
       free_inputs = FreeInput.where(message: message)
       free_inputs.each do |free_input|
-        free_input.free_input_labels.delete_all
+        FreeInputLabel.where(free_input_id: free_input.id).delete_all
       end
       free_inputs.delete_all
+      message.update(message_params)
 
       if params[:message][:message_buttons].present?
         params[:message][:message_buttons].each do |message_button_data|
@@ -93,16 +93,16 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
     ActiveRecord::Base.transaction do
       message_buttons = MessageButton.where(message: message)
       message_buttons.each do |message_button|
-        message_buttons.message_button_labels.delete_all
+        MessageButtonLabel.where(message_button_id: message_button.id).delete_all
       end
       message_buttons.delete_all
-      message.destroy
 
       free_inputs = FreeInput.where(message: message)
       free_inputs.each do |free_input|
-        free_input.free_input_labels.delete_all
+        FreeInputLabel.where(free_input_id: free_input.id).delete_all
       end
       free_inputs.delete_all
+      message.destroy
     rescue StandardError => error
       Rails.logger.debug(error)
       return render json: {code: 2, message: error}
