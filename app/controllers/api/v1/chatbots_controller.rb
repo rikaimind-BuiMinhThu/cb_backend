@@ -90,7 +90,7 @@ class Api::V1::ChatbotsController < ApplicationController
     else
       message_bags = MessageBag.where(id: find_message_bag_ids(instagram_account, message_bag_type, received_message[:text]))
     end
-    instagram_user.update(pending_message_id: nil)
+    instagram_user.update!(pending_message_id: nil)
     message_bags.each do |message_bag|
       messages = message_bag&.messages
       messages = messages.where("id > ?", instagram_user.pending_message.id) if need_pending
@@ -114,9 +114,11 @@ class Api::V1::ChatbotsController < ApplicationController
 
     message_bag = MessageBag.find_by(id: postback_payload[:message_bag_id])
     return if message_bag&.message_group&.user_id != instagram_account.user_id
+    instagram_user.update!(pending_message_id: nil)
 
     messages = message_bag&.messages
     messages.each do |message|
+      return if instagram_user.pending_message.present?
       chatbot_manager.message = message
       chatbot_manager.message_type = "dm_bag"
       chatbot_manager.call_graph_api
@@ -144,9 +146,9 @@ class Api::V1::ChatbotsController < ApplicationController
 
   def create_instagram_user(sender_psid, usage_type, content, instagram_account, media_id, message_button_id)
     ActiveRecord::Base.transaction do
-      instagram_user = InstagramUser.find_or_create_by(instagram_id: sender_psid, instagram_account: instagram_account)
+      instagram_user = InstagramUser.find_or_create_by!(instagram_id: sender_psid, instagram_account: instagram_account)
       instagram_user_query = HttpManager.new("https://graph.facebook.com/v14.0/#{sender_psid}?fields=name,username,follower_count,is_user_follow_business,is_business_follow_user&access_token=#{instagram_account.page_access_token}").get_request
-      instagram_user.update(username: instagram_user_query["username"], full_name: instagram_user_query["name"], follower_count: instagram_user_query["follower_count"], is_verified_user: instagram_user_query["is_verified_user"], is_user_follow_business: instagram_user_query["is_user_follow_business"], is_business_follow_user: instagram_user_query["is_business_follow_user"])
+      instagram_user.update!(username: instagram_user_query["username"], full_name: instagram_user_query["name"], follower_count: instagram_user_query["follower_count"], is_verified_user: instagram_user_query["is_verified_user"], is_user_follow_business: instagram_user_query["is_user_follow_business"], is_business_follow_user: instagram_user_query["is_business_follow_user"])
 
       if message_button_id.present?
         message_button_labels = MessageButton.find_by(id: message_button_id)&.message_button_labels
@@ -162,21 +164,21 @@ class Api::V1::ChatbotsController < ApplicationController
         media_query = HttpManager.new("https://graph.facebook.com/#{media_id}?fields=id,timestamp&access_token=#{instagram_account.page_access_token}").get_request
         chatbot_usage.media_start_at = media_query["timestamp"].to_datetime if media_query["timestamp"].present?
       end
-      chatbot_usage.save
+      chatbot_usage.save!
+      return instagram_user
     end
-    instagram_user
   end
 
   def check_user_message(instagram_user, received_message_text, chatbot_manager)
     return false if received_message_text.blank?
 
     ActiveRecord::Base.transaction do
-      if instagram_user.pending_message&.free_input&.format_check_email? && instagram_user.update(email: received_message_text)
-        instagram_user.update(pending_message_id: nil)
+      if instagram_user.pending_message&.free_input&.format_check_email? && instagram_user.update!(email: received_message_text)
+        instagram_user.update!(pending_message_id: nil)
         return true
       end
-      if instagram_user.pending_message&.free_input&.format_check_phone_number? && instagram_user.update(phone_number: received_message_text)
-        instagram_user.update(pending_message_id: nil)
+      if instagram_user.pending_message&.free_input&.format_check_phone_number? && instagram_user.update!(phone_number: received_message_text)
+        instagram_user.update!(pending_message_id: nil)
         return true
       end
     end
