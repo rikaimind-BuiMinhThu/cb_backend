@@ -147,7 +147,7 @@ class Api::V1::ChatbotsController < ApplicationController
       message_button_labels = MessageButton.find_by(id: message_button_id)&.message_button_labels
       if message_button_labels.present?
         message_button_labels.each do |message_button_label|
-          InstagramUserLabel.find_or_create_by(message_button_label: message_button_label, instagram_user: instagram_user)
+          InstagramUserLabel.find_or_create_by(name: message_button_label.label_name, instagram_user: instagram_user)
         end
       end
     end
