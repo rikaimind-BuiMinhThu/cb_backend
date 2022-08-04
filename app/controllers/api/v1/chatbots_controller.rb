@@ -98,7 +98,7 @@ class Api::V1::ChatbotsController < ApplicationController
     instagram_user = create_instagram_user(sender_psid, "dm_received", postback[:title], instagram_account, nil, postback_payload[:message_button_id])
     # return if instagram_user.pending_message&.free_input&.need_pending_check? && !check_user_message(instagram_user, received_message[:text], chatbot_manager)
     pending_message_id = instagram_user.pending_message_id
-    return if !check_user_message(instagram_user, received_message[:text], chatbot_manager)
+    return if !check_user_message(instagram_user, postback[:title], chatbot_manager)
 
     if pending_message_id.present?
       message_bag = MessageBag.find_by(id: Message.find_by(id: pending_message_id).message_bag.id)
