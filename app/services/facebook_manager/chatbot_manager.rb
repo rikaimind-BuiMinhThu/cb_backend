@@ -175,7 +175,7 @@ module FacebookManager
         end
         chatbot_usage.save!
 
-        instagram_user.update!(pending_message: @message) if @message.free_input&.need_pending_check?
+        instagram_user.update!(pending_message: @message) if @message&.free_input&.need_pending_check?
       end
     end
   end
