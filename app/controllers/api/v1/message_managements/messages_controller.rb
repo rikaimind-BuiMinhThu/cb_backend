@@ -20,7 +20,7 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
 
       if params[:message][:message_buttons].blank? && params[:message][:free_input].present?
         free_input_params = params[:message][:free_input]
-        free_input = FreeInput.create(message: message, message_bag_id: free_input_params[:message_bag_id], format_check: free_input_params[:format_check], format_check_message: free_input_params[:format_check_message])
+        free_input = FreeInput.create(message: message, format_check: free_input_params[:format_check], format_check_message: free_input_params[:format_check_message])
         if free_input_params[:free_input_labels].present?
           free_input_params[:free_input_labels].each do |free_input_label|
             FreeInputLabel.create(free_input: free_input, label_name: free_input_label[:label_name])
@@ -72,7 +72,7 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
 
       if params[:message][:message_buttons].blank? && params[:message][:free_input].present?
         free_input_params = params[:message][:free_input]
-        free_input = FreeInput.create(message: message, message_bag_id: free_input_params[:message_bag_id], format_check: free_input_params[:format_check], format_check_message: free_input_params[:format_check_message])
+        free_input = FreeInput.create(message: message, format_check: free_input_params[:format_check], format_check_message: free_input_params[:format_check_message])
         if free_input_params[:free_input_labels].present?
           free_input_params[:free_input_labels].each do |free_input_label|
             FreeInputLabel.create(free_input: free_input, label_name: free_input_label[:label_name])
