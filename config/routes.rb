@@ -35,6 +35,10 @@ Rails.application.routes.draw do
         resources :keyword_settings, except: [:new, :edit]
         get "/keyword_settings_active" => "keywords#active"
       end
+      namespace :instagram_users do
+        resources :custom_items, except: [:index, :new, :edit]
+        resources :labels, except: [:index, :new, :edit]
+      end
       resources :instagram_settings, only: [:index, :show, :update, :destroy]
       get "webhook", :to => 'chatbots#webhook'
       post "webhook", :to => 'chatbots#webhook_callback'

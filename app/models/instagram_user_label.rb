@@ -1,4 +1,6 @@
 class InstagramUserLabel < ApplicationRecord
   belongs_to :instagram_user
-  belongs_to :message_button_label
+
+  validates :name, presence: true
+  validates :instagram_user_id, presence: true
 end
