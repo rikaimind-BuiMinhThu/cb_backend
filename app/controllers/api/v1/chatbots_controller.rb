@@ -179,6 +179,10 @@ class Api::V1::ChatbotsController < ApplicationController
       chatbot_manager.call_postback_api
       return false
     end
+    if instagram_user.pending_message&.free_input&.format_check_no_validate?
+      return true if instagram_user.update(pending_message_id: nil)
+    end
+    return false
     # end
   end
 end
