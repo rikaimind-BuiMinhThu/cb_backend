@@ -27,10 +27,10 @@ class Api::V1::Managements::ClientsController < ApplicationController
 
   def index
     return render json: {code: 2, data: "No permission"} unless current_user.admin_deel?
-    clients = Client.ransack(name_or_email_cont: params[:name], plan_eq: params[:plan]).result
-    total = clients.size
-    clients = clients.select(:id, :logo_url, :name, :plan, :price, :subscription_start_at, :subscription_end_at, :address).page(params[:page])
-    render json: {code: 1, data: {clients: clients, total: total}}
+    @clients = Client.ransack(name_or_email_cont: params[:name], plan_eq: params[:plan]).result
+    @total = @clients.size
+    @clients = @clients.select(:id, :logo_url, :name, :plan, :price, :subscription_start_at, :subscription_end_at, :address).page(params[:page])
+    # render json: {code: 1, data: {clients: clients, total: total}}
   end
 
   def show
