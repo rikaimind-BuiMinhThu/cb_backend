@@ -6,6 +6,7 @@ class InstagramAccount < ApplicationRecord
   belongs_to :live_comment_bag, class_name: "MessageBag", optional: true
   has_many :ice_breakers, dependent: :destroy
   has_many :persistent_menus, dependent: :destroy
+  has_many :instagram_users, dependent: :destroy
 
   validates :user_id, presence: true, uniqueness: true
   validates :ig_id, presence: true, uniqueness: true
