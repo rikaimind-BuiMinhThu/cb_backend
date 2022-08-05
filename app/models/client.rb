@@ -7,4 +7,6 @@ class Client < ApplicationRecord
 
   mount_base64_uploader :logo_url, PictureUploader
 
+  validates :subscription_end_at, comparison: { greater_than: :subscription_start_at }
+
 end
