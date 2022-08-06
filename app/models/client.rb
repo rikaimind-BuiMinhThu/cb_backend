@@ -7,6 +7,14 @@ class Client < ApplicationRecord
 
   mount_base64_uploader :logo_url, PictureUploader
 
-  validates :subscription_end_at, comparison: { greater_than: :subscription_start_at }
+  # validates :subscription_end_at, comparison: { greater_than: :subscription_start_at }
+
+  validate :subscription_start_at_cannot_be_greater_than_subscription_end_at
+
+  def subscription_start_at_cannot_be_greater_than_subscription_end_at
+    if subscription_start_at.present? && subscription_end_at.present? && subscription_start_at > subscription_end_at
+      errors.add(:subscription_start_at, "can't be greater than subscription end at")
+    end
+  end
 
 end
