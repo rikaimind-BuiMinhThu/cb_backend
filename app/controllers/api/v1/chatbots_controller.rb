@@ -72,8 +72,10 @@ class Api::V1::ChatbotsController < ApplicationController
       return
     end
 
-    if pending_message_id.present?
-      message_bags = MessageBag.where(id: Message.find_by(id: pending_message_id).message_bag.id)
+    pending_message = Message.find_by(id: pending_message_id)
+
+    if pending_message.present?
+      message_bags = MessageBag.where(id: pending_message.message_bag.id)
     else
       message_bags = MessageBag.where(id: find_message_bag_ids(instagram_account, message_bag_type, received_message[:text]))
     end
@@ -100,8 +102,10 @@ class Api::V1::ChatbotsController < ApplicationController
     pending_message_id = instagram_user.pending_message_id
     return if !check_user_message(instagram_user, postback[:title], chatbot_manager)
 
-    if pending_message_id.present?
-      message_bag = MessageBag.find_by(id: Message.find_by(id: pending_message_id).message_bag.id)
+    pending_message = Message.find_by(id: pending_message_id)
+
+    if pending_message.present?
+      message_bag = MessageBag.find_by(id: Message.find_by(id: pending_message.id).message_bag.id)
     else
       message_bag = MessageBag.find_by(id: postback_payload[:message_bag_id])
     end
@@ -170,28 +174,23 @@ class Api::V1::ChatbotsController < ApplicationController
       free_input_labels = instagram_user.pending_message.free_input.free_input_labels
       if free_input.format_check_email?
         if instagram_user.update(email: received_message_text, pending_message_id: nil)
-          if free_input_labels.present?
-            create_instagram_user_label(free_input_labels, instagram_user)
-          end
+          create_instagram_user_label(free_input_labels, instagram_user) if free_input_labels.present?
           return true
         end
       elsif free_input.format_check_phone_number?
         if instagram_user.update(phone_number: received_message_text, pending_message_id: nil)
-          if free_input_labels.present?
-            create_instagram_user_label(free_input_labels, instagram_user)
-          end
+          create_instagram_user_label(free_input_labels, instagram_user) if free_input_labels.present?
           return true
         end
       elsif free_input.format_check_no_validate?
         if instagram_user.update(pending_message_id: nil)
-          if free_input_labels.present?
-            create_instagram_user_label(free_input_labels, instagram_user)
-          end
+          create_instagram_user_label(free_input_labels, instagram_user) if free_input_labels.present?
           return true
         end
       end
 
       if free_input.format_check_email? || free_input.format_check_phone_number?
+        instagram_user.update(pending_message_id: nil) if Message.find_by(id: instagram_user.pending_message_id).blank?
         chatbot_manager.payload = InstagramUser.find_by(id: instagram_user.id).pending_message&.free_input&.format_check_message
         chatbot_manager.call_postback_api
       end
