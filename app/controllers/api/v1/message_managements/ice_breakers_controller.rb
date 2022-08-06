@@ -3,8 +3,8 @@ class Api::V1::MessageManagements::IceBreakersController < ApplicationController
   before_action :check_instagram_connect
 
   def index
-    ice_breakers = IceBreaker.where(instagram_account_id: current_user.instagram_account.id)
-    render json: {code: 1, data: ice_breakers}
+    @ice_breakers = IceBreaker.where(instagram_account_id: current_user.instagram_account.id)
+    # render json: {code: 1, data: ice_breakers}
   end
 
   def create
