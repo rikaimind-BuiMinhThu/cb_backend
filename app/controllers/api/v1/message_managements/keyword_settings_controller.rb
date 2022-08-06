@@ -3,8 +3,8 @@ class Api::V1::MessageManagements::KeywordSettingsController < ApplicationContro
 
   def index
     instagram_account_ids = InstagramAccount.where(user: current_user).pluck(:id)
-    keywords = KeywordSetting.where(instagram_account_id: instagram_account_ids)
-    render json: {code: 1, data: keywords}
+    @keywords = KeywordSetting.where(instagram_account_id: instagram_account_ids)
+    # render json: {code: 1, data: keywords}
   end
 
   def active
