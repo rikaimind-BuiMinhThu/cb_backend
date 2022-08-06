@@ -7,6 +7,10 @@ class Api::V1::MessageManagements::MessageGroupsController < ApplicationControll
   end
 
   def create
+    if MessageGroup.find_by(group_name: message_group_params[:group_name], user_id: current_user.id)
+      render json: {code: 2, message: "Message group name has unique."}
+      return
+    end
     message_group = MessageGroup.create(group_name: message_group_params[:group_name], user_id: current_user.id)
     render json: {code: 1, data: message_group}
   end
