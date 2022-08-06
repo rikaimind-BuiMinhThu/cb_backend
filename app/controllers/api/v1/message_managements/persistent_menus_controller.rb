@@ -3,8 +3,8 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
   before_action :check_instagram_connect
 
   def index
-    persistent_menus = PersistentMenu.where(instagram_account_id: current_user.instagram_account.id)
-    render json: {code: 1, data: persistent_menus}
+    @persistent_menus = PersistentMenu.where(instagram_account_id: current_user.instagram_account.id)
+    # render json: {code: 1, data: persistent_menus}
   end
 
   def create

@@ -2,8 +2,8 @@ class Api::V1::InstagramSettingsController < ApplicationController
   skip_before_action :verify_authenticity_token
 
   def index
-    instagram_accounts = InstagramAccount.where(user_id: current_user.id)
-    render json: {code: 1, data: instagram_accounts}
+    @instagram_accounts = InstagramAccount.where(user_id: current_user.id)
+    # render json: {code: 1, data: instagram_accounts}
   end
 
   def show
