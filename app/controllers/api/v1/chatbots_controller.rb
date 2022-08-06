@@ -115,7 +115,7 @@ class Api::V1::ChatbotsController < ApplicationController
 
     messages = message_bag&.messages
     messages.each do |message|
-      return if instagram_user.pending_message.present?
+      return if InstagramUser.find_by(id: instagram_user.id).pending_message.present?
       chatbot_manager.message = message
       chatbot_manager.message_type = "dm_bag"
       chatbot_manager.call_graph_api
