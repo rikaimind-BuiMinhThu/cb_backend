@@ -81,7 +81,7 @@ class Api::V1::ChatbotsController < ApplicationController
     end
     message_bags.each do |message_bag|
       messages = message_bag&.messages
-      messages = messages.where("id > ?", pending_message_id) if pending_message_id.present?
+      messages = messages.where("id > ?", pending_message.id) if pending_message.present?
       messages.each do |message|
         return if InstagramUser.find_by(id: instagram_user.id).pending_message.present?
         chatbot_manager.message = message
