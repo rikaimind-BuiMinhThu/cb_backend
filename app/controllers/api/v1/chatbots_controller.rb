@@ -195,7 +195,7 @@ class Api::V1::ChatbotsController < ApplicationController
       end
       return false
     elsif instagram_user.pending_message_id.present? && Message.find_by(id: instagram_user.pending_message_id).blank?
-      instagram_user.update(pending_message_id: nil)
+      return instagram_user.update(pending_message_id: nil)
     end
     return false
   end
