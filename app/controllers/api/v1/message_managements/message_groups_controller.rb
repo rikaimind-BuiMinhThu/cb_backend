@@ -25,15 +25,20 @@ class Api::V1::MessageManagements::MessageGroupsController < ApplicationControll
 
   def update
     message_group = MessageGroup.find_by(id: params[:id])
-    return render json: {code: 2, message: "Cannot find message group"}  if message_group.blank?
+    return render json: {code: 2, message: "Cannot find message group"} if message_group.blank?
     return render json: {code: 2, message: "User can't permission"} if message_group.user_id != current_user.id
+    return render json: {code: 1, data: message_group} if message_group_params[:group_name] == message_group.group_name
+    if MessageGroup.find_by(group_name: message_group_params[:group_name], user_id: current_user.id)
+      render json: {code: 2, message: "Message group name has unique."}
+      return
+    end
     message_group.update message_group_params
     render json: {code: 1, data: message_group}
   end
 
   def destroy
     message_group = MessageGroup.find_by(id: params[:id])
-    return render json: {code: 2, message: "Cannot find message group"}  if message_group.blank?
+    return render json: {code: 2, message: "Cannot find message group"} if message_group.blank?
     return render json: {code: 2, message: "User can't permission"} if message_group.user_id != current_user.id
     return render json: {code: 2, message: "Cannot delete message group"} unless MessageGroupForm.new(message_group, current_user).check_delete
     if message_group.destroy
@@ -45,7 +50,7 @@ class Api::V1::MessageManagements::MessageGroupsController < ApplicationControll
 
   def copy
     message_group = MessageGroup.find_by(id: params[:id])
-    return render json: {code: 2, message: "Cannot find message group"}  if message_group.blank?
+    return render json: {code: 2, message: "Cannot find message group"} if message_group.blank?
     return render json: {code: 2, message: "User can't permission"} if message_group.user_id != current_user.id
     if CopyObject::MessageManager.new(message_group, "group").call
       render json: {code: 1, message: "Success!"}
