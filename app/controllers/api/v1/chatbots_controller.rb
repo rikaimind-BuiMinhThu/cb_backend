@@ -190,11 +190,12 @@ class Api::V1::ChatbotsController < ApplicationController
       end
 
       if free_input.format_check_email? || free_input.format_check_phone_number?
-        instagram_user.update(pending_message_id: nil) if Message.find_by(id: instagram_user.pending_message_id).blank?
         chatbot_manager.payload = InstagramUser.find_by(id: instagram_user.id).pending_message&.free_input&.format_check_message
         chatbot_manager.call_postback_api
       end
       return false
+    elsif instagram_user.pending_message_id.present? && Message.find_by(id: instagram_user.pending_message_id).blank?
+      instagram_user.update(pending_message_id: nil)
     end
     return false
   end
