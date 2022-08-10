@@ -2,6 +2,7 @@ class Api::V1::InstagramUsers::CustomItemsController < ApplicationController
   skip_before_action :verify_authenticity_token
 
   def create
+    return render json: {code: 2, data: "No permission"} unless current_user.admin_deel?
     custom_item = CustomItem.new(custom_item_params)
     return render json: {code: 1, data: custom_item} if custom_item.save
     render json: {code: 2, message: "Something went wrong!"}
@@ -14,6 +15,7 @@ class Api::V1::InstagramUsers::CustomItemsController < ApplicationController
   end
 
   def update
+    return render json: {code: 2, data: "No permission"} unless current_user.admin_deel?
     custom_item = CustomItem.find_by(id: params[:id])
     return render json: {code: 2, data: "Cannot find item"} if custom_item.blank?
     if custom_item.update custom_item_params
@@ -24,6 +26,7 @@ class Api::V1::InstagramUsers::CustomItemsController < ApplicationController
   end
 
   def destroy
+    return render json: {code: 2, data: "No permission"} unless current_user.admin_deel?
     custom_item = CustomItem.find_by(id: params[:id])
     return render json: {code: 2, data: "Cannot find item"} if custom_item.blank?
     if custom_item.destroy
