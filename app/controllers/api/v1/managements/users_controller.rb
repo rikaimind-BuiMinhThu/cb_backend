@@ -5,7 +5,7 @@ class Api::V1::Managements::UsersController < ApplicationController
     q = {full_name_or_email_cont: params[:name], client_id_eq: current_user.client_id} if current_user.admin_client?
     @users = User.ransack(q).result
     @total = @users.size
-    @users = @users.page(params[:page])
+    @users = @users.order(created_at: :desc).page(params[:page])
     # render json: {code: 1, data: {users: users, total: total}}
   end
 
