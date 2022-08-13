@@ -1,16 +1,16 @@
 module CopyObject
   class MessageManager
-    attr_reader :message_origin
-    attr_reader :type
+    attr_reader :message_origin, :type, :current_user_id
 
-    def initialize(message_origin, type)
+    def initialize(message_origin, type, current_user_id)
       @message_origin = message_origin
       @type = type
+      @current_user_id = current_user_id
     end
 
     def call
       if @type == "group"
-        copy_group @message_origin
+        copy_group @message_origin, @current_user_id
       elsif @type == "bag"
         copy_bag @message_origin, nil
       end
@@ -19,21 +19,21 @@ module CopyObject
 
     private
 
-    def copy_group message_group
+    def copy_group message_group, current_user
       if MessageGroup.find_by(group_name: message_group.group_name + " Copy",
-                              user_id: message_group.user_id).present?
+                              user_id: current_user_id).present?
         index = 0
         loop do
           index += 1
           temp_message = MessageGroup.find_by(group_name: message_group.group_name + " Copy #{index}",
-                                              user_id: current_user.id)
+                                              user_id: current_user_id)
           break if temp_message.blank?
         end
         new_message_group = MessageGroup.create(group_name: message_group.group_name + " Copy #{index}",
-                                                user_id: current_user.id)
+                                                user_id: current_user_id)
       else
         new_message_group = MessageGroup.create(group_name: message_group.group_name + " Copy",
-                                                user_id: current_user.id)
+                                                user_id: current_user_id)
       end
       message_group.message_bags.each do |message_bag|
         copy_bag message_bag, new_message_group.id
