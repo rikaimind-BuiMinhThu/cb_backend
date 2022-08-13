@@ -34,6 +34,7 @@ Rails.application.routes.draw do
         get "/persistent_menus_turn_off" => "persistent_menus#turn_off"
         resources :keyword_settings, except: [:new, :edit]
         get "/keyword_settings_active" => "keywords#active"
+        resources :hot_templates, only: [:index, :create]
       end
       namespace :instagram_users do
         resources :custom_items, except: [:index, :new, :edit]
