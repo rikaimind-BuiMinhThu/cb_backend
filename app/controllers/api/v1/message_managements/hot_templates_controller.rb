@@ -2,7 +2,7 @@ class Api::V1::MessageManagements::HotTemplatesController < ApplicationControlle
   skip_before_action :verify_authenticity_token
 
   def index
-    hot_templates = HotTemplate.all
+    hot_templates = HotTemplate.joins(:message_group).select("hot_templates.*, message_groups.group_name")
     render json: {code: 1, data: hot_templates}
   end
 
