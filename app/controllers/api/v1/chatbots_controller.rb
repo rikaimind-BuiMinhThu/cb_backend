@@ -182,6 +182,36 @@ class Api::V1::ChatbotsController < ApplicationController
           create_instagram_user_label(free_input_labels, instagram_user) if free_input_labels.present?
           return true
         end
+      elsif free_input.format_check_real_name?
+        if instagram_user.update(real_name: received_message_text, pending_message_id: nil)
+          create_instagram_user_label(free_input_labels, instagram_user) if free_input_labels.present?
+          return true
+        end
+      elsif free_input.format_check_company_name?
+        if instagram_user.update(company_name: received_message_text, pending_message_id: nil)
+          create_instagram_user_label(free_input_labels, instagram_user) if free_input_labels.present?
+          return true
+        end
+      elsif free_input.format_check_company_role?
+        if instagram_user.update(company_role: received_message_text, pending_message_id: nil)
+          create_instagram_user_label(free_input_labels, instagram_user) if free_input_labels.present?
+          return true
+        end
+      elsif free_input.format_check_website?
+        if instagram_user.update(website: received_message_text, pending_message_id: nil)
+          create_instagram_user_label(free_input_labels, instagram_user) if free_input_labels.present?
+          return true
+        end
+      elsif free_input.format_check_propose?
+        if instagram_user.update(propose: received_message_text, pending_message_id: nil)
+          create_instagram_user_label(free_input_labels, instagram_user) if free_input_labels.present?
+          return true
+        end
+      elsif free_input.format_check_know_product_in?
+        if instagram_user.update(know_product_in: received_message_text, pending_message_id: nil)
+          create_instagram_user_label(free_input_labels, instagram_user) if free_input_labels.present?
+          return true
+        end
       elsif free_input.format_check_no_validate?
         if instagram_user.update(pending_message_id: nil)
           create_instagram_user_label(free_input_labels, instagram_user) if free_input_labels.present?
