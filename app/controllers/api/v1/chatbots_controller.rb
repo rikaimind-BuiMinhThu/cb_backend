@@ -143,12 +143,21 @@ class Api::V1::ChatbotsController < ApplicationController
 
   def create_instagram_user(sender_psid, usage_type, content, instagram_account, media_id, message_button_id)
     # ActiveRecord::Base.transaction do
-    instagram_user = InstagramUser.find_or_create_by!(instagram_id: sender_psid, instagram_account: instagram_account)
+    instagram_user = InstagramUser.create_with(start_chatbot_in: usage_type.split("_received")[0], start_chatbot_at: Time.current)
+                                  .find_or_create_by(instagram_id: sender_psid, instagram_account: instagram_account)
     instagram_user_query = HttpManager.new("https://graph.facebook.com/v14.0/#{sender_psid}?fields=name,username,follower_count,is_user_follow_business,is_business_follow_user&access_token=#{instagram_account.page_access_token}").get_request
     instagram_user.update!(username: instagram_user_query["username"], full_name: instagram_user_query["name"], follower_count: instagram_user_query["follower_count"], is_verified_user: instagram_user_query["is_verified_user"], is_user_follow_business: instagram_user_query["is_user_follow_business"], is_business_follow_user: instagram_user_query["is_business_follow_user"])
 
     if message_button_id.present?
-      message_button_labels = MessageButton.find_by(id: message_button_id)&.message_button_labels
+      message_button = MessageButton.find_by(id: message_button_id)
+      if message_button.is_purchase_button_yes?
+        Conversion.create(instagram_user: instagram_user,
+                          user_name: instagram_user.user_name,
+                          user_source: instagram_user.start_chatbot_in,
+                          conversion_at: Time.current,
+                          message_bag: message_button.message_bag_id)
+      end
+      message_button_labels = message_button&.message_button_labels
       if message_button_labels.present?
         create_instagram_user_label(message_button_labels, instagram_user)
       end

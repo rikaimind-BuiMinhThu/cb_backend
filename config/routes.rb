@@ -16,7 +16,7 @@ Rails.application.routes.draw do
       namespace :managements do
         resources :users, except: [:new, :edit]
         resources :clients, except: [:new, :edit]
-        resources :instagram_users, only: [:index, :show]
+        resources :instagram_users, only: [:index, :show, :update]
       end
       namespace :message_managements do
         resources :message_groups, except: [:new, :edit]
@@ -39,6 +39,7 @@ Rails.application.routes.draw do
       namespace :instagram_users do
         resources :custom_items, except: [:index, :new, :edit]
         resources :labels, except: [:index, :new, :edit]
+        resources :conversions, only: :show
       end
       resources :instagram_settings, only: [:index, :show, :update, :destroy]
       get "webhook", :to => 'chatbots#webhook'
