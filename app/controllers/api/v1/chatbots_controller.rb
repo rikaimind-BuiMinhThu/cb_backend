@@ -152,10 +152,10 @@ class Api::V1::ChatbotsController < ApplicationController
       message_button = MessageButton.find_by(id: message_button_id)
       if message_button.is_purchase_button_yes?
         Conversion.create(instagram_user: instagram_user,
-                          user_name: instagram_user.user_name,
+                          user_name: instagram_user.username,
                           user_source: instagram_user.start_chatbot_in,
                           conversion_at: Time.current,
-                          message_bag: message_button.message_bag_id)
+                          message_bag_id: message_button.message_bag_id)
       end
       message_button_labels = message_button&.message_button_labels
       if message_button_labels.present?
