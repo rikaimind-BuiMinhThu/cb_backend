@@ -23,7 +23,9 @@ Rails.application.routes.draw do
         post "message_groups/:id/copy", :to => 'message_groups#copy'
         resources :message_bags, except: [:index, :new, :edit]
         post "message_bags/:id/copy", :to => 'message_bags#copy'
+        post "message_bags/:id/move", :to => 'message_bags#move'
         resources :messages, except: [:index, :new, :edit]
+        post "messages/:id/move", :to => 'messages#move'
         resources :ice_breakers, except: [:new, :edit]
         get "/ice_breakers_status" => "ice_breakers#status"
         get "/ice_breakers_turn_on" => "ice_breakers#turn_on"
