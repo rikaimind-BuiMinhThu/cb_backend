@@ -10,7 +10,7 @@ class Api::V1::MessageManagements::MessageBagsController < ApplicationController
     @message_bag = MessageBag.find_by(id: params[:id])
     return render json: {code: 2, message: "Cannot find message bag"} if @message_bag.blank?
     return render json: {code: 2, message: "User can't permission"} if @message_bag.message_group.user_id != current_user.id
-    @messages = Message.where(message_bag: @message_bag)
+    @messages = Message.where(message_bag: @message_bag).order(:order_no)
     # render json: {code: 1, data: {message_bag: message_bag, messages: messages}}
   end
 
@@ -43,6 +43,17 @@ class Api::V1::MessageManagements::MessageBagsController < ApplicationController
     else
       render json: {code: 2, message: "Something went wrong!"}
     end
+  end
+
+  def move
+    message_bag = MessageBag.find_by(id: params[:id])
+    return render json: {code: 2, message: "Cannot find message bag"} if message_bag.blank?
+    return render json: {code: 2, message: "User can't permission"} if message_bag.message_group.user_id != current_user.id
+    new_message_group = MessageGroup.find_by(id: params[:message_group_id])
+    return render json: {code: 2, message: "Cannot find message group"} if new_message_group.blank?
+    return render json: {code: 2, message: "User can't permission"} if new_message_group.user_id != current_user.id
+    message_bag.update message_group_id: params[:message_group_id]
+    render json: {code: 1, data: message_bag}
   end
 
   private
