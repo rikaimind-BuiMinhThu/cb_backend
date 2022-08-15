@@ -6,7 +6,7 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
       message = Message.create(message_params)
       if params[:message][:message_buttons].present?
         params[:message][:message_buttons].each do |message_button_data|
-          message_button = MessageButton.create(message: message, button_type: message_button_data[:button_type], title: message_button_data[:title], content: message_button_data[:content], message_bag_id: message_button_data[:message_bag_id])
+          message_button = MessageButton.create(message: message, button_type: message_button_data[:button_type], title: message_button_data[:title], content: message_button_data[:content], message_bag_id: message_button_data[:message_bag_id], is_purchase_button: message_button_data[:is_purchase_button])
           if message_button_data[:message_button_labels].present?
             message_button_data[:message_button_labels].each do |message_button_label|
               MessageButtonLabel.create(message_button: message_button, label_name: message_button_label[:label_name])
@@ -58,7 +58,7 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
 
       if params[:message][:message_buttons].present?
         params[:message][:message_buttons].each do |message_button_data|
-          message_button = MessageButton.create(message: message, button_type: message_button_data[:button_type], title: message_button_data[:title], content: message_button_data[:content], message_bag_id: message_button_data[:message_bag_id])
+          message_button = MessageButton.create(message: message, button_type: message_button_data[:button_type], title: message_button_data[:title], content: message_button_data[:content], message_bag_id: message_button_data[:message_bag_id], is_purchase_button: message_button_data[:is_purchase_button])
           if message_button_data[:message_button_labels].present?
             message_button_data[:message_button_labels].each do |message_button_label|
               MessageButtonLabel.create(message_button: message_button, label_name: message_button_label[:label_name])
