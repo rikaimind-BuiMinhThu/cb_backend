@@ -116,7 +116,7 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
   def move
     message = Message.find_by(id: params[:id])
     return render json: {code: 2, message: "Cannot find message bag"} if message.blank?
-    return render json: {code: 2, message: "Message not change"} if params[:messages].index(message.id) + 1 == message.order_no
+    return render json: {code: 2, message: "Message not change"} if params[:messages].index(message.id).to_i + 1 == message.order_no
     return render json: {code: 2, message: "Error!"} if params[:messages].blank?
     params[:messages].each_with_index do |id, index|
       Message.find_by(id: id)&.update order_no: index + 1
