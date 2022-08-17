@@ -2,40 +2,22 @@ class Api::V1::Analytics::ChatbotUsagesController < ApplicationController
   def show
     return render json: {code: 2, message: "No permission"} unless ["admin_deel", "admin_client"].include?(current_user.role)
     return render json: {code: 2, message: "Invalid parameter"} unless ["message", "user", "live"].include?(params[:id])
-    end_date = Time.current
-    case params[:date]
-    when "5d"
-      begin_date = Date.current - 5.days
-    when "10d"
-      begin_date = Date.current - 10.days
-    when "15d"
-      begin_date = Date.current - 15.days
-    when "30d"
-      begin_date = Date.current - 30.days
-    when "3m"
-      begin_date = (Date.current - 2.months).at_beginning_of_month
-    when "6m"
-      begin_date = (Date.current - 5.months).at_beginning_of_month
-    else
-      return render json: {code: 2, message: "Please enter date"}
-    end
+    return render json: {code: 2, message: "Missing begin date"} if params[:begin_date].blank?
+    return render json: {code: 2, message: "Missing end date"} if params[:end_date].blank?
+
+    begin_date = params[:begin_date].to_date
+    end_date = params[:end_date].to_date
+
     @q = {created_at_lteq: end_date, created_at_gteq: begin_date}
     @q[:instagram_account_eq] = current_user.instagram_account
     return get_stats_live if params[:id] == "live"
     if params[:id] == "user"
       counts = InstagramUser.ransack(@q).result
-      if ["3m", "6m"].include?(params[:date])
-        counts = counts.group("DATE_FORMAT(created_at, '%m/%Y')").select("DATE_FORMAT(created_at, '%m/%Y') as log_date, count(*) as user_count")
-      else
-        counts = counts.group("DATE_FORMAT(created_at, '%d/%m/%Y')").select("DATE_FORMAT(created_at, '%d/%m/%Y') as log_date, count(*) as user_count")
-      end
+      counts = counts.group("DATE_FORMAT(created_at, '%d/%m/%Y')").select("DATE_FORMAT(created_at, '%d/%m/%Y') as log_date, count(*) as user_count")
     else
       counts = ChatbotUsage.ransack(@q).result
       counts = counts.where(usage_type: [:dm_received, :post_comment_sent, :story_comment_sent, :live_comment_sent])
-      if ["3m", "6m"].include?(params[:date])
-        counts = counts.group("DATE_FORMAT(created_at, '%m/%Y')").select("DATE_FORMAT(created_at, '%m/%Y') as log_date, count(*) as message_count")
-      else
-        counts = counts.group("DATE_FORMAT(created_at, '%d/%m/%Y')").select("DATE_FORMAT(created_at, '%d/%m/%Y') as log_date, count(*) as message_count")
+      counts = counts.group("DATE_FORMAT(created_at, '%d/%m/%Y')").select("DATE_FORMAT(created_at, '%d/%m/%Y') as log_date, count(*) as message_count")
       end
     end
     date_arr = create_date_arr(begin_date, end_date)
@@ -71,19 +53,10 @@ class Api::V1::Analytics::ChatbotUsagesController < ApplicationController
   def create_date_arr(start_date, end_date)
     date_arr = []
     id_param = params[:id] + "_count"
-    if ["3m", "6m"].include?(params[:date])
-      count_times = (params[:date] == "3m") ? 3 : 6
-      count_times.times do |m|
-        date_hash = {log_date: (start_date + m.months).strftime("%m/%Y")}
-        date_hash[id_param.to_sym] = 0
-        date_arr.push(date_hash)
-      end
-    else
-      (start_date..end_date).each do |datee|
-        date_hash = {log_date: datee.strftime("%d/%m/%Y")}
-        date_hash[id_param.to_sym] = 0
-        date_arr.push(date_hash)
-      end
+    (start_date..end_date).each do |datee|
+      date_hash = {log_date: datee.strftime("%d/%m/%Y")}
+      date_hash[id_param.to_sym] = 0
+      date_arr.push(date_hash)
     end
     date_arr
   end
