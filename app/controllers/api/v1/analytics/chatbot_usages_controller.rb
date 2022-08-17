@@ -18,7 +18,6 @@ class Api::V1::Analytics::ChatbotUsagesController < ApplicationController
       counts = ChatbotUsage.ransack(@q).result
       counts = counts.where(usage_type: [:dm_received, :post_comment_sent, :story_comment_sent, :live_comment_sent])
       counts = counts.group("DATE_FORMAT(created_at, '%d/%m/%Y')").select("DATE_FORMAT(created_at, '%d/%m/%Y') as log_date, count(*) as message_count")
-      end
     end
     date_arr = create_date_arr(begin_date, end_date)
     counts.each do |date_hash|
