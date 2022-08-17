@@ -4,6 +4,8 @@ json.data do
     json.merge! instagram_user.as_json
     # json.labels instagram_user.instagram_user_labels.select(:id, :name)
     # json.custom_items instagram_user.custom_items.select(:id, :title, :value)
+    json.num_of_messages_sent instagram_user.chatbot_usages.dm_received.count
+    json.num_of_conversions instagram_user.conversions.count
     json.updated_at instagram_user.chatbot_usages.last.updated_at if instagram_user.chatbot_usages&.last.present?
   end
 end
