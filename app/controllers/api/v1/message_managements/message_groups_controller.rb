@@ -59,6 +59,14 @@ class Api::V1::MessageManagements::MessageGroupsController < ApplicationControll
     end
   end
 
+  def export_csv
+    @message_group = MessageGroup.find_by(id: params[:id])
+    return render json: {code: 2, message: "Cannot find message group"} if @message_group.blank?
+    return render json: {code: 2, message: "User can't permission"} if @message_group.user_id != current_user.id
+    @message_bags = MessageBag.where(message_group: message_group)
+    render json: {code: 1, data: {message_group: message_group, message_bags: message_bags}}
+  end
+
   private
 
   def message_group_params
