@@ -78,7 +78,8 @@ class Api::V1::ChatbotsController < ApplicationController
       message_bags = MessageBag.where(id: pending_message.message_bag.id)
     else
       message_bag_ids = find_message_bag_ids(instagram_account, message_bag_type, received_message[:text])
-      message_bags = MessageBag.where(id: message_bag_ids).order(Arel.sql("field(id, #{message_bag_ids.join(',')})"))
+      message_bags = MessageBag.where(id: message_bag_ids)
+      message_bags = message_bags.order(Arel.sql("field(id, #{message_bag_ids.join(',')})")) if message_bag_ids.present?
     end
     message_bags.each do |message_bag|
       messages = message_bag&.messages
