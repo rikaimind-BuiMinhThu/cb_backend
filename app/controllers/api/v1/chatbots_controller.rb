@@ -140,7 +140,7 @@ class Api::V1::ChatbotsController < ApplicationController
         end
       end
     end
-    message_bag_ids.uniq!
+    message_bag_ids.uniq
   end
 
   def create_instagram_user(sender_psid, usage_type, content, instagram_account, media_id, message_button_id)
