@@ -64,14 +64,6 @@ class Api::V1::ChatbotsController < ApplicationController
     pending_message_id = instagram_user.pending_message_id
     return if !check_user_message(instagram_user, received_message[:text], chatbot_manager)
 
-    # if received_message[:text].include?('support') && message_bag_type == "dm_bag"
-    #   PageMailer.request_support_email(instagram_account.user).deliver
-    #   chatbot_manager.payload = "We will send supporter to help you. Please wait!"
-    #   chatbot_manager.call_postback_api
-    #   SupportingUser.create instagram_account: instagram_account, instagram_user: instagram_user
-    #   return
-    # end
-
     pending_message = Message.find_by(id: pending_message_id)
 
     if pending_message.present?
