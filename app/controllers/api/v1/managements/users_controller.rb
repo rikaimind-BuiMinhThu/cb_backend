@@ -42,6 +42,6 @@ class Api::V1::Managements::UsersController < ApplicationController
   end
 
   def admin_user_params
-    params.require(:user).permit(:full_name, :client_id, :english_name, :can_read, :can_write)
+    params.require(:user).permit(:full_name, :client_id, :english_name, :can_read, :can_write, :email)
   end
 end
