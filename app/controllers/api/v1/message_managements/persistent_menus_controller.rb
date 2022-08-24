@@ -57,7 +57,7 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
     call_to_actions = []
     PersistentMenu.where(instagram_account: current_user.instagram_account).each do |persistent_menu|
       call_to_actions.push({"type": "web_url", "title": persistent_menu.title, "url": persistent_menu.url}) if persistent_menu.url.present?
-      payload_hash = {message_bag_id: persistent_menu.message_bag_id, is_support: persistent_menu}
+      payload_hash = {message_bag_id: persistent_menu.message_bag_id, is_support: persistent_menu.is_support}
       call_to_actions.push({"type": "postback", "title": persistent_menu.title, "payload": payload_hash.to_json}) if persistent_menu.url.blank? && persistent_menu.message_bag_id.present?
     end
     return render json: {code: 2, instagram_persistent_menu: "persistent_menu is blank"} if call_to_actions.blank?
