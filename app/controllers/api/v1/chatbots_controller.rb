@@ -113,7 +113,7 @@ class Api::V1::ChatbotsController < ApplicationController
     end
 
     if postback_payload[:is_support].present?
-      PageMailer.request_support_email(instagram_account.user).deliver
+      PageMailer.request_support_email(instagram_account.user, instagram_user).deliver
       SupportingUser.create instagram_account: instagram_account, instagram_user: instagram_user
     end
   end
