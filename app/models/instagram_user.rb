@@ -3,6 +3,7 @@ class InstagramUser < ApplicationRecord
   has_many :custom_items
   has_many :chatbot_usages
   has_many :conversions
+  has_many :supporting_users
   belongs_to :instagram_account
   belongs_to :pending_message, class_name: Message.name, foreign_key: :pending_message_id, optional: true
 

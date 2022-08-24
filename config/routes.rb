@@ -43,6 +43,7 @@ Rails.application.routes.draw do
         resources :custom_items, except: [:index, :new, :edit]
         resources :labels, except: [:index, :new, :edit]
         resources :conversions, only: :show
+        resources :supporting_users, only: :destroy
       end
       resources :instagram_settings, only: [:index, :show, :update, :destroy]
       get "webhook", :to => 'chatbots#webhook'

@@ -17,14 +17,14 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
 
   def show
     persistent_menu = PersistentMenu.find_by(id: params[:id])
-    return render json: {code: 2, message: "Cannot find ice breaker"} if persistent_menu.blank?
+    return render json: {code: 2, message: "Cannot find persistent menu"} if persistent_menu.blank?
     return render json: {code: 2, message: "User can't permission"} if persistent_menu.instagram_account_id != current_user.instagram_account.id
     render json: {code: 1, data: persistent_menu}
   end
 
   def update
     persistent_menu = PersistentMenu.find_by(id: params[:id])
-    return render json: {code: 2, data: "Cannot find ice breaker"} if persistent_menu.blank?
+    return render json: {code: 2, data: "Cannot find persistent menu"} if persistent_menu.blank?
     return render json: {code: 2, message: "User can't permission"} if persistent_menu.instagram_account_id != current_user.instagram_account.id
     if persistent_menu.update persistent_menu_params
       render json: {code: 1, data: persistent_menu}
@@ -35,7 +35,7 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
 
   def destroy
     persistent_menu = PersistentMenu.find_by(id: params[:id])
-    return render json: {code: 2, data: "Cannot find ice breaker"} if persistent_menu.blank?
+    return render json: {code: 2, data: "Cannot find persistent menu"} if persistent_menu.blank?
     return render json: {code: 2, message: "User can't permission"} if persistent_menu.instagram_account_id != current_user.instagram_account.id
     if persistent_menu.destroy
       render json: {code: 1, message: "Success!"}
@@ -57,7 +57,7 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
     call_to_actions = []
     PersistentMenu.where(instagram_account: current_user.instagram_account).each do |persistent_menu|
       call_to_actions.push({"type": "web_url", "title": persistent_menu.title, "url": persistent_menu.url}) if persistent_menu.url.present?
-      payload_hash = {message_bag_id: persistent_menu.message_bag_id}
+      payload_hash = {message_bag_id: persistent_menu.message_bag_id, is_support: persistent_menu}
       call_to_actions.push({"type": "postback", "title": persistent_menu.title, "payload": payload_hash.to_json}) if persistent_menu.url.blank? && persistent_menu.message_bag_id.present?
     end
     return render json: {code: 2, instagram_persistent_menu: "persistent_menu is blank"} if call_to_actions.blank?
@@ -86,7 +86,7 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
   private
 
   def persistent_menu_params
-    params.require(:persistent_menu).permit(:title, :message_bag_id, :url)
+    params.require(:persistent_menu).permit(:title, :message_bag_id, :url, :is_support)
   end
 
   def check_instagram_connect
