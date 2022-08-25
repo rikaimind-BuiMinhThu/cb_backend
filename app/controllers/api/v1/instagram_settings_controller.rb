@@ -3,6 +3,7 @@ class Api::V1::InstagramSettingsController < ApplicationController
 
   def index
     @instagram_accounts = InstagramAccount.where(user_id: current_user.id)
+                                          .includes(:post_comment_bag, :story_comment_bag, :live_comment_bag)
     # render json: {code: 1, data: instagram_accounts}
   end
 
