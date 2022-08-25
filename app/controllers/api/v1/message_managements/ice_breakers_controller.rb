@@ -4,6 +4,7 @@ class Api::V1::MessageManagements::IceBreakersController < ApplicationController
 
   def index
     @ice_breakers = IceBreaker.where(instagram_account_id: current_user.instagram_account.id)
+                              .includes(:message_bag)
     # render json: {code: 1, data: ice_breakers}
   end
 
