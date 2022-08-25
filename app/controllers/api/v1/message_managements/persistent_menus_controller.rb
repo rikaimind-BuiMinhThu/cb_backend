@@ -4,6 +4,7 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
 
   def index
     @persistent_menus = PersistentMenu.where(instagram_account_id: current_user.instagram_account.id)
+                                      .includes(:message_bag)
     # render json: {code: 1, data: persistent_menus}
   end
 
