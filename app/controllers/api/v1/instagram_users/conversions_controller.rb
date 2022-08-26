@@ -10,17 +10,17 @@ class Api::V1::InstagramUsers::ConversionsController < ApplicationController
     story_instagram_users = instagram_user.story_comment
     dm_instagram_users = instagram_user.dm
 
-    @live_instagram_message_count = live_instagram_users.count
-    @story_instagram_message_count = story_instagram_users.count
-    @dm_instagram_message_count = dm_instagram_users.count
+    @live_instagram_user_count = live_instagram_users.count
+    @story_instagram_user_count = story_instagram_users.count
+    @dm_instagram_user_count = dm_instagram_users.count
 
     @live_instagram_message_count = ChatbotUsage.where(instagram_user: live_instagram_users.pluck(:id)).count
     @story_instagram_message_count = ChatbotUsage.where(instagram_user: story_instagram_users.pluck(:id)).count
     @dm_instagram_message_count = ChatbotUsage.where(instagram_user: dm_instagram_users.pluck(:id)).count
 
-    @live_conversions = Conversion.where(instagram_user: live_instagram_users.pluck(:id))
-    @story_instagram_message_count = Conversion.where(instagram_user: story_instagram_users.pluck(:id))
-    @dm_instagram_message_count = Conversion.where(instagram_user: dm_instagram_users.pluck(:id))
+    @live_conversion_count = Conversion.where(instagram_user: live_instagram_users.pluck(:id))
+    @story_conversion_count = Conversion.where(instagram_user: story_instagram_users.pluck(:id))
+    @dm_conversion_count = Conversion.where(instagram_user: dm_instagram_users.pluck(:id))
   end
 
   def show
