@@ -1,13 +1,14 @@
 module FacebookManager
   class ChatbotManager
-    attr_accessor :message, :sender_psid, :payload, :message_type, :instagram_account
+    attr_accessor :message, :sender_psid, :payload, :message_type, :instagram_account, :instagram_user
     attr_reader :platform
 
-    def initialize(sender_psid, instagram_account, platform = 'instagram', message = nil, payload = nil, message_type = 'message')
+    def initialize(sender_psid, instagram_account, instagram_user, platform = 'instagram', message = nil, payload = nil, message_type = 'message')
       @platform = platform
       @message = message
       @sender_psid = sender_psid
       @instagram_account = instagram_account
+      @instagram_user = instagram_user
       @payload = payload
       @message_type = message_type
     end
@@ -35,10 +36,12 @@ module FacebookManager
         buttons = []
         @message.message_buttons.each do |message_button|
           if message_button.web_url?
+            button_url = message_button.content.include('?') ? message_button.content + "&instagram_user=" + instagram_user.id : message_button.content + "?instagram_user=" + instagram_user.id
+            button_url += "&message_bag_id=" + @message.message_bag.id
             buttons.push({
               "type": "web_url",
               "title": message_button.title,
-              "url": message_button.content,
+              "url": button_url
             })
           else
             payload_hash = {message_bag_id: message_button.message_bag_id, message_button_id: message_button.id}
@@ -174,6 +177,7 @@ module FacebookManager
           chatbot_usage.media_start_at = media_query["timestamp"].to_datetime if media_query["timestamp"].present?
         end
         chatbot_usage.save!
+        ChatbotUsageGroup.create(chatbot_usage: chatbot_usage, message_bag: @message.message_bag, message_group: @message.message_bag.message_group)
 
         instagram_user.update!(pending_message: @message) if @message&.free_input&.present?
       end
