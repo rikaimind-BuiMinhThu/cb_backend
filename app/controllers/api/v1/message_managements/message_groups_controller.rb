@@ -63,6 +63,8 @@ class Api::V1::MessageManagements::MessageGroupsController < ApplicationControll
     @message_group = MessageGroup.find_by(id: params[:id])
     return render json: {code: 2, message: "Cannot find message group"} if @message_group.blank?
     return render json: {code: 2, message: "User can't permission"} if @message_group.user_id != current_user.id
+    instagram_user_group_ids = ChatbotUsage.joins(:chatbot_usage_groups).where("message_group_id = ?", @message_group.id).group(:instagram_user_id).pluck(:instagram_user_id)
+    @instagram_users = InstagramUser.where(id: instagram_user_group_ids)
   end
 
   private

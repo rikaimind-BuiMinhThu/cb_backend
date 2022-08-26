@@ -42,7 +42,7 @@ Rails.application.routes.draw do
       namespace :instagram_users do
         resources :custom_items, except: [:index, :new, :edit]
         resources :labels, except: [:index, :new, :edit]
-        resources :conversions, only: :show
+        resources :conversions, only: [:create, :show]
         resources :supporting_users, only: :destroy
       end
       resources :instagram_settings, only: [:index, :show, :update, :destroy]

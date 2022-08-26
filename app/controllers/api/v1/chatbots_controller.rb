@@ -58,9 +58,10 @@ class Api::V1::ChatbotsController < ApplicationController
     return if instagram_account.blank?
 
     usage_type = message_bag_type.split("bag")[0] + "received"
-    instagram_user = create_instagram_user(sender_psid, usage_type, received_message[:text], instagram_account, media_id, nil)
+    instagram_user = create_instagram_user(sender_psid, usage_type, instagram_account, nil)
+    chatbot_usage = create_chatbot_usage(instagram_user, usage_type, received_message[:text], instagram_account, media_id)
     return if SupportingUser.find_by(instagram_account: instagram_account, instagram_user: instagram_user).present?
-    chatbot_manager = FacebookManager::ChatbotManager.new sender_psid, instagram_account, params[:object]
+    chatbot_manager = FacebookManager::ChatbotManager.new sender_psid, instagram_account, instagram_user, params[:object]
     pending_message_id = instagram_user.pending_message_id
     return if !check_user_message(instagram_user, received_message[:text], chatbot_manager)
 
@@ -74,6 +75,7 @@ class Api::V1::ChatbotsController < ApplicationController
       message_bags = message_bags.order(Arel.sql("field(id, #{message_bag_ids.join(',')})")) if message_bag_ids.present?
     end
     message_bags.each do |message_bag|
+      ChatbotUsageGroup.create(chatbot_usage: chatbot_usage, message_bag: message_bag, message_group: message_bag.message_group)
       messages = message_bag&.messages
       messages = messages.where("id > ?", pending_message.id) if pending_message.present?
       messages.each do |message|
@@ -89,9 +91,10 @@ class Api::V1::ChatbotsController < ApplicationController
     return if postback[:payload].blank?
     postback_payload = JSON.parse(postback[:payload]).deep_symbolize_keys
     instagram_account = InstagramAccount.find_by(ig_id: ig_id)
-    chatbot_manager = FacebookManager::ChatbotManager.new sender_psid, instagram_account, params[:object]
 
-    instagram_user = create_instagram_user(sender_psid, "dm_received", postback[:title], instagram_account, nil, postback_payload[:message_button_id])
+    instagram_user = create_instagram_user(sender_psid, "dm_received", instagram_account, postback_payload[:message_button_id])
+    chatbot_usage = create_chatbot_usage(instagram_user, "dm_received", postback[:title], instagram_account, nil)
+    chatbot_manager = FacebookManager::ChatbotManager.new sender_psid, instagram_account, instagram_user, params[:object]
     # return if instagram_user.pending_message&.free_input&.need_pending_check? && !check_user_message(instagram_user, received_message[:text], chatbot_manager)
 
     if postback_payload[:is_support].blank?
@@ -105,6 +108,8 @@ class Api::V1::ChatbotsController < ApplicationController
       message_bag = MessageBag.find_by(id: postback_payload[:message_bag_id])
     end
     return if message_bag&.message_group&.user_id != instagram_account.user_id
+
+    ChatbotUsageGroup.create(chatbot_usage: chatbot_usage, message_bag: message_bag, message_group: message_bag.message_group)
 
     messages = message_bag&.messages
     messages.each do |message|
@@ -139,7 +144,7 @@ class Api::V1::ChatbotsController < ApplicationController
     message_bag_ids.uniq
   end
 
-  def create_instagram_user(sender_psid, usage_type, content, instagram_account, media_id, message_button_id)
+  def create_instagram_user(sender_psid, usage_type, instagram_account, message_button_id)
     # ActiveRecord::Base.transaction do
     instagram_user = InstagramUser.create_with(start_chatbot_in: usage_type.split("_received")[0], start_chatbot_at: Time.current)
                                   .find_or_create_by(instagram_id: sender_psid, instagram_account: instagram_account)
@@ -148,27 +153,31 @@ class Api::V1::ChatbotsController < ApplicationController
 
     if message_button_id.present?
       message_button = MessageButton.find_by(id: message_button_id)
-      if message_button.is_purchase_button_yes?
-        Conversion.create(instagram_user: instagram_user,
-                          user_name: instagram_user.username,
-                          user_source: instagram_user.start_chatbot_in,
-                          conversion_at: Time.current,
-                          message_bag_id: message_button.message_bag_id)
-      end
+      # if message_button.is_purchase_button_yes?
+      #   Conversion.create(instagram_user: instagram_user,
+      #                     user_name: instagram_user.username,
+      #                     user_source: instagram_user.start_chatbot_in,
+      #                     conversion_at: Time.current,
+      #                     message_bag_id: message_button.message_bag_id)
+      # end
       message_button_labels = message_button&.message_button_labels
       if message_button_labels.present?
         create_instagram_user_label(message_button_labels, instagram_user)
       end
     end
 
+    instagram_user
+    # end
+  end
+
+  def create_chatbot_usage(instagram_user, usage_type, content, instagram_account, media_id)
     chatbot_usage = ChatbotUsage.new(instagram_user: instagram_user, usage_type: usage_type, content: content, instagram_account: instagram_account, media_id: media_id)
     if ChatbotUsage.where(media_id: media_id).where.not(media_start_at: nil).blank?
       media_query = HttpManager.new("https://graph.facebook.com/#{media_id}?fields=id,timestamp&access_token=#{instagram_account.page_access_token}").get_request
       chatbot_usage.media_start_at = media_query["timestamp"].to_datetime if media_query["timestamp"].present?
     end
     chatbot_usage.save!
-    return instagram_user
-    # end
+    chatbot_usage
   end
 
   def check_user_message(instagram_user, received_message_text, chatbot_manager)
