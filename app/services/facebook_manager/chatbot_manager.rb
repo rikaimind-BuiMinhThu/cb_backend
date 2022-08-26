@@ -36,8 +36,8 @@ module FacebookManager
         buttons = []
         @message.message_buttons.each do |message_button|
           if message_button.web_url?
-            button_url = message_button.content.include('?') ? message_button.content + "&instagram_user=" + instagram_user.id : message_button.content + "?instagram_user=" + instagram_user.id
-            button_url += "&message_bag_id=" + @message.message_bag.id
+            button_url = message_button.content.include?('?') ? message_button.content + "&instagram_user=" + instagram_user.id.to_s : message_button.content + "?instagram_user=" + instagram_user.id.to_s
+            button_url += "&message_bag_id=" + @message.message_bag.id.to_s
             buttons.push({
               "type": "web_url",
               "title": message_button.title,
