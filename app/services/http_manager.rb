@@ -36,4 +36,13 @@ class HttpManager
     response = http.request(request)
     response.body.present? ? JSON.parse(response.body) : nil
   end
+
+  def uri?
+    uri = URI.parse(@url)
+    %w( http https ).include?(uri.scheme)
+  rescue URI::BadURIError
+    false
+  rescue URI::InvalidURIError
+    false
+  end
 end
