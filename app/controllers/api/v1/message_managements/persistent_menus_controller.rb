@@ -13,7 +13,7 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
     persistent_menu.instagram_account_id = current_user.instagram_account.id
     return render json: {code: 2, message: "Cannot create more"} unless PersistentMenu.validate_size!(persistent_menu.instagram_account_id)
     return render json: {code: 1, data: persistent_menu} if persistent_menu.save
-    render json: {code: 2, message: "Something went wrong!"}
+    render json: {code: 2, message: persistent_menu.errors.full_messages}
   end
 
   def show
@@ -30,7 +30,7 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
     if persistent_menu.update persistent_menu_params
       render json: {code: 1, data: persistent_menu}
     else
-      render json: {code: 2, message: "Something went wrong!"}
+      render json: {code: 2, message: persistent_menu.errors.full_messages}
     end
   end
 

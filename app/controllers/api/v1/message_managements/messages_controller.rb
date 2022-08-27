@@ -6,14 +6,14 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
       message = Message.new(message_params)
       message_bag = MessageBag.find_by(id: message_params[:message_bag_id])
       message.order_no = message_bag&.messages&.order(:order_no).last&.order_no.to_i + 1
-      if message.save
+      if message.save!
 
         if params[:message][:message_buttons].present?
           params[:message][:message_buttons].each do |message_button_data|
-            message_button = MessageButton.create(message: message, button_type: message_button_data[:button_type], title: message_button_data[:title], content: message_button_data[:content], message_bag_id: message_button_data[:message_bag_id], is_purchase_button: message_button_data[:is_purchase_button])
+            message_button = MessageButton.create!(message: message, button_type: message_button_data[:button_type], title: message_button_data[:title], content: message_button_data[:content], message_bag_id: message_button_data[:message_bag_id], is_purchase_button: message_button_data[:is_purchase_button])
             if message_button_data[:message_button_labels].present?
               message_button_data[:message_button_labels].each do |message_button_label|
-                MessageButtonLabel.create(message_button: message_button, label_name: message_button_label[:label_name])
+                MessageButtonLabel.create!(message_button: message_button, label_name: message_button_label[:label_name])
               end
             end
           end
@@ -21,10 +21,10 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
 
         if params[:message][:message_buttons].blank? && params[:message][:free_input].present?
           free_input_params = params[:message][:free_input]
-          free_input = FreeInput.create(message: message, format_check: free_input_params[:format_check], format_check_message: free_input_params[:format_check_message])
+          free_input = FreeInput.create!(message: message, format_check: free_input_params[:format_check], format_check_message: free_input_params[:format_check_message])
           if free_input_params[:free_input_labels].present?
             free_input_params[:free_input_labels].each do |free_input_label|
-              FreeInputLabel.create(free_input: free_input, label_name: free_input_label[:label_name])
+              FreeInputLabel.create!(free_input: free_input, label_name: free_input_label[:label_name])
             end
           end
         end
@@ -64,10 +64,10 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
 
       if params[:message][:message_buttons].present?
         params[:message][:message_buttons].each do |message_button_data|
-          message_button = MessageButton.create(message: message, button_type: message_button_data[:button_type], title: message_button_data[:title], content: message_button_data[:content], message_bag_id: message_button_data[:message_bag_id], is_purchase_button: message_button_data[:is_purchase_button])
+          message_button = MessageButton.create!(message: message, button_type: message_button_data[:button_type], title: message_button_data[:title], content: message_button_data[:content], message_bag_id: message_button_data[:message_bag_id], is_purchase_button: message_button_data[:is_purchase_button])
           if message_button_data[:message_button_labels].present?
             message_button_data[:message_button_labels].each do |message_button_label|
-              MessageButtonLabel.create(message_button: message_button, label_name: message_button_label[:label_name])
+              MessageButtonLabel.create!(message_button: message_button, label_name: message_button_label[:label_name])
             end
           end
         end
@@ -75,10 +75,10 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
 
       if params[:message][:message_buttons].blank? && params[:message][:free_input].present?
         free_input_params = params[:message][:free_input]
-        free_input = FreeInput.create(message: message, format_check: free_input_params[:format_check], format_check_message: free_input_params[:format_check_message])
+        free_input = FreeInput.create!(message: message, format_check: free_input_params[:format_check], format_check_message: free_input_params[:format_check_message])
         if free_input_params[:free_input_labels].present?
           free_input_params[:free_input_labels].each do |free_input_label|
-            FreeInputLabel.create(free_input: free_input, label_name: free_input_label[:label_name])
+            FreeInputLabel.create!(free_input: free_input, label_name: free_input_label[:label_name])
           end
         end
       end

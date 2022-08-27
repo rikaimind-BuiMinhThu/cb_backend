@@ -36,8 +36,7 @@ module FacebookManager
         buttons = []
         @message.message_buttons.each do |message_button|
           if message_button.web_url?
-            button_url = message_button.content.include?('?') ? message_button.content + "&instagram_user=" + instagram_user.id.to_s : message_button.content + "?instagram_user=" + instagram_user.id.to_s
-            button_url += "&message_bag_id=" + @message.message_bag.id.to_s
+            button_url = add_params_to_url(message_button.content, instagram_user, @message)
             buttons.push({
               "type": "web_url",
               "title": message_button.title,
@@ -68,6 +67,7 @@ module FacebookManager
           }
         }
       else
+        text_sent_to_user = add_params_to_url(text_sent_to_user, instagram_user, @message) if HttpManager.new(text_sent_to_user).uri?
         response = {
           "text": text_sent_to_user
         }
@@ -181,6 +181,11 @@ module FacebookManager
 
         instagram_user.update!(pending_message: @message) if @message&.free_input&.present?
       end
+    end
+
+    def add_params_to_url content, instagram_user, message
+      content = message_button.content.include?('?') ? message_button.content + "&instagram_user=" + instagram_user.id.to_s : message_button.content + "?instagram_user=" + instagram_user.id.to_s
+      content += "&message_bag_id=" + message.message_bag.id.to_s
     end
   end
 end
