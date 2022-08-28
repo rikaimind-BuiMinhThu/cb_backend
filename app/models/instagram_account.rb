@@ -7,6 +7,8 @@ class InstagramAccount < ApplicationRecord
   has_many :ice_breakers, dependent: :destroy
   has_many :persistent_menus, dependent: :destroy
   has_many :instagram_users, dependent: :destroy
+  has_many :chatbot_usages, dependent: :destroy
+  has_many :keyword_settings, dependent: :destroy
 
   validates :user_id, presence: true, uniqueness: true
   validates :ig_id, presence: true, uniqueness: true
