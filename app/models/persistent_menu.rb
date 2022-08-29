@@ -6,11 +6,6 @@ class PersistentMenu < ApplicationRecord
 
   validates :url, allow_blank: true, format: URL_REG
 
-  def check_url
-    return if url.blank? || HttpManager.new(url).uri?
-    errors.add(:url, "invalid")
-  end
-
   private
 
   def self.validate_size!(instagram_account_id)
