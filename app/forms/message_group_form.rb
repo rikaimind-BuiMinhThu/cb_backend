@@ -10,7 +10,7 @@ class MessageGroupForm
   end
 
   def check_delete
-    return false if @instagram_account.blank?
+    return true if @instagram_account.blank?
     list_setting_ids = KeywordSetting.where(instagram_account_id: @instagram_account.id).pluck(:message_bag_id)
     list_setting_ids.push(@instagram_account.post_comment_bag_id) if @instagram_account.post_comment_bag_id.present?
     list_setting_ids.push(@instagram_account.story_comment_bag_id) if @instagram_account.story_comment_bag_id.present?

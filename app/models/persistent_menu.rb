@@ -1,11 +1,13 @@
 class PersistentMenu < ApplicationRecord
+  URL_REG = /\A(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})\z/
+
   belongs_to :instagram_account
   belongs_to :message_bag, optional: true
 
-  validate :check_url
+  validates :url, allow_blank: true, format: URL_REG
 
   def check_url
-    return if HttpManager.new(url).uri?
+    return if url.blank? || HttpManager.new(url).uri?
     errors.add(:url, "invalid")
   end
 
