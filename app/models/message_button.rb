@@ -8,6 +8,6 @@ class MessageButton < ApplicationRecord
   enum button_type: {mess: 0, web_url: 1}
   enum is_purchase_button: {yes: true, no: false}, _prefix: :is_purchase_button
 
-  validates :content, presence: true
+  # validates :content, presence: true
   validates :content, allow_blank: true, format: URL_REG, if: -> {web_url?}
 end

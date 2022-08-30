@@ -184,7 +184,7 @@ module FacebookManager
     end
 
     def add_params_to_url content, instagram_user, message
-      content = message_button.content.include?('?') ? message_button.content + "&instagram_user=" + instagram_user.id.to_s : message_button.content + "?instagram_user=" + instagram_user.id.to_s
+      content = content.include?('?') ? content + "&instagram_user=" + instagram_user.id.to_s : content + "?instagram_user=" + instagram_user.id.to_s
       content += "&message_bag_id=" + message.message_bag.id.to_s
     end
   end
