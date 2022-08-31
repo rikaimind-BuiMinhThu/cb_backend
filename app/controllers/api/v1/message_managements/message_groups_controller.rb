@@ -52,10 +52,15 @@ class Api::V1::MessageManagements::MessageGroupsController < ApplicationControll
     message_group = MessageGroup.find_by(id: params[:id])
     return render json: {code: 2, message: "Cannot find message group"} if message_group.blank?
     return render json: {code: 2, message: "User can't permission"} if message_group.user_id != current_user.id && HotTemplate.find_by(message_group: message_group).blank?
-    if CopyObject::MessageManager.new(message_group, "group", current_user.id).call
+    ActiveRecord::Base.transaction do
+      CopyObject::MessageManager.new(message_group, "group", current_user.id).call
       render json: {code: 1, message: "Success!"}
-    else
-      render json: {code: 2, message: "Something went wrong!"}
+    rescue StandardError => error
+      Rails.logger.debug(error)
+      error.backtrace.each do |line|
+        Rails.logger.error(line)
+      end
+      return render json: {code: 2, message: error}
     end
   end
 
