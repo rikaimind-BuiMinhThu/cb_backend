@@ -4,5 +4,5 @@ class MessageGroup < ApplicationRecord
   has_many :chatbot_usage_groups
   belongs_to :user
 
-  validates :group_name, presence: true, uniqueness: true
+  validates :group_name, presence: true, uniqueness: { scope: :user_id }
 end
