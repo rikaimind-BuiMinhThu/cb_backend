@@ -12,7 +12,7 @@ class Api::V1::MessageManagements::HotTemplatesController < ApplicationControlle
     ActiveRecord::Base.transaction do
       hot_template = HotTemplate.create!(hot_template_params)
     end
-    render json: {code: 1, data: hot_template}
+    render json: {code: 1, data: "Success!"}
   rescue StandardError => error
     Rails.logger.error(error)
     error.backtrace.each do |line|
