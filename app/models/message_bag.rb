@@ -5,4 +5,5 @@ class MessageBag < ApplicationRecord
   has_one :post_comment_bag_ig, class_name: "InstagramAccount", foreign_key: "post_comment_bag_id"
   has_one :story_comment_bag_ig, class_name: "InstagramAccount", foreign_key: "story_comment_bag_id"
   has_one :live_comment_bag_ig, class_name: "InstagramAccount", foreign_key: "live_comment_bag_id"
+  has_one :default_reply_bag_ig, class_name: "InstagramAccount", foreign_key: "default_reply_bag_id"
 end

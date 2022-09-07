@@ -74,6 +74,7 @@ class Api::V1::ChatbotsController < ApplicationController
       message_bags = MessageBag.where(id: message_bag_ids)
       message_bags = message_bags.order(Arel.sql("field(id, #{message_bag_ids.join(',')})")) if message_bag_ids.present?
     end
+    message_bags = MessageBag.where(id: instagram_account.default_reply_bag_id) if message_bags.blank? && instagram_account.default_reply_bag_id.present?
     message_bags.each do |message_bag|
       ChatbotUsageGroup.create(chatbot_usage: chatbot_usage, message_bag: message_bag, message_group: message_bag.message_group)
       messages = message_bag&.messages

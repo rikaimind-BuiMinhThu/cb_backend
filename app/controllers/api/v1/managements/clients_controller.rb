@@ -27,6 +27,8 @@ class Api::V1::Managements::ClientsController < ApplicationController
 
   def index
     return render json: {code: 2, data: "No permission"} unless current_user.admin_deel?
+    @conversion_begin_date = params[:conversion_begin_date].to_date rescue ''
+    @conversion_end_date = params[:conversion_end_date].to_date rescue ''
     @clients = Client.ransack(name_or_address_cont: params[:name], plan_eq: params[:plan]).result
     @total = @clients.size
     @clients = @clients.select(:id, :logo_url, :name, :plan, :price, :subscription_start_at,

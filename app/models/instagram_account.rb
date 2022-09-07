@@ -4,6 +4,7 @@ class InstagramAccount < ApplicationRecord
   belongs_to :post_comment_bag, class_name: "MessageBag", optional: true
   belongs_to :story_comment_bag, class_name: "MessageBag", optional: true
   belongs_to :live_comment_bag, class_name: "MessageBag", optional: true
+  belongs_to :default_reply_bag, class_name: "MessageBag", optional: true
   has_many :ice_breakers, dependent: :destroy
   has_many :persistent_menus, dependent: :destroy
   has_many :instagram_users, dependent: :destroy
