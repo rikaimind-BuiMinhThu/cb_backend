@@ -21,7 +21,8 @@ class Api::V1::InstagramSettingsController < ApplicationController
     post_comment_bag = MessageBag.find_by(id: params[:instagram_setting][:post_comment_bag_id])
     story_comment_bag = MessageBag.find_by(id: params[:instagram_setting][:story_comment_bag_id])
     live_comment_bag = MessageBag.find_by(id: params[:instagram_setting][:live_comment_bag_id])
-    instagram_account.update post_comment_bag: post_comment_bag, story_comment_bag: story_comment_bag, live_comment_bag: live_comment_bag
+    default_reply_bag = MessageBag.find_by(id: params[:instagram_setting][:default_reply_bag_id])
+    instagram_account.update post_comment_bag: post_comment_bag, story_comment_bag: story_comment_bag, live_comment_bag: live_comment_bag, default_reply_bag: default_reply_bag
     render json: {code: 1, data: instagram_account}
   end
 
