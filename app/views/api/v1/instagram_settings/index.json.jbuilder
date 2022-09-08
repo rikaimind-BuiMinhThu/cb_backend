@@ -18,7 +18,7 @@ json.data @instagram_accounts.each do |instagram_account|
   end
   if instagram_account.default_reply_bag_id.present?
     default_reply_group = instagram_account.default_reply_bag.message_group
-    json.live_comment_group_id default_reply_group.id
-    json.live_comment_group_name default_reply_group.group_name
+    json.default_reply_group_id default_reply_group.id
+    json.default_reply_group_name default_reply_group.group_name
   end
 end
