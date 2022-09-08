@@ -2,6 +2,19 @@ class Api::V1::Managements::InstagramUsersController < ApplicationController
   def index
     return render json: {code: 2, data: "Not have permission"} unless current_user.admin_deel? || current_user.admin_client?
     @instagram_users = InstagramUser.all
+
+    if params[:instagram_user_name].present?
+      @instagram_users = @instagram_users.where("username like ?", "%#{params[:instagram_user_name]}%")
+    end
+
+    if params[:client_name].present?
+      @instagram_users = @instagram_users.joins(instagram_account: [user: :client]).where('clients.name like ?', "%#{params[:client_name]}%")
+    end
+
+    if params[:supporting_users] == "true"
+      @instagram_users = @instagram_users.joins(:supporting_users).group(:id)
+    end
+
     @instagram_users = @instagram_users.where(instagram_account: current_user.instagram_account) if current_user.admin_client?
   end
 
