@@ -2,7 +2,6 @@ class Api::V1::MessageManagements::HotTemplatesController < ApplicationControlle
   skip_before_action :verify_authenticity_token
 
   def index
-    return render json: {code: 2, data: "Not have permission"} unless current_user.admin_deel?
     hot_templates = HotTemplate.joins(:message_group).select("hot_templates.*, message_groups.group_name")
     render json: {code: 1, data: hot_templates}
   end
