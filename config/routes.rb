@@ -22,6 +22,7 @@ Rails.application.routes.draw do
         resources :message_groups, except: [:new, :edit]
         post "message_groups/:id/copy", :to => 'message_groups#copy'
         get "message_groups/:id/export_csv", :to => 'message_groups#export_csv'
+        get "message_groups/data_analyst", :to => 'message_groups#data_analyst'
         resources :message_bags, except: [:index, :new, :edit]
         post "message_bags/:id/copy", :to => 'message_bags#copy'
         post "message_bags/:id/move", :to => 'message_bags#move'

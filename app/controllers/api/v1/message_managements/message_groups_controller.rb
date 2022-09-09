@@ -72,6 +72,24 @@ class Api::V1::MessageManagements::MessageGroupsController < ApplicationControll
     @instagram_users = InstagramUser.where(id: instagram_user_group_ids)
   end
 
+  def data_analyst
+    return render json: {code: 2, message: "Cannot find message group"} if current_user.client?
+    begin_date = params[:begin_date].to_datetime.at_beginning_of_day() if params[:begin_date].present?
+    end_date = params[:end_date].to_datetime.at_end_of_day() if params[:end_date].present?
+
+    q = {}
+    q[:created_at_gteq] = begin_date if begin_date.present?
+    q[:created_at_lteq] = end_date if end_date.present?
+    if current_user.admin_deel?
+      @message_groups = MessageGroup.ransack(q).result
+      @message_groups = @message_groups.joins(user: :client)
+                                       .where('clients.name like ?', "%#{params[:client_name]}%") if params[:client_name].present?
+    elsif current_user.admin_client?
+      @message_groups = MessageGroup.where(user_id: current_user.id).ransack(q).result
+    end
+    # render json: {code: 1, data: message_groups}
+  end
+
   private
 
   def message_group_params
