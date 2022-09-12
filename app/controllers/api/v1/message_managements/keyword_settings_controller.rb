@@ -3,7 +3,9 @@ class Api::V1::MessageManagements::KeywordSettingsController < ApplicationContro
 
   def index
     instagram_account_ids = InstagramAccount.where(user: current_user).pluck(:id)
-    @keywords = KeywordSetting.where(instagram_account_id: instagram_account_ids).includes(:message_bag)
+    @keywords = KeywordSetting.includes(:message_bag)
+                              .where(instagram_account_id: instagram_account_ids)
+                              .page(params[:page])
     # render json: {code: 1, data: keywords}
   end
 
