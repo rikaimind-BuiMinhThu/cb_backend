@@ -4,8 +4,8 @@ class Api::V1::Analytics::UsersController < ApplicationController
     return render json: {code: 2, message: "Missing begin date"} if params[:begin_date].blank?
     return render json: {code: 2, message: "Missing end date"} if params[:end_date].blank?
 
-    begin_date = params[:begin_date].to_date
-    end_date = params[:end_date].to_date
+    begin_date = params[:begin_date].to_date.beginning_of_day
+    end_date = params[:end_date].to_date.end_of_day
 
     q = {created_at_lteq: end_date, created_at_gteq: begin_date}
     q[:client_id_eq] = current_user.client_id if current_user.admin_client?
