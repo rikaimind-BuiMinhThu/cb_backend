@@ -2,8 +2,10 @@ class Api::V1::MessageManagements::MessageGroupsController < ApplicationControll
   skip_before_action :verify_authenticity_token
 
   def index
-    message_groups = MessageGroup.where(user_id: current_user.id).page(params[:page])
-    render json: {code: 1, data: message_groups}
+    message_groups = MessageGroup.where(user_id: current_user.id)
+    total = message_groups.length
+    message_groups = message_groups.page(params[:page])
+    render json: {code: 1, data: message_groups, total: total}
   end
 
   def create
@@ -83,11 +85,12 @@ class Api::V1::MessageManagements::MessageGroupsController < ApplicationControll
     if current_user.admin_deel?
       @message_groups = MessageGroup.ransack(q).result
       @message_groups = @message_groups.joins(user: :client)
-                                       .where('clients.name like ?', "%#{params[:client_name]}%")
-                                       .page(params[:page]).per(10) if params[:client_name].present?
+                                       .where('clients.name like ?', "%#{params[:client_name]}%") if params[:client_name].present?
     elsif current_user.admin_client?
-      @message_groups = MessageGroup.where(user_id: current_user.id).ransack(q).result.page(params[:page]).per(10)
+      @message_groups = MessageGroup.where(user_id: current_user.id).ransack(q).result
     end
+    @total = @message_groups.length
+    @message_groups = @message_groups.page(params[:page]).per(10)
     # render json: {code: 1, data: message_groups}
   end
 

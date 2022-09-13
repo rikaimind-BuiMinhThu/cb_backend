@@ -16,6 +16,7 @@ class Api::V1::Managements::InstagramUsersController < ApplicationController
     end
 
     @instagram_users = @instagram_users.where(instagram_account: current_user.instagram_account) if current_user.admin_client?
+    @total = @instagram_users.length
     @instagram_users = @instagram_users.page(params[:page])
   end
 
