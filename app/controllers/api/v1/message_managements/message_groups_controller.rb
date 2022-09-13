@@ -84,9 +84,9 @@ class Api::V1::MessageManagements::MessageGroupsController < ApplicationControll
       @message_groups = MessageGroup.ransack(q).result
       @message_groups = @message_groups.joins(user: :client)
                                        .where('clients.name like ?', "%#{params[:client_name]}%")
-                                       .page(params[:page]) if params[:client_name].present?
+                                       .page(params[:page]).per(10) if params[:client_name].present?
     elsif current_user.admin_client?
-      @message_groups = MessageGroup.where(user_id: current_user.id).ransack(q).result.page(params[:page])
+      @message_groups = MessageGroup.where(user_id: current_user.id).ransack(q).result.page(params[:page]).per(10)
     end
     # render json: {code: 1, data: message_groups}
   end

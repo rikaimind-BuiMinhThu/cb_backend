@@ -35,7 +35,7 @@ class Api::V1::Analytics::ChatbotUsagesController < ApplicationController
   private
 
   def get_stats_live
-    media_ids = ChatbotUsage.live_comment_received.ransack(@q).result.page(params[:page]).group(:media_id).pluck(:media_id)
+    media_ids = ChatbotUsage.live_comment_received.ransack(@q).result.page(params[:page]).per(10).group(:media_id).pluck(:media_id)
     live_usages = []
     media_ids.each do |media_id|
       live_usage = {}
