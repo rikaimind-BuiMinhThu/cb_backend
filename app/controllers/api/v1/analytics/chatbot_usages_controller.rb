@@ -35,7 +35,9 @@ class Api::V1::Analytics::ChatbotUsagesController < ApplicationController
   private
 
   def get_stats_live
-    media_ids = ChatbotUsage.live_comment_received.ransack(@q).result.page(params[:page]).per(10).group(:media_id).pluck(:media_id)
+    media_ids = ChatbotUsage.live_comment_received.ransack(@q).result
+    total = media_ids.length
+    media_ids = media_ids.page(params[:page]).per(10).group(:media_id).pluck(:media_id)
     live_usages = []
     media_ids.each do |media_id|
       live_usage = {}
@@ -46,7 +48,7 @@ class Api::V1::Analytics::ChatbotUsagesController < ApplicationController
       live_usage[:comment_lives] = chatbot_lives.joins(:instagram_user).select(:id, :content, :full_name, "DATE_FORMAT(chatbot_usages.created_at, '%d/%m/%Y %H:%m:%S') as created_at")
       live_usages.push(live_usage)
     end
-    render json: {code: 1, live_usages: live_usages}
+    render json: {code: 1, live_usages: live_usages, total: total}
   end
 
   def create_date_arr(start_date, end_date)

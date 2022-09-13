@@ -11,3 +11,4 @@ json.data do
     json.updated_at instagram_user.chatbot_usages.last.updated_at if instagram_user.chatbot_usages&.last.present?
   end
 end
+json.total @total

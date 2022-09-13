@@ -4,3 +4,4 @@ json.data @keywords.each do |keyword|
   json.message_group_id keyword.message_bag&.message_group_id
   json.message_group_name keyword.message_bag&.message_group&.group_name
 end
+json.total @total
