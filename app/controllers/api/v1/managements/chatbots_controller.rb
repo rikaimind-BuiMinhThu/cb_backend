@@ -11,7 +11,7 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
   private
 
   def chatbot_params
-    params.require(:chatbot).permit(:scenario, :title, :subtitle, :design_type,
+    params.require(:chatbot).permit(:title, :subtitle, :design_type,
       :main_color, :status, :icon, :bot_name)
   end
 end
