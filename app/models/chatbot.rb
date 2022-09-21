@@ -7,7 +7,6 @@ class Chatbot < ApplicationRecord
 
   mount_base64_uploader :icon, ChatbotIconUploader
 
-  validates :scenario, presence: true
   validates :title, presence: true
   validates :subtitle, presence: true
   validates :design_type, presence: true
