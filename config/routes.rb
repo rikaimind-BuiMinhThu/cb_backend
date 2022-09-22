@@ -17,7 +17,7 @@ Rails.application.routes.draw do
         resources :users, except: [:new, :edit]
         resources :clients, except: [:new, :edit]
         resources :instagram_users, only: [:index, :show, :update]
-        resources :chatbots, only: [:index, :create]
+        resources :chatbots, except: [:new, :edit]
         resources :user_chatbots, only: [:create]
       end
       namespace :message_managements do

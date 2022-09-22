@@ -1,12 +1,19 @@
 class Api::V1::Managements::ChatbotsController < ApplicationController
 
   def index
-    return render json: {code: 2, message: "No permission"} if current_user.client?
-    chatbots = Chatbot.all if current_user.admin_deel?
-    chatbots = Chatbot.where(user_id: current_user.id) if current_user.admin_client?
+    chatbots = Chatbot.joins({user_chatbots: :user}).select("chatbots.*, users.full_name as owner_name") if current_user.admin_deel?
+    chatbots = UserChatbot.joins(:chatbot, :user).select("chatbots.*, user_chatbots.role as my_authority, users.full_name as owner_name")
+                          .where(user_id: current_user.id) unless current_user.admin_deel?
     total = chatbots.length
     chatbots = chatbots.page(params[:page]).per(10)
     render json: {code: 1, data: chatbots, total: total}
+  end
+
+  def show
+    return render json: {code: 2, message: "No permission"} unless UserChatbot.where(user_id: current_user.id, chatbot_id: params[:id]).present? || current_user.admin_deel?
+    chatbot = Chatbot.joins({user_chatbots: :user}).select("chatbots.*, users.full_name as owner_name")
+                     .find_by(id: params[:id])
+    render json: {code: 1, data: chatbot}
   end
 
   def create
@@ -22,6 +29,34 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
       return render json: {code: 2, message: error}
     end
     render json: {code: 1, data: chatbot}
+  end
+
+  def update
+    chatbot = Chatbot.find_by(id: params[:id])
+    return render json: {code: 2, message: "Chatbot not found"} if chatbot.blank?
+    user_chatbot = UserChatbot.where(user_id: current_user.id, chatbot_id: params[:id])
+    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || user_chatbot.present? || user_chatbot.bot_admin?
+    ActiveRecord::Base.transaction do
+      chatbot.update!(chatbot_params)
+    rescue StandardError => error
+      Rails.logger.debug(error)
+      return render json: {code: 2, message: error}
+    end
+    render json: {code: 1, data: chatbot}
+  end
+
+  def destroy
+    chatbot = Chatbot.find_by(id: params[:id])
+    return render json: {code: 2, message: "Chatbot not found"} if chatbot.blank?
+    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || current_user.id == chatbot.user_id
+    ActiveRecord::Base.transaction do
+      user_chatbots = UserChatbot.where(chatbot_id: params[:id]).destroy_all
+      chatbot.destroy!
+    rescue StandardError => error
+      Rails.logger.debug(error)
+      return render json: {code: 2, message: error}
+    end
+    render json: {code: 1, message: "Success"}
   end
 
   private
