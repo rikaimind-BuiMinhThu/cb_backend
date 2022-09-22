@@ -14,8 +14,14 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
     chatbot = Chatbot.new(chatbot_params)
     chatbot.user = current_user
     chatbot.status = :off
-    return render json: {code: 1, data: chatbot} if chatbot.save
-    render json: {code: 2, message: chatbot.errors.full_messages[0]}
+    ActiveRecord::Base.transaction do
+      chatbot.save!
+      UserChatbot.create!(user: current_user, chatbot: chatbot, role: :bot_admin)
+    rescue StandardError => error
+      Rails.logger.debug(error)
+      return render json: {code: 2, message: error}
+    end
+    render json: {code: 1, data: chatbot}
   end
 
   private

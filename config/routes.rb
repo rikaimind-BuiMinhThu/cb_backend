@@ -18,6 +18,7 @@ Rails.application.routes.draw do
         resources :clients, except: [:new, :edit]
         resources :instagram_users, only: [:index, :show, :update]
         resources :chatbots, only: [:index, :create]
+        resources :user_chatbots, only: [:create]
       end
       namespace :message_managements do
         get "message_groups/data_analyst", :to => 'message_groups#data_analyst'

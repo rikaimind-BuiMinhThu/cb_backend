@@ -1,4 +1,6 @@
 class Chatbot < ApplicationRecord
+  has_many :user_chatbots
+  has_many :users, through: :user_chatbots
   belongs_to :user
 
   enum design_type: {pop: 0, flat: 1, material: 2}

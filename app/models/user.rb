@@ -3,6 +3,7 @@ class User < ApplicationRecord
   belongs_to :client, optional: true
   has_many :identities
   has_many :chatbots
+  has_many :user_chatbots
   has_one :instagram_account, dependent: :destroy
   has_many :message_groups, dependent: :destroy
   # Include default devise modules. Others available are:
