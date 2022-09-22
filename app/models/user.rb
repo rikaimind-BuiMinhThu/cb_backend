@@ -2,8 +2,8 @@ class User < ApplicationRecord
   acts_as_paranoid
   belongs_to :client, optional: true
   has_many :identities
-  has_many :chatbots
-  has_many :user_chatbots
+  has_many :chatbots, dependent: :nullify
+  has_many :user_chatbots, dependent: :destroy
   has_one :instagram_account, dependent: :destroy
   has_many :message_groups, dependent: :destroy
   # Include default devise modules. Others available are:

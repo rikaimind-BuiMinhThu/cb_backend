@@ -1,5 +1,5 @@
 class Chatbot < ApplicationRecord
-  has_many :user_chatbots
+  has_many :user_chatbots, dependent: :destroy
   has_many :users, through: :user_chatbots
   belongs_to :user
 
