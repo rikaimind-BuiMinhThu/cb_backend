@@ -19,6 +19,8 @@ Rails.application.routes.draw do
         resources :instagram_users, only: [:index, :show, :update]
         resources :chatbots, only: [:index, :create]
         resources :user_chatbots, only: [:create]
+        resources :emails, only: [:index, :create, :show, :update, :destroy]
+        post "/emails/:id/duplicate" => "emails#duplicate"
       end
       namespace :message_managements do
         get "message_groups/data_analyst", :to => 'message_groups#data_analyst'
