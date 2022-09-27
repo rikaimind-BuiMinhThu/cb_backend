@@ -18,6 +18,7 @@ Rails.application.routes.draw do
         resources :clients, except: [:new, :edit]
         resources :instagram_users, only: [:index, :show, :update]
         resources :chatbots, except: [:new, :edit]
+        post "chatbots/:id/duplicate", :to => 'chatbots#duplicate'
         resources :user_chatbots, only: [:create]
       end
       namespace :message_managements do
