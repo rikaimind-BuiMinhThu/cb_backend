@@ -17,7 +17,9 @@ Rails.application.routes.draw do
         resources :users, except: [:new, :edit]
         resources :clients, except: [:new, :edit]
         resources :instagram_users, only: [:index, :show, :update]
-        resources :chatbots, except: [:new, :edit]
+        resources :chatbots, except: [:new, :edit] do
+          resources :variables, except: [:new, :edit]
+        end
         post "chatbots/:id/duplicate", :to => 'chatbots#duplicate'
         resources :user_chatbots, only: [:create]
         resources :emails, only: [:index, :create, :show, :update, :destroy]

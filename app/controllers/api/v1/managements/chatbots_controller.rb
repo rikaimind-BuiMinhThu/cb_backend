@@ -10,7 +10,7 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
   end
 
   def show
-    return render json: {code: 2, message: "No permission"} unless UserChatbot.where(user_id: current_user.id, chatbot_id: params[:id]).present? || current_user.admin_deel?
+    return render json: {code: 2, message: "No permission"} unless UserChatbot.find_by(user_id: current_user.id, chatbot_id: params[:id]).present? || current_user.admin_deel?
     chatbot = Chatbot.joins({user_chatbots: :user}).select("chatbots.*, users.full_name as owner_name")
                      .find_by(id: params[:id])
     render json: {code: 1, data: chatbot}
@@ -34,8 +34,7 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
   def update
     chatbot = Chatbot.find_by(id: params[:id])
     return render json: {code: 2, message: "Chatbot not found"} if chatbot.blank?
-    user_chatbot = UserChatbot.where(user_id: current_user.id, chatbot_id: params[:id])
-    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || user_chatbot.present? || user_chatbot.bot_admin?
+    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || current_user.id == chatbot.user_id
     ActiveRecord::Base.transaction do
       chatbot.update!(chatbot_params)
     rescue StandardError => error
@@ -64,8 +63,12 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
     return render json: {code: 2, message: "Chatbot not found"} if chatbot.blank?
     return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || current_user.id == chatbot.user_id
     chatbot_dup = chatbot.dup
+    chatbot_dup.user_id = current_user.id
     ActiveRecord::Base.transaction do
       chatbot_dup.save!
+      UserChatbot.create!(user_id: current_user.id,
+                          chatbot_id: chatbot_dup.id,
+                          role: 'bot_admin')
     rescue StandardError => error
       Rails.logger.debug(error)
       return render json: {code: 2, message: error}
