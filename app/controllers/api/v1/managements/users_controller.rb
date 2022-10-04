@@ -46,16 +46,20 @@ class Api::V1::Managements::UsersController < ApplicationController
   private
 
   def user_params
-    params.require(:user).permit(:full_name, :english_name)
+    params.require(:user).permit(:full_name, :english_name, :email, :business_division,
+      :company_name, :department, :job_title, :post_code, :address, :language)
   end
 
   def admin_user_params
     params.require(:user).permit(:full_name, :client_id, :english_name,
-      :can_read, :can_write, :email)
+      :can_read, :can_write, :email, :business_division, :company_name, :department,
+      :job_title, :post_code, :address, :language)
   end
 
   def admin_with_password_user_params
     params.require(:user).permit(:full_name, :client_id, :english_name,
-      :can_read, :can_write, :email, :password, :password_confirmation)
+      :can_read, :can_write, :email, :password, :password_confirmation,
+      :business_division, :company_name, :department, :job_title, :post_code,
+      :address, :language)
   end
 end
