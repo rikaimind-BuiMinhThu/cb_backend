@@ -31,7 +31,7 @@ class Api::V1::Managements::UsersController < ApplicationController
         end
       end
     end
-    return render json: {code: 1, data: "Success"} if user.update user_params
+    return render json: {code: 1, data: user} if user.update user_params
     render json: {code: 2, data: "Fail"}
   end
 
