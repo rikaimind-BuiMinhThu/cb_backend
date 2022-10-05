@@ -18,6 +18,7 @@ class Api::V1::Managements::UsersController < ApplicationController
 
   def update
     user = User.find_by(id: params[:id])
+    return render json: {code: 2, data: "Email duplicate"} if params[:user][:email].present? && User.where("id <> ?", params[:id]).find_by(email: params[:user][:email]).present?
     return render json: {code: 2, data: "Not found"} if user.blank?
     return render json: {code: 2, data: "Not have permission"} unless current_user.admin_deel? || user.client_id == current_user.client_id || user.id == current_user.id
     if current_user.admin_deel?
