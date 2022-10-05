@@ -22,16 +22,19 @@ class Api::V1::Managements::UsersController < ApplicationController
     return render json: {code: 2, data: "Not have permission"} unless current_user.admin_deel? || user.client_id == current_user.client_id || user.id == current_user.id
     if current_user.admin_deel?
       if params[:user][:password].blank? && params[:user][:password_confirmation].blank?
-        return render json: {code: 1, data: user} if user.update admin_user_params
+        user.attributes = admin_user_params
+        return render json: {code: 1, data: user} if user.save!(:validate => false)
       else
         if params[:user][:password] == params[:user][:password_confirmation]
-          return render json: {code: 1, data: user} if user.update admin_with_password_user_params
+          user.attributes = admin_with_password_user_params
+          return render json: {code: 1, data: user} if user.save!(:validate => false)
         else
           return render json: {code: 2, data: "Password Confirm not Comparing with Password"}
         end
       end
     end
-    return render json: {code: 1, data: user} if user.update user_params
+    user.attributes = user_params
+    return render json: {code: 1, data: user} if user.save!(:validate => false)
     render json: {code: 2, data: "Fail"}
   end
 
