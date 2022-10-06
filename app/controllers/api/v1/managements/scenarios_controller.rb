@@ -10,7 +10,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
 
   def show
     scenario = Scenario.find_by(id: params[:id])
-    return render json: {code: 2, message: "Variable not found"} if scenario.blank?
+    return render json: {code: 2, message: "Scenario not found"} if scenario.blank?
     render json: {code: 1, data: scenario}
   end
 
@@ -28,7 +28,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
 
   def update
     scenario = Scenario.find_by(id: params[:id])
-    return render json: {code: 2, message: "Variable not found"} if scenario.blank?
+    return render json: {code: 2, message: "Scenario not found"} if scenario.blank?
     ActiveRecord::Base.transaction do
       scenario.update!(scenario_params)
     rescue StandardError => error
@@ -40,7 +40,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
 
   def destroy
     scenario = Scenario.find_by(id: params[:id])
-    return render json: {code: 2, message: "Variable not found"} if scenario.blank?
+    return render json: {code: 2, message: "Scenario not found"} if scenario.blank?
     ActiveRecord::Base.transaction do
       scenario.destroy!
     rescue StandardError => error
