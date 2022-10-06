@@ -4,6 +4,7 @@ class Chatbot < ApplicationRecord
   has_many :emails, through: :user_chatbots
   belongs_to :user
   has_many :variables, dependent: :destroy
+  has_many :scenarios, dependent: :destroy
 
   enum design_type: {pop: 0, flat: 1, material: 2}
   enum main_color: {pink: 0, yellow: 1, orange: 2, blue: 3, green: 4, purple: 5, black: 6, white: 7}
