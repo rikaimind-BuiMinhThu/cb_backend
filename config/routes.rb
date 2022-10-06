@@ -19,6 +19,7 @@ Rails.application.routes.draw do
         resources :instagram_users, only: [:index, :show, :update]
         resources :chatbots, except: [:new, :edit] do
           resources :variables, except: [:new, :edit]
+          resources :scenarios, except: [:new, :edit]
         end
         post "chatbots/:id/duplicate", :to => 'chatbots#duplicate'
         resources :user_chatbots, only: [:create]
