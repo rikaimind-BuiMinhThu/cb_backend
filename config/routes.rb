@@ -20,6 +20,8 @@ Rails.application.routes.draw do
         resources :chatbots, except: [:new, :edit] do
           resources :variables, except: [:new, :edit]
           resources :scenarios, except: [:new, :edit]
+          get "scenarios/:id/conversation", :to => 'scenarios#detail_conversation'
+          post "scenarios/:id/conversation", :to => 'scenarios#conversation'
         end
         post "chatbots/:id/duplicate", :to => 'chatbots#duplicate'
         resources :user_chatbots, only: [:create]
