@@ -66,6 +66,19 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     end
   end
 
+  def duplicate
+    scenario = Scenario.find_by(id: params[:id])
+    return render json: {code: 2, message: "Scenario not found"} if scenario.blank?
+    scenario_dup = scenario.dup
+    ActiveRecord::Base.transaction do
+      scenario_dup.save!
+    rescue StandardError => error
+      Rails.logger.debug(error)
+      return render json: {code: 2, message: error}
+    end
+    render json: {code: 1, data: scenario}
+  end
+
   private
 
   def scenario_params
