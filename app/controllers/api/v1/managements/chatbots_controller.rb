@@ -76,6 +76,20 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
     render json: {code: 1, data: chatbot_dup}
   end
 
+  def scenario_selected
+    chatbot = Chatbot.find_by(id: params[:id])
+    return render json: {code: 2, message: "Chatbot not found"} if chatbot.blank?
+    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || current_user.id == chatbot.user_id
+    return render json: {code: 2, message: "Scenario not found"} if Scenario.find_by(id: params[:scenario_selected]).blank?
+    ActiveRecord::Base.transaction do
+      chatbot.update! scenario_selected: params[:scenario_selected]
+    rescue StandardError => error
+      Rails.logger.debug(error)
+      return render json: {code: 2, message: error}
+    end
+    render json: {code: 1, data: chatbot}
+  end
+
   private
 
   def chatbot_params
