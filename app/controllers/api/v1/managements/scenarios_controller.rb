@@ -70,6 +70,19 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     scenario = Scenario.find_by(id: params[:id])
     return render json: {code: 2, message: "Scenario not found"} if scenario.blank?
     scenario_dup = scenario.dup
+    if Scenario.find_by(name: scenario.name + " (1)",
+                        chatbot_id: params[:chatbot_id]).present?
+      index = 1
+      loop do
+        index += 1
+        temp_message = Scenario.find_by(name: scenario.name + " (#{index})",
+                                chatbot_id: params[:chatbot_id])
+        break if temp_message.blank?
+      end
+      scenario_dup.name = scenario.name + " (#{index})"
+    else
+      scenario_dup.name = scenario.name + " (1)"
+    end
     ActiveRecord::Base.transaction do
       scenario_dup.save!
     rescue StandardError => error
