@@ -26,7 +26,7 @@ Rails.application.routes.draw do
         end
         post "chatbots/:id/duplicate", :to => 'chatbots#duplicate'
         post "chatbots/:id/scenario_selected", :to => 'chatbots#scenario_selected'
-        resources :user_chatbots, only: [:create]
+        resources :user_chatbots, only: [:create, :update, :destroy]
         resources :emails, only: [:index, :create, :show, :update, :destroy]
         post "/emails/:id/duplicate" => "emails#duplicate"
       end

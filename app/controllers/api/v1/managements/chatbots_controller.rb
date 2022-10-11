@@ -11,9 +11,9 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
 
   def show
     return render json: {code: 2, message: "No permission"} unless UserChatbot.find_by(user_id: current_user.id, chatbot_id: params[:id]).present? || current_user.admin_deel?
-    chatbot = Chatbot.joins({user_chatbots: :user}).select("chatbots.*, users.full_name as owner_name")
+    @chatbot = Chatbot.joins({user_chatbots: :user}).select("chatbots.*, users.full_name as owner_name")
                      .find_by(id: params[:id])
-    render json: {code: 1, data: chatbot}
+    return render json: {code: 2, data: "Cannot find chatbot"} if @chatbot.blank?
   end
 
   def create
