@@ -5,7 +5,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     scenarios = Scenario.where(chatbot_id: params[:chatbot_id])
     total = scenarios.length
     scenarios = scenarios.page(params[:page])
-    render json: {code: 1, data: scenarios, total: total}
+    render json: {code: 1, data: scenarios, total: total, scenario_selected: @chatbot.scenario_selected}
   end
 
   def show
@@ -99,7 +99,8 @@ class Api::V1::Managements::ScenariosController < ApplicationController
   end
 
   def check_chatbot_present
-    return render json: {code: 2, message: "Chatbot not found"} if Chatbot.find_by(id: params[:chatbot_id]).blank?
+    @chatbot = Chatbot.find_by(id: params[:chatbot_id])
+    return render json: {code: 2, message: "Chatbot not found"} if @chatbot.blank?
     user_chatbot = UserChatbot.find_by(user_id: current_user.id, chatbot_id: params[:chatbot_id])
     return render json: {code: 2, message: "No permission"} if user_chatbot.blank? || user_chatbot.reader?
   end
