@@ -1,4 +1,11 @@
 class Api::V1::Managements::UserChatbotsController < ApplicationController
+  def index
+    return render json: {code: 2, message: "No permission"} unless UserChatbot.find_by(user_id: current_user.id, chatbot_id: params[:chatbot_id]).present? || current_user.admin_deel?
+    chatbot = Chatbot.find_by(id: params[:chatbot_id])
+    return render json: {code: 2, data: "Cannot find chatbot"} if chatbot.blank?
+    @user_chatbots = chatbot.user_chatbots
+  end
+
   def create
     return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
     chatbot = Chatbot.where(id: params[:user_chatbot][:chatbot_id], user_id: current_user.id).first
