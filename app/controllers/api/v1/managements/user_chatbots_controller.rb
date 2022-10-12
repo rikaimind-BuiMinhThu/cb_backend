@@ -42,8 +42,8 @@ class Api::V1::Managements::UserChatbotsController < ApplicationController
   end
 
   def check_bot_admin
-    @current_user_chatbot = @user_chatbot.chatbot.user_chatbots.find_by(id: current_user.id) if @user_chatbot.present?
-    @current_user_chatbot = @chatbot.user_chatbots.find_by(id: current_user.id) if @chatbot.present?
+    @current_user_chatbot = @user_chatbot.chatbot.user_chatbots.find_by(user_id: current_user.id) if @user_chatbot.present?
+    @current_user_chatbot = @chatbot.user_chatbots.find_by(user_id: current_user.id) if @chatbot.present?
     return render json: {code: 2, message: "Something went wrong"} if @current_user_chatbot.blank?
     return render json: {code: 2, message: "No permission"} unless @current_user_chatbot.bot_admin?
   end
