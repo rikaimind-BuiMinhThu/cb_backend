@@ -13,7 +13,6 @@ class Api::V1::Managements::UserChatbotsController < ApplicationController
     return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? && chatbot.user_chatbots.bot_admin.find_by(user_id: current_user.id).present?
     user = User.find_by(email: params[:user_chatbot][:email])
     return render json: {code: 2, message: "Cannot find user"} if user.blank?
-    return render json: {code: 2, message: "User email cannot be blank"} if user.email.blank?
     user_chatbot = UserChatbot.new(user: user, chatbot: chatbot, role: params[:user_chatbot][:role])
     return render json: {code: 1, data: user_chatbot} if user_chatbot.save
     render json: {code: 2, data: user_chatbot.errors.full_messages[0]}
