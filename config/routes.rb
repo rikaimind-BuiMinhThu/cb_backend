@@ -67,6 +67,7 @@ Rails.application.routes.draw do
         resources :users, only: :index
         resources :chatbot_usages, only: :show
       end
+      resources :prefectures, only: :index
     end
   end
 end
