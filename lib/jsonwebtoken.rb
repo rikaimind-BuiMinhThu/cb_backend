@@ -8,6 +8,8 @@ class JsonWebToken
 
   def self.decode token
     JWT.decode token, Rails.application.secrets.secret_key_base
+  rescue JWT::ExpiredSignature
+    'EXPIRED'
   end
 
   def self.valid_payload payload
@@ -30,6 +32,8 @@ class JsonWebToken
 
   def self.decode_refresh token
     JWT.decode token, Rails.application.secrets.secret_refresh_token
+  rescue JWT::ExpiredSignature
+    'EXPIRED'
   end
 
   def self.valid_payload_refresh payload
