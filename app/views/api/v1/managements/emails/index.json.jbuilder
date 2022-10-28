@@ -4,4 +4,4 @@ json.data @emails.each do |email|
   json.cc email.email_ccs
   json.bcc email.email_bccs
 end
-json.total_count @emails.total_count
+json.total @total
