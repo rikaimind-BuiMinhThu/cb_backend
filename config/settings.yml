@@ -16,3 +16,9 @@ facebook:
     # app_secret: 32bda995fb95260d62f8c96b902052c6
     app_id: 1733245763691008
     app_secret: 113b79c662606799cfe1cc50b8b840eb
+aws:
+  s3:
+    AWS_ACCESS_KEY_ID: YOURACCESSKEY
+    AWS_SECRET_ACCESS_KEY: sEcReTkEyInSpoNGeBoBCaSe
+    S3_BUCKET: your-app-dev
+    AWS_REGION: your-region-1
