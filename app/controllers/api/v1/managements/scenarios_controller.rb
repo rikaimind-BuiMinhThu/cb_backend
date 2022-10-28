@@ -59,7 +59,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     @scenario = Scenario.find_by(id: params[:id])
     return render json: {code: 2, message: "Scenario not found"} if @scenario.blank?
     ActiveRecord::Base.transaction do
-      @scenario.update!(conversation: JSON.generate(params[:conversation].as_json)) if params[:conversation].present?
+      @scenario.update!(conversation: JSON.generate(params[:conversation].as_json), name: params[:scenario_name]) if params[:conversation].present?
     rescue StandardError => error
       Rails.logger.debug(error)
       return render json: {code: 2, message: error}
