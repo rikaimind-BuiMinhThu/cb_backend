@@ -29,6 +29,8 @@ Rails.application.routes.draw do
         resources :user_chatbots, only: [:index, :create, :update, :destroy]
         resources :emails, only: [:index, :create, :show, :update, :destroy]
         post "/emails/:id/duplicate" => "emails#duplicate"
+        resources :file, only: [:index, :create, :destroy]
+        post "/file/upload" => "file#presinged_aws"
       end
       namespace :message_managements do
         get "message_groups/data_analyst", :to => 'message_groups#data_analyst'
