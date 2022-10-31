@@ -8,8 +8,6 @@ class ApplicationController < ActionController::Base
   def authenticate_request!
     token = request.headers['Authorization'].split(' ').last rescue nil
     payload = token.nil? ? nil : JsonWebToken.decode(token) rescue nil
-    return render json: {code: 2,message: "Refresh token expired."},
-      status: 401 if token.present? && JsonWebToken.decode(token) == 'EXPIRED'
     if payload.nil? || !JsonWebToken.valid_payload(payload.first)
       return render json: {code: 0,
         message: "You need to sign in before continuing."}, status: 401
