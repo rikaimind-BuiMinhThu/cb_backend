@@ -1,6 +1,8 @@
 class Api::V1::Managements::ScenariosController < ApplicationController
   before_action :check_chatbot_present
 
+  SCAN_REGEX = /\{\{(.*?)\}\}/
+
   def index
     scenarios = Scenario.where(chatbot_id: params[:chatbot_id])
     total = scenarios.length
@@ -12,6 +14,25 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     scenario = Scenario.find_by(id: params[:id])
     return render json: {code: 2, message: "Scenario not found"} if scenario.blank?
     render json: {code: 1, data: scenario}
+  end
+
+  def preview
+    scenario = Scenario.find_by(id: params[:id])
+    return render json: {code: 2, message: "Scenario not found"} if scenario.blank?
+    scenario_conversation = scenario.conversation
+    variables = Variable.where(variable_name: scenario_conversation.scan(/\{\{(.*?)\}\}/).flatten).each do |variable|
+      scenario_conversation.gsub!("{{#{variable.variable_name}}}", variable.default_value)
+    end
+    render json: {
+      code: 1, data: {
+        id: scenario.id,
+        name: scenario.name,
+        chatbot_id: scenario.chatbot_id,
+        conversation: scenario_conversation,
+        created_at: scenario.created_at,
+        updated_at: scenario.updated_at
+      }
+    }
   end
 
   def create
@@ -102,6 +123,6 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     @chatbot = Chatbot.find_by(id: params[:chatbot_id])
     return render json: {code: 2, message: "Chatbot not found"} if @chatbot.blank?
     user_chatbot = UserChatbot.find_by(user_id: current_user.id, chatbot_id: params[:chatbot_id])
-    return render json: {code: 2, message: "No permission"} if user_chatbot.blank? || user_chatbot.reader?
+    return render json: {code: 2, message: "No permission"} if (user_chatbot.blank? || user_chatbot.reader?)
   end
 end
