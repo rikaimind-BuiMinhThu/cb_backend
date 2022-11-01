@@ -23,6 +23,7 @@ Rails.application.routes.draw do
           get "scenarios/:id/conversation", :to => 'scenarios#detail_conversation'
           post "scenarios/:id/conversation", :to => 'scenarios#conversation'
           post "scenarios/:id/duplicate", :to => 'scenarios#duplicate'
+          get "scenarios/:id/preview", :to => 'scenarios#preview'
         end
         post "chatbots/:id/duplicate", :to => 'chatbots#duplicate'
         post "chatbots/:id/scenario_selected", :to => 'chatbots#scenario_selected'

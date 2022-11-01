@@ -7,8 +7,14 @@ class ApplicationController < ActionController::Base
 
   def authenticate_request!
     token = request.headers['Authorization'].split(' ').last rescue nil
-    payload = token.nil? ? nil : JsonWebToken.decode(token) rescue nil
-    if payload.nil? || !JsonWebToken.valid_payload(payload.first)
+    begin
+      payload = token.nil? ? nil : JsonWebToken.decode(token)
+    rescue JWT::ExpiredSignature, JWT::VerificationError => e
+      return render json: {code: 2, message: "Token expire"}, status: 401
+    rescue Exception => e
+      return render json: {code: 0, message: "You need to sign in before continuing."}, status: 401
+    end
+    if payload.nil?
       return render json: {code: 0,
         message: "You need to sign in before continuing."}, status: 401
     end
