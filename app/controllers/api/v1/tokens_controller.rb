@@ -12,7 +12,13 @@ class Api::V1::TokensController < ApplicationController
 
   def authenticate_refresh_token!
     token = request.headers['Authorization'].split(' ').last rescue nil
-    payload = token.nil? ? nil : JsonWebToken.decode_refresh(token) rescue nil
+    begin
+      payload = token.nil? ? nil : JsonWebToken.decode_refresh(token)
+    rescue JWT::ExpiredSignature, JWT::VerificationError => e
+      return render json: {code: 0, message: "Token expire"}, status: 401
+    rescue Exception => e
+      return render json: {code: 0, message: "You need to sign in before continuing."}, status: 401
+    end
     if payload.nil? || !JsonWebToken.valid_payload_refresh(payload.first)
       return render json: {code: 0,
         message: "You need to sign in before continuing."}, status: 401
