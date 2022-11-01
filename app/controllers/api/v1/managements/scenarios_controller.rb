@@ -28,7 +28,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         id: scenario.id,
         name: scenario.name,
         chatbot_id: scenario.chatbot_id,
-        conversation: scenario_conversation,
+        conversation: JSON.parse(scenario_conversation),
         created_at: scenario.created_at,
         updated_at: scenario.updated_at
       }
