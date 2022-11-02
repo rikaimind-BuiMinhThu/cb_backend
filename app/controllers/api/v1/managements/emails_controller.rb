@@ -5,7 +5,7 @@ class Api::V1::Managements::EmailsController < ApplicationController
     return render json: {code: 2, data: "Cannot find chatbot"} if chatbot.blank?
     return render json: {code: 2, data: "No permission"} if current_user.admin_client? && chatbot.user_chatbots.pluck(:user_id).include?(current_user.id)
     page = params[:page] || 1
-    @emails = Email.where(chatbot_id: chatbot.id)
+    @emails = Email.where(chatbot_id: chatbot.id).includes(:email_ccs, :email_bccs)
     if current_user.admin_client?
       user_ids = current_user.client.users.pluck(:id)
       @emails = @emails.where(user_id: user_ids)
