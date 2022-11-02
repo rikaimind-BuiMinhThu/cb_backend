@@ -22,12 +22,15 @@ class Api::V1::Managements::FileController < ApplicationController
     user_file = UserFile.find_by(id: params[:id])
     return render json: {code: 2, data: "Cannot find file"} if user_file.blank?
     return render json: {code: 2, data: "Not have permission"} if user_file.user != current_user
-    return render json: {code: 1, message: 'success'} if user_file.destroy!
+    if user_file.destroy!
+      AmazonWebServices::DeleteFileS3.new(user_file.file_url).call
+      return render json: {code: 1, message: 'success'}
+    end
     render json: {code: 2, message: 'error'}
   end
 
   def presinged_aws
-    presigned = UploadFileS3.new(user_file_params[:file_type], current_user.id).call
+    presigned = AmazonWebServices::UploadFileS3.new(user_file_params[:file_type], current_user.id).call
     presigned_response = JSON.parse(presigned)
     return render json: {code: 2, message: presigned_response["message"]}, status: 500 if presigned_response["status"] == 500
     render json: {code: 1, data: presigned_response["data"]} if presigned_response["status"] == 200
