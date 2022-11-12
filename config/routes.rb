@@ -71,6 +71,9 @@ Rails.application.routes.draw do
         resources :chatbot_usages, only: :show
       end
       resources :prefectures, only: :index
+      namespace :payment_managements do
+        resources :payment_gateways, except: [:new, :edit]
+      end
     end
   end
 end
