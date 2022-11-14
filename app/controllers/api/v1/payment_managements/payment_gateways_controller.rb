@@ -2,7 +2,9 @@ class Api::V1::PaymentManagements::PaymentGatewaysController < ApplicationContro
   RETURN_FIELDS = [:id, :gateway_name, :payment_agency, :mode, :shop_id,
       :merchant_code, :client_ip, :store_id, :user_id]
   def index
-    render json: {code: 1, data: current_user.payment_gateways.select(RETURN_FIELDS)}
+    payment_gateways = PaymentGateway.select(RETURN_FIELDS)
+                                     .where(user_id: current_user.id)
+    render json: {code: 1, data: payment_gateways}
   end
 
   def show
