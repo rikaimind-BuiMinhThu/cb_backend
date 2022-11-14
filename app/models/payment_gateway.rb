@@ -7,7 +7,7 @@ class PaymentGateway < ApplicationRecord
   validates :payment_agency, presence: true
   validates :mode, presence: true
   validates :shop_id, presence: true, if: -> { gmo? }
-  validates :shop_pass, presence: true, if: -> { gmo? }
+  # validates :shop_pass, presence: true, if: -> { gmo? }
   validates :merchant_code, presence: true, if: -> { np_payment? }
   validates :sp_code, presence: true, if: -> { np_payment? }
   validates :terminal_id, presence: true, if: -> { np_payment? }
