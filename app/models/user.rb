@@ -7,6 +7,7 @@ class User < ApplicationRecord
   has_one :instagram_account, dependent: :destroy
   has_many :message_groups, dependent: :destroy
   has_many :user_files, dependent: :destroy
+  has_many :payment_gateways, dependent: :destroy
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable and :omniauthable
   devise :database_authenticatable, :registerable, :validatable, :trackable,
