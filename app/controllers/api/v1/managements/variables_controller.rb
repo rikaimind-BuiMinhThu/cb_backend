@@ -3,6 +3,7 @@ class Api::V1::Managements::VariablesController < ApplicationController
 
   def index
     variables = Variable.where(chatbot_id: params[:chatbot_id])
+    variables = variables.ransack(variable_name_cont: params[:name]).result if params[:name].present?
     total = variables.length
     variables = variables.page(params[:page]) if params[:page] != 'all'
     render json: {code: 1, data: variables, total: total}
