@@ -39,6 +39,10 @@ module AmazonWebServices
     def check_type_upload_file_s3
       if ['png', 'jpg', 'jpeg'].include?(@type)
         @type_name = 'image/' + @type
+      elsif ['pdf'].include?(@type)
+        @type_name = 'application/' + @type
+      elsif ['mp4'].include?(@type)
+        @type_name = 'video/' + @type
       else
         @type_name = nil
       end
