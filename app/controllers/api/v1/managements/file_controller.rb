@@ -30,7 +30,10 @@ class Api::V1::Managements::FileController < ApplicationController
   end
 
   def presinged_aws
-    presigned = AmazonWebServices::UploadFileS3.new(user_file_params[:file_type], current_user.id).call
+    presigned = AmazonWebServices::UploadFileS3.new(user_file_params[:file_type],
+                                                    current_user.id,
+                                                    user_file_params[:size],
+                                                    user_file_params[:timeplay]).call
     presigned_response = JSON.parse(presigned)
     return render json: {code: 2, message: presigned_response["message"]}, status: 500 if presigned_response["status"] == 500
     render json: {code: 1, data: presigned_response["data"]} if presigned_response["status"] == 200
@@ -39,7 +42,7 @@ class Api::V1::Managements::FileController < ApplicationController
   private
 
   def user_file_params
-    params.require(:user_file).permit(:file_url, :file_type)
+    params.require(:user_file).permit(:file_url, :file_type, :size, :timeplay)
   end
 end
 
