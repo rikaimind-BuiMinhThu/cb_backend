@@ -5,23 +5,20 @@ class HistoryClickUrl < ApplicationRecord
   belongs_to :chatbot
 
   before_validation :generate_shorten_code, on: :create
-  before_validation :init_num_of_click, on: :create
 
   validates :num_of_click, presence: true
   validates :origin_url, presence: true, format: URL_REG
+  validates_format_of :origin_url, without: /#{Settings.api.shorten_url}/i
   validates :shorten_code, presence: true
 
   private
 
   def generate_shorten_code
+    return if self.shorten_code.present?
     shorten_temp = SecureRandom.alphanumeric(SHORTEN_CODE_LENGTH)
     while HistoryClickUrl.find_by(shorten_code: shorten_temp).present?
       shorten_temp = SecureRandom.alphanumeric(SHORTEN_CODE_LENGTH)
     end
     self.shorten_code = shorten_temp
-  end
-
-  def init_num_of_click
-    self.num_of_click = 0
   end
 end

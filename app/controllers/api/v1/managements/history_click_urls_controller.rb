@@ -9,8 +9,13 @@ class Api::V1::Managements::HistoryClickUrlsController < ApplicationController
   def create
     chatbot = find_chatbot
     return if chatbot.blank?
-    history_click_url = HistoryClickUrl.new(history_click_url_params)
-    history_click_url.chatbot = chatbot
+    history_click_url = HistoryClickUrl.find_by(origin_url: history_click_url_params[:origin_url])
+    history_click_url = HistoryClickUrl.find_by(shorten_code: history_click_url_params[:origin_url].gsub(Settings.api.shorten_url, '').gsub('/', '').split('?')[0]) if history_click_url.blank?
+    if history_click_url.blank?
+      history_click_url = HistoryClickUrl.new(history_click_url_params)
+      history_click_url.num_of_click = 0
+    end
+    history_click_url.num_of_click += 1
     return render json: {code: 1, message: history_click_url} if history_click_url.save
     render json: {code: 2, message: history_click_url.errors.full_messages}
   end
@@ -18,16 +23,7 @@ class Api::V1::Managements::HistoryClickUrlsController < ApplicationController
   def show
     history_click_url = find_history_click_url
     return if history_click_url.blank?
-    history_click_url.num_of_click += 1
-    history_click_url.save
     render json: {code: 1, origin_url: history_click_url.origin_url}
-  end
-
-  def update
-    history_click_url = find_history_click_url(true)
-    return if history_click_url.blank?
-    return render json: {code: 1, message: history_click_url} if history_click_url.update(history_click_url_params)
-    render json: {code: 2, message: history_click_url.errors.full_messages}
   end
 
   def destroy
@@ -43,7 +39,7 @@ class Api::V1::Managements::HistoryClickUrlsController < ApplicationController
   private
 
   def history_click_url_params
-    params.require(:history_click_url).permit(:origin_url)
+    params.require(:history_click_url).permit(:origin_url, :chatbot_id)
   end
 
   def find_chatbot
