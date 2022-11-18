@@ -3,7 +3,9 @@ class Api::V1::Managements::PushMessagesController < ApplicationController
     chatbot = find_chatbot
     return if chatbot.blank?
     push_messages = chatbot.push_messages
-    return render json: {code: 1, data: push_messages}
+    total = push_messages.length
+    push_messages = push_messages.page(params[:page])
+    return render json: {code: 1, data: push_messages, total: total}
   end
 
   def create
