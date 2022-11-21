@@ -2,8 +2,6 @@ class HistoryClickUrl < ApplicationRecord
   URL_REG = /\A(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})\z/
   SHORTEN_CODE_LENGTH = 9
 
-  belongs_to :chatbot
-
   before_validation :generate_shorten_code, on: :create
 
   validates :num_of_click, presence: true
