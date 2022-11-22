@@ -3,6 +3,7 @@ api:
   time_refresh_token: 30
   company: rikai
   client_name: chatbot
+  shorten_url: https://ec-chatbot.com/s/
 webhook:
   verify_token: c6b92b43c7e8d23e2b88d86e3592f6dfccb15c29d0cd278124a168aa72bfba1a5cddcf532ea89ae6555fdcbb6a8a19d0ba2adfbe92dc54498cda953282f76501
   page_facebook_access_token: EAAYoYLoNogABALy8IXBV82AEbSZBXE67ZBF6vpzCeUkjylYLiT9SjpZAiFLUl4B4OOX8VAOh8C1aZAFFTx0Ogzs0sj6EGlliZBPPvfc8dXOWSHxlZBzlJwZBobO1FCFPLikwias2jN8wmyEQYudM9KITnzcTMxu83UW9FdB4nsAj1zUgEZBDOhFZCjWq8Ov2oLn8ZD

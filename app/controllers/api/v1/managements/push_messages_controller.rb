@@ -82,6 +82,36 @@ class Api::V1::Managements::PushMessagesController < ApplicationController
     end
   end
 
+  def subscribe
+    push_message = find_push_message(true)
+    return if push_message.blank?
+    ActiveRecord::Base.transaction do
+      push_message.update!(subscribe_status: :subscribe)
+      render json: {code: 1, message: push_message.subscribe_status}
+    rescue StandardError => error
+      Rails.logger.error(error)
+      error.backtrace.each do |line|
+        Rails.logger.error(line)
+      end
+      render json: {code: 2, message: error}
+    end
+  end
+
+  def unsubscribe
+    push_message = find_push_message(true)
+    return if push_message.blank?
+    ActiveRecord::Base.transaction do
+      push_message.update!(subscribe_status: :unsubscribe)
+      render json: {code: 1, message: push_message.subscribe_status}
+    rescue StandardError => error
+      Rails.logger.error(error)
+      error.backtrace.each do |line|
+        Rails.logger.error(line)
+      end
+      render json: {code: 2, message: error}
+    end
+  end
+
   private
 
   def push_message_params

@@ -33,6 +33,9 @@ Rails.application.routes.draw do
         resources :file, only: [:index, :create, :destroy]
         post "/file/upload" => "file#presinged_aws"
         resources :push_messages, only: [:index, :create, :show, :update, :destroy]
+        patch "push_messages/:id/subscribe" => "push_messages#subscribe"
+        patch "push_messages/:id/unsubscribe" => "push_messages#unsubscribe"
+        resources :history_click_urls, only: [:index, :create, :show, :update, :destroy]
       end
       namespace :message_managements do
         get "message_groups/data_analyst", :to => 'message_groups#data_analyst'
