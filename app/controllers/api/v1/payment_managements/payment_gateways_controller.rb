@@ -4,7 +4,9 @@ class Api::V1::PaymentManagements::PaymentGatewaysController < ApplicationContro
   def index
     payment_gateways = PaymentGateway.select(RETURN_FIELDS)
                                      .where(user_id: current_user.id)
-    render json: {code: 1, data: payment_gateways}
+    total = payment_gateways.length
+    payment_gateways = payment_gateways.page(params[:page]) if params[:page] != 'all'
+    render json: {code: 1, data: payment_gateways, total: total}
   end
 
   def show
