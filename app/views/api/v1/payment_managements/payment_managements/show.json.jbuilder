@@ -34,4 +34,10 @@ json.data do
     json.prefecture_name prefecture.name
     json.value @chatbot.shipping_fee_variables.find_by(prefecture: prefecture)&.amount || 0
   end
+  json.need_np_deferred_payment @chatbot.need_np_deferred_payment
+  json.np_invoice_included @chatbot.np_invoice_included
+  json.np_maximum_amount @chatbot.np_maximum_amount
+  json.np_settlement_min_value @chatbot.np_settlement_min_value
+  json.np_settlement_max_value @chatbot.np_settlement_max_value
+  json.np_settlement_fee_value @chatbot.np_settlement_fee_value
 end
