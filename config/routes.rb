@@ -77,6 +77,12 @@ Rails.application.routes.draw do
       resources :prefectures, only: :index
       namespace :payment_managements do
         resources :payment_gateways, except: [:new, :edit]
+        resources :payment_managements, only: :show
+        patch "payment_managements/:id/update_consumption_tax" => "payment_managements#update_consumption_tax"
+        patch "payment_managements/:id/update_specify_payment_gateway" => "payment_managements#update_specify_payment_gateway"
+        patch "payment_managements/:id/update_settlement_fee" => "payment_managements#update_settlement_fee"
+        patch "payment_managements/:id/update_shipping_fee" => "payment_managements#update_shipping_fee"
+        patch "payment_managements/:id/update_np_deferred_payment" => "payment_managements#update_np_deferred_payment"
       end
     end
   end
