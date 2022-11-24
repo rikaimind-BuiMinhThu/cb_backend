@@ -9,9 +9,17 @@ class Api::V1::Managements::FileController < ApplicationController
   end
 
   def create
+    file_type = ''
+    if ['png', 'jpg', 'jpeg'].include?(user_file_params[:file_type])
+      file_type = 'image'
+    elsif ['mp4'].include?(user_file_params[:file_type])
+      file_type = 'mp4'
+    elsif ['pdf'].include?(user_file_params[:file_type])
+      file_type = 'pdf'
+    end
     user_file = UserFile.new(
       file_url: user_file_params[:file_url],
-      file_type: ['png', 'jpg', 'jpeg'].include?(user_file_params[:file_type]) ? 'image' : '',
+      file_type: file_type,
       user_id: current_user.id
     )
     return render json: {code: 1, data: user_file} if user_file.save!
