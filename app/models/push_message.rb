@@ -2,7 +2,7 @@ class PushMessage < ApplicationRecord
   belongs_to :email, optional: true
   belongs_to :chatbot
 
-  has_many :push_message_variables
+  has_many :push_message_variables, dependent: :destroy
 
   enum sending_method: {email: 0, sms: 1}, _prefix: :sending_method
   enum has_timezone_exclusion: {no: false, yes: true}, _prefix: :has_timezone_exclusion
