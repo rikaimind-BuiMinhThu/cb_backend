@@ -9,11 +9,14 @@ class Chatbot < ApplicationRecord
   has_many :specify_payment_variables, dependent: :destroy
   has_many :settlement_fee_variables, dependent: :destroy
   has_many :shipping_fee_variables, dependent: :destroy
+  has_many :np_value_settlements, dependent: :destroy
 
   belongs_to :user
   belongs_to :specify_payment_variable, class_name: Variable.name, optional: true
   belongs_to :settlement_fee_variable, class_name: Variable.name, optional: true
   belongs_to :shipping_fee_variable, class_name: Variable.name, optional: true
+
+  accepts_nested_attributes_for :np_value_settlements
 
   enum design_type: {pop: 0, flat: 1, material: 2}
   enum main_color: {pink: 0, yellow: 1, orange: 2, blue: 3, green: 4, purple: 5, black: 6, white: 7}
@@ -36,7 +39,5 @@ class Chatbot < ApplicationRecord
   validates :status, presence: true
   validates :bot_name, presence: true
   validates :np_maximum_amount, presence: true, if: -> {need_np_deferred_payment_yes?}
-  validates :np_settlement_min_value, presence: true, if: -> {need_np_deferred_payment_yes?}
-  validates :np_settlement_max_value, presence: true, numericality: { greater_than_or_equal_to: :np_settlement_min_value }, if: -> {need_np_deferred_payment_yes?}
-  validates :np_settlement_fee_value, presence: true, if: -> {need_np_deferred_payment_yes?}
+  validates :np_value_settlements, presence: true, if: -> {need_np_deferred_payment_yes?}
 end

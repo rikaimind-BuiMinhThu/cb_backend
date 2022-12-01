@@ -2,6 +2,7 @@ class PaymentGateway < ApplicationRecord
   belongs_to :user
   enum payment_agency: {gmo: 0, np_payment: 1}
   enum mode: {test: 0, product: 1}
+  enum is_default: {yes: true, no: false}, _prefix: :is_default
 
   validates :gateway_name, presence: true
   validates :payment_agency, presence: true
