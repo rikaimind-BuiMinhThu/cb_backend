@@ -37,7 +37,9 @@ json.data do
   json.need_np_deferred_payment @chatbot.need_np_deferred_payment
   json.np_invoice_included @chatbot.np_invoice_included
   json.np_maximum_amount @chatbot.np_maximum_amount
-  json.np_settlement_min_value @chatbot.np_settlement_min_value
-  json.np_settlement_max_value @chatbot.np_settlement_max_value
-  json.np_settlement_fee_value @chatbot.np_settlement_fee_value
+  json.np_value_settlements @chatbot.np_value_settlements.each do |np_value_settlement|
+    json.np_settlement_min_value np_value_settlement.np_settlement_min_value
+    json.np_settlement_max_value np_value_settlement.np_settlement_max_value
+    json.np_settlement_fee_value np_value_settlement.np_settlement_fee_value
+  end
 end

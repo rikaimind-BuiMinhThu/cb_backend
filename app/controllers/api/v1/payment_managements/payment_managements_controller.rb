@@ -1,18 +1,18 @@
 class Api::V1::PaymentManagements::PaymentManagementsController < ApplicationController
   def show
-    find_chatbot
+    @chatbot = find_chatbot
     return if @chatbot.blank?
   end
 
   def update_consumption_tax
-    find_chatbot(true)
+    @chatbot = find_chatbot(true)
     return if @chatbot.blank?
     return render json: {code: 1, data: "Success"} if @chatbot.update(consumption_tax_params)
     render json: {code: 2, data: @chatbot.errors.full_messages}
   end
 
   def update_specify_payment_gateway
-    find_chatbot(true)
+    @chatbot = find_chatbot(true)
     return if @chatbot.blank?
     ActiveRecord::Base.transaction do
       @chatbot.specify_payment_variables.each { |specify_payment_variable| specify_payment_variable.destroy! }
@@ -33,7 +33,7 @@ class Api::V1::PaymentManagements::PaymentManagementsController < ApplicationCon
   end
 
   def update_settlement_fee
-    find_chatbot(true)
+    @chatbot = find_chatbot(true)
     return if @chatbot.blank?
     ActiveRecord::Base.transaction do
       @chatbot.settlement_fee_variables.each { |settlement_fee_variable| settlement_fee_variable.destroy! }
@@ -54,7 +54,7 @@ class Api::V1::PaymentManagements::PaymentManagementsController < ApplicationCon
   end
 
   def update_shipping_fee
-    find_chatbot(true)
+    @chatbot = find_chatbot(true)
     return if @chatbot.blank?
     ActiveRecord::Base.transaction do
       @chatbot.shipping_fee_variables.each { |shipping_fee_variable| shipping_fee_variable.destroy! }
@@ -75,10 +75,21 @@ class Api::V1::PaymentManagements::PaymentManagementsController < ApplicationCon
   end
 
   def update_np_deferred_payment
-    find_chatbot(true)
+    @chatbot = find_chatbot(true)
     return if @chatbot.blank?
-    return render json: {code: 1, data: "Success"} if @chatbot.update(np_deferred_payment_params)
-    render json: {code: 2, data: @chatbot.errors.full_messages}
+    ActiveRecord::Base.transaction do
+      @chatbot.np_value_settlements.each do |np_value_settlement|
+        np_value_settlement.destroy!
+      end
+      @chatbot.update!(np_deferred_payment_params)
+      render json: {code: 1, data: "Success"}
+    rescue StandardError => error
+      Rails.logger.error(error)
+      error.backtrace.each do |line|
+        Rails.logger.error(line)
+      end
+      render json: {code: 2, message: error}
+    end
   end
 
   private
@@ -112,14 +123,16 @@ class Api::V1::PaymentManagements::PaymentManagementsController < ApplicationCon
   end
 
   def np_deferred_payment_params
-    params.require(:np_deferred_payment).permit(:need_np_deferred_payment, :np_invoice_included, :np_maximum_amount, :np_settlement_min_value, :np_settlement_max_value, :np_settlement_fee_value)
+    params.require(:np_deferred_payment).permit(:need_np_deferred_payment, :np_invoice_included, :np_maximum_amount, np_value_settlements_attributes: [:np_settlement_min_value, :np_settlement_max_value, :np_settlement_fee_value])
   end
 
   def find_chatbot(editor_permission = false)
     render json: {code: 2, data: "No permission"} and return unless current_user.admin_deel? || current_user.admin_client?
-    @chatbot = Chatbot.find_by(id: params[:id])
-    render json: {code: 2, message: "Cannot find chatbot"} and return if @chatbot.blank?
-    render json: {code: 2, data: "No permission"} and return if current_user.admin_client? && @chatbot.user_chatbots.where(roles: [:bot_admin, :editor, :reader]).pluck(:user_id).include?(current_user.id)
-    @chatbot
+    chatbot = Chatbot.find_by(id: params[:id])
+    render json: {code: 2, message: "Cannot find chatbot"} and return if chatbot.blank?
+    chatbot_roles = [:bot_admin, :editor]
+    chatbot_roles.push(:reader) if editor_permission.blank?
+    render json: {code: 2, data: "No permission"} and return if current_user.admin_client? && chatbot.user_chatbots.where(role: chatbot_roles).pluck(:user_id).exclude?(current_user.id)
+    chatbot
   end
 end
