@@ -1,4 +1,5 @@
 class Api::V1::PrefecturesController < ApplicationController
+  skip_before_action :permision
   skip_before_action :verify_authenticity_token
 
   def index
