@@ -29,6 +29,7 @@ class Chatbot < ApplicationRecord
   enum need_paid_shipping_fee: {free: false, paid: true}, _prefix: true
   enum need_np_deferred_payment: {no: false, yes: true}, _prefix: true
   enum np_invoice_included: {not_include: 0, enclosed: 1}, _prefix: true
+  enum withdrawal_prevention_status: {invalid: 0, standard_exit_popup: 1, image_popup: 2}, _prefix: true
 
   mount_base64_uploader :icon, ChatbotIconUploader
 
@@ -40,4 +41,5 @@ class Chatbot < ApplicationRecord
   validates :bot_name, presence: true
   validates :np_maximum_amount, presence: true, if: -> {need_np_deferred_payment_yes?}
   validates :np_value_settlements, presence: true, if: -> {need_np_deferred_payment_yes?}
+  validates :withdrawal_prevention_image_url, presence: true, if: -> {withdrawal_prevention_status_image_popup?}
 end

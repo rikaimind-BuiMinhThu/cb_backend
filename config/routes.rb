@@ -85,6 +85,9 @@ Rails.application.routes.draw do
         patch "payment_managements/:id/update_shipping_fee" => "payment_managements#update_shipping_fee"
         patch "payment_managements/:id/update_np_deferred_payment" => "payment_managements#update_np_deferred_payment"
       end
+      namespace :chatbot_settings do
+        resources :withdrawal_preventions, only: [:show, :update]
+      end
     end
   end
 end
