@@ -1,5 +1,7 @@
 class Api::V1::Managements::ScenariosController < ApplicationController
-  before_action :check_chatbot_present
+  skip_before_action :permision, only: :preview
+  skip_before_action :verify_authenticity_token, only: :preview
+  before_action :check_chatbot_present, except: :preview
 
   SCAN_REGEX = /\{\{(.*?)\}\}/
 
@@ -25,6 +27,9 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     # end
     variables = Variable.select(:variable_name, :default_value)
                         .where(variable_name: scenario_conversation.scan(/\{\{(.*?)\}\}/).flatten)
+
+    chatbot = Chatbot.find_by(id: scenario.chatbot_id)
+
     render json: {
       code: 1, data: {
         id: scenario.id,
@@ -33,7 +38,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         conversation: JSON.parse(scenario_conversation),
         created_at: scenario.created_at,
         updated_at: scenario.updated_at
-      }, variables: variables
+      }, variables: variables, chatbot: chatbot
     }
   end
 

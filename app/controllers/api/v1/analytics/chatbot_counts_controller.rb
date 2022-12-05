@@ -1,4 +1,7 @@
 class Api::V1::Analytics::ChatbotCountsController < ApplicationController
+  skip_before_action :permision, only: :update
+  skip_before_action :verify_authenticity_token, only: :update
+
   def show
     chatbot = Chatbot.find_by(id: params[:id])
     return render json: {code: 2, message: "Cannot find chatbot"} if chatbot.blank?
