@@ -5,6 +5,7 @@ class Api::V1::Managements::HistoryClickUrlsController < ApplicationController
   def index
     return if check_permission.blank?
     history_click_urls = HistoryClickUrl.select(:id, :num_of_click, :origin_url, :shorten_code)
+                                        .where(chatbot_id: params[:chatbot_id])
     return render json: {code: 1, data: history_click_urls}
   end
 
@@ -16,6 +17,7 @@ class Api::V1::Managements::HistoryClickUrlsController < ApplicationController
     end
     if history_click_url.blank?
       history_click_url = HistoryClickUrl.new(history_click_url_params)
+      history_click_url.chatbot_id = params[:chatbot_id]
       history_click_url.num_of_click = 0
     end
     history_click_url.num_of_click += 1
