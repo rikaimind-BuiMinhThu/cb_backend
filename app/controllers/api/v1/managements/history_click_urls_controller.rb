@@ -11,9 +11,9 @@ class Api::V1::Managements::HistoryClickUrlsController < ApplicationController
 
   def create
     history_click_url = if history_click_url_params[:origin_url].include?(Settings.api.shorten_url)
-      HistoryClickUrl.find_by(shorten_code: history_click_url_params[:origin_url].gsub(Settings.api.shorten_url, '').gsub('/', '').split('?')[0])
+      HistoryClickUrl.find_by(shorten_code: history_click_url_params[:origin_url].gsub(Settings.api.shorten_url, '').gsub('/', '').split('?')[0], chatbot_id: params[:chatbot_id])
     else
-      HistoryClickUrl.find_by(origin_url: history_click_url_params[:origin_url])
+      HistoryClickUrl.find_by(origin_url: history_click_url_params[:origin_url], chatbot_id: params[:chatbot_id])
     end
     if history_click_url.blank?
       history_click_url = HistoryClickUrl.new(history_click_url_params)
@@ -51,7 +51,7 @@ class Api::V1::Managements::HistoryClickUrlsController < ApplicationController
   end
 
   def find_history_click_url(is_delete = false)
-    history_click_url = is_delete.present? ? HistoryClickUrl.find_by(id: params[:id]) : HistoryClickUrl.find_by(shorten_code: params[:id])
+    history_click_url = is_delete.present? ? HistoryClickUrl.find_by(id: params[:id], chatbot_id: params[:chatbot_id]) : HistoryClickUrl.find_by(shorten_code: params[:id] , chatbot_id: params[:chatbot_id])
     render json: {code: 2, message: "Not found history click url"} and return if history_click_url.blank?
     history_click_url
   end
