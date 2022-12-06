@@ -51,7 +51,7 @@ class Api::V1::Managements::HistoryClickUrlsController < ApplicationController
   end
 
   def find_history_click_url(is_delete = false)
-    history_click_url = is_delete.present? ? HistoryClickUrl.find_by(id: params[:id], chatbot_id: params[:chatbot_id]) : HistoryClickUrl.find_by(shorten_code: params[:id] , chatbot_id: params[:chatbot_id])
+    history_click_url = is_delete.present? ? HistoryClickUrl.find_by(id: params[:id]) : HistoryClickUrl.find_by(shorten_code: params[:id])
     render json: {code: 2, message: "Not found history click url"} and return if history_click_url.blank?
     history_click_url
   end
