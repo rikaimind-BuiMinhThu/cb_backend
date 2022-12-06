@@ -1,6 +1,6 @@
 class Email < ApplicationRecord
-  has_many :email_ccs
-  has_many :email_bccs
+  has_many :email_ccs, dependent: :destroy
+  has_many :email_bccs, dependent: :destroy
   belongs_to :user
   belongs_to :chatbot
 
