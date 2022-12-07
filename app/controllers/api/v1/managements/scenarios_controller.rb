@@ -120,6 +120,18 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     render json: {code: 1, data: scenario}
   end
 
+  def get_all
+    scenarios = Scenario.select(:id, :name)
+                        .where(chatbot_id: params[:chatbot_id])
+    render json: {code: 1, data: scenarios}
+  end
+
+  def get_scenario_selected
+    scenario = Scenario.select(:id, :name)
+                       .find_by(id: @chatbot.scenario_selected)
+    render json: {code: 1, data: scenario}
+  end
+
   private
 
   def scenario_params
