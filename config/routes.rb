@@ -78,6 +78,9 @@ Rails.application.routes.draw do
         resources :chatbot_counts, only: [:show, :update]
       end
       resources :prefectures, only: :index
+      get "cities", :to => 'prefectures#get_cities'
+      get "towns", :to => 'prefectures#get_towns'
+      get "get_address_from_zip_code", :to => 'prefectures#get_address_from_zip_code'
       namespace :payment_managements do
         resources :payment_gateways, except: [:new, :edit]
         resources :payment_managements, only: :show
