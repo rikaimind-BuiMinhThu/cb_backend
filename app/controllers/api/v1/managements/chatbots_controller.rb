@@ -1,13 +1,14 @@
 class Api::V1::Managements::ChatbotsController < ApplicationController
 
   def index
-    chatbots = Chatbot.joins({user_chatbots: :user}).select("chatbots.*, users.full_name as owner_name") if current_user.admin_deel?
-    chatbots = UserChatbot.joins(:chatbot, :user).select("chatbots.*, user_chatbots.role as my_authority, users.full_name as owner_name")
+    chatbots = Chatbot.joins(:user).select("chatbots.*, users.full_name as owner_name") if current_user.admin_deel?
+    chatbots = UserChatbot.joins(:chatbot, :user)
+                          .select("chatbots.*, user_chatbots.role as my_authority, users.full_name as owner_name")
                           .where(user_id: current_user.id) unless current_user.admin_deel?
     q = {}
     q[:bot_name_cont] = params[:name] if params[:name].present?
-    q[:status_eq] = (params[:status] == 'on') ? 1 : 0 if params[:status].present?
-    chatbots = chatbots.ransack(q).result
+    q[:status_eq] = (params[:status] == 'on') ? 1 : 0 if params[:status].present? && (params[:status] == 'on' || params[:status] == 'off')
+    chatbots = chatbots.ransack(q).result(distinct: true)
     total = chatbots.length
     chatbots = chatbots.page(params[:page]).per(10)
     render json: {code: 1, data: chatbots, total: total}
