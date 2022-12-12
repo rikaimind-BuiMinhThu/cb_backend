@@ -75,7 +75,7 @@ Rails.application.routes.draw do
       namespace :analytics do
         resources :users, only: :index
         resources :chatbot_usages, only: :show
-        resources :chatbot_counts, only: [:show, :update]
+        resources :scenario_counts, only: [:show, :update]
       end
       resources :prefectures, only: :index
       get "cities", :to => 'prefectures#get_cities'
