@@ -9,6 +9,7 @@ class Api::V1::Analytics::ScenarioPagesController < ApplicationController
   end
 
   def show
+    return render json: {code: 2, message: "Permission denied"} unless current_user.admin_client? || current_user.admin_deel?
     scenario = Scenario.find_by(id: params[:id])
     return render json: {code: 2, message: "Cannot find scenario"} if scenario.blank?
     urls = ScenarioPage.where(scenario: scenario).group(:url).pluck(:url)
