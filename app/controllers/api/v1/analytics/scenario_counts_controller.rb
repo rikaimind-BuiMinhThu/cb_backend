@@ -8,6 +8,11 @@ class Api::V1::Analytics::ScenarioCountsController < ApplicationController
                         .find_by(id: params[:id])
     return render json: {code: 2, message: "Cannot find scenario"} if @scenario.blank?
     @analytic_scenarios = @scenario.analytic_scenarios
+
+    begin_date = params[:begin_date].to_date
+    end_date = params[:end_date].to_date
+    q = {created_at_lteq: end_date.end_of_day, created_at_gteq: begin_date.beginning_of_day}
+    @analytic_scenarios = @analytic_scenarios.ransack(q).result
     # return render json: {code: 2, data: "No permission"} if current_user.admin_client? && chatbot.user_chatbots.where(role: [:bot_admin, :editor, :reader]).pluck(:user_id).exclude?(current_user.id)
     # render json: {code: 1, data: scenario}
   end
