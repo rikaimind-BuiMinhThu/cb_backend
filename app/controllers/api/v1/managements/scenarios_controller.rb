@@ -1,7 +1,7 @@
 class Api::V1::Managements::ScenariosController < ApplicationController
-  skip_before_action :permision, only: :preview
-  skip_before_action :verify_authenticity_token, only: :preview
-  before_action :check_chatbot_present, except: :preview
+  skip_before_action :permision, only: [:preview, :get_scenario_selected]
+  skip_before_action :verify_authenticity_token, only: [:preview, :get_scenario_selected]
+  before_action :check_chatbot_present, except: [:preview, :get_scenario_selected]
 
   SCAN_REGEX = /\{\{(.*?)\}\}/
 
@@ -127,8 +127,10 @@ class Api::V1::Managements::ScenariosController < ApplicationController
   end
 
   def get_scenario_selected
+    chatbot = Chatbot.find_by(id: params[:chatbot_id])
+    return render json: {code: 2, message: "Chatbot not found"} if chatbot.blank?
     scenario = Scenario.select(:id, :name)
-                       .find_by(id: @chatbot.scenario_selected)
+                       .find_by(id: chatbot.scenario_selected)
     render json: {code: 1, data: scenario}
   end
 

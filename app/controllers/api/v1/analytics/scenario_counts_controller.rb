@@ -15,6 +15,16 @@ class Api::V1::Analytics::ScenarioCountsController < ApplicationController
     @analytic_scenarios = @analytic_scenarios.ransack(q).result
     # return render json: {code: 2, data: "No permission"} if current_user.admin_client? && chatbot.user_chatbots.where(role: [:bot_admin, :editor, :reader]).pluck(:user_id).exclude?(current_user.id)
     # render json: {code: 1, data: scenario}
+    urls = ScenarioPage.where(scenario: @scenario).group(:url).pluck(:url)
+    @scenario_pages = []
+    list_scenario_pages = ScenarioPage.where(scenario: @scenario).ransack(q).result
+    urls.each do |url|
+      num_of_cv = list_scenario_pages.select("count(*) as num_of_cv_count")
+                                     .num_of_cv.where(url: url)
+      num_of_start = list_scenario_pages.select("count(*) as num_of_start_count")
+                                        .num_of_start.where(url: url)
+      @scenario_pages.push({url: url, num_of_cv: num_of_cv[0].num_of_cv_count, num_of_start: num_of_start[0].num_of_start_count})
+    end
   end
 
   def update
