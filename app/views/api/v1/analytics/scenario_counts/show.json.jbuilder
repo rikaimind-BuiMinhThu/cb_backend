@@ -14,3 +14,4 @@ json.data do
   json.tablet_close_chatbot_window_count @analytic_scenarios.tablet_close_chatbot_window.length
   json.smartphone_close_chatbot_window_count @analytic_scenarios.smartphone_close_chatbot_window.length
 end
+json.scenario_pages @scenario_pages
