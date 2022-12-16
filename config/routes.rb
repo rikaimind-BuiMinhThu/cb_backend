@@ -76,6 +76,7 @@ Rails.application.routes.draw do
         resources :users, only: :index
         resources :chatbot_usages, only: :show
         resources :scenario_counts, only: [:show, :update]
+        get "scenario_counts/:id/download" => "scenario_counts#download"
         resources :scenario_pages, only: [:show, :create]
       end
       resources :prefectures, only: :index
