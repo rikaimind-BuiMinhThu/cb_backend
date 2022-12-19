@@ -15,6 +15,7 @@ Rails.application.routes.draw do
       end
       namespace :managements do
         resources :users, except: [:new, :edit]
+        get "/get_admin_client_with_name" => "users#get_admin_client_with_name"
         resources :clients, except: [:new, :edit]
         resources :instagram_users, only: [:index, :show, :update]
         resources :chatbots, except: [:new, :edit] do
@@ -29,9 +30,12 @@ Rails.application.routes.draw do
         post "chatbots/:id/scenario_selected", :to => 'chatbots#scenario_selected'
         get "chatbots/:chatbot_id/all_scenarios", :to => 'scenarios#get_all'
         get "chatbots/:chatbot_id/get_scenario_selected", :to => 'scenarios#get_scenario_selected'
+        get "get_list_chatbot_by_client", :to => 'chatbots#get_list_chatbot_by_client'
+        get "get_list_scenario_by_client", :to => 'scenarios#get_list_scenario_by_client'
         resources :user_chatbots, only: [:index, :create, :update, :destroy]
         resources :emails, only: [:index, :create, :show, :update, :destroy]
         post "/emails/:id/duplicate" => "emails#duplicate"
+        get "/get_list_emails_by_chatbot" => "emails#get_list_emails_by_chatbot"
         resources :file, only: [:index, :create, :destroy]
         post "/file/upload" => "file#presinged_aws"
         resources :push_messages, only: [:index, :create, :show, :update, :destroy]
@@ -77,7 +81,7 @@ Rails.application.routes.draw do
         resources :chatbot_usages, only: :show
         resources :scenario_counts, only: [:show, :update]
         get "scenario_counts/:id/download" => "scenario_counts#download"
-        resources :scenario_pages, only: [:show, :create]
+        resources :scenario_pages, only: [:create]
       end
       resources :prefectures, only: :index
       get "cities", :to => 'prefectures#get_cities'

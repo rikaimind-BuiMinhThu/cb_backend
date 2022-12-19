@@ -134,6 +134,15 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     render json: {code: 1, data: scenario}
   end
 
+  def get_list_scenario_by_client
+    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel?
+    chatbot_ids = Chatbot.where(user_id: params[:user_id]).pluck(:id)
+    render json: {code: 2, message: "No data"} if chatbot_ids.length == 0
+    scenarios = Scenario.select(:id, :name)
+                        .where("chatbot_id in (?)", chatbot_ids)
+    render json: {code: 1, data: scenarios}
+  end
+
   private
 
   def scenario_params

@@ -135,6 +135,16 @@ class Api::V1::Managements::EmailsController < ApplicationController
     render json: {code: 1, message: "Success"}
   end
 
+  def get_list_emails_by_chatbot
+    return render json: {code: 2, data: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
+    chatbot = Chatbot.find_by(id: params[:chatbot_id])
+    return render json: {code: 2, data: "Cannot find chatbot"} if chatbot.blank?
+    return render json: {code: 2, data: "No permission"} if current_user.admin_client? && chatbot.user_chatbots.pluck(:user_id).include?(current_user.id)
+    emails = Email.select(:id, :email_template_name)
+                   .where(chatbot_id: chatbot.id)
+    render json: {code: 1, data: emails}
+  end
+
   private
 
   def email_params
