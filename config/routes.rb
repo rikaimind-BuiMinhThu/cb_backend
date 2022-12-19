@@ -15,8 +15,8 @@ Rails.application.routes.draw do
       end
       namespace :managements do
         resources :users, except: [:new, :edit]
-        get "/get_admin_client_with_name" => "users#get_admin_client_with_name"
         resources :clients, except: [:new, :edit]
+        get "/get_client_with_name" => "clients#get_client_with_name"
         resources :instagram_users, only: [:index, :show, :update]
         resources :chatbots, except: [:new, :edit] do
           resources :variables, except: [:new, :edit]

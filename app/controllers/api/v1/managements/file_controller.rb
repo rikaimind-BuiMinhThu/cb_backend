@@ -3,6 +3,7 @@ class Api::V1::Managements::FileController < ApplicationController
   def index
     user_files = UserFile.select(:id, :file_url, :file_type)
                          .where(user_id: current_user.id)
+    user_files = user_files.ransack(file_type_eq: params[:file_type]).result if params[:file_type].present?
     total = user_files.length
     user_files = user_files.page(params[:page])
     render json: {code: 1, data: user_files, total: total}
