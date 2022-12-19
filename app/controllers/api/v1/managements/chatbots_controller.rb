@@ -97,8 +97,9 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
 
   def get_list_chatbot_by_client
     return render json: {code: 2, message: "No permission"} unless current_user.admin_deel?
+    user_ids = User.admin_client.where(client_id: params[:client_id]).pluck(:id)
     chatbots = Chatbot.select(:id, :bot_name)
-                      .where(user_id: params[:user_id])
+                      .where("user_id in (?)", user_ids)
     render json: {code: 1, data: chatbots}
   end
 

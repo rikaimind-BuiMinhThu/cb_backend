@@ -63,6 +63,12 @@ class Api::V1::Managements::ClientsController < ApplicationController
     render json: {code: 2, data: "Fail"}
   end
 
+   def get_client_with_name
+    return render json: {code: 2, data: "Not have permission"} unless current_user.admin_deel?
+    clients = Client.select(:id, :name)
+    render json: {code: 1, data: clients}
+  end
+
   private
 
   def client_params

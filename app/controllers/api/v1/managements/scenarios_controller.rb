@@ -26,19 +26,21 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     #   scenario_conversation.gsub!("{{#{variable.variable_name}}}", variable.default_value)
     # end
     variables = Variable.select(:variable_name, :default_value)
-                        .where(variable_name: scenario_conversation.scan(/\{\{(.*?)\}\}/).flatten)
+                        .where(variable_name: scenario_conversation.scan(/\{\{(.*?)\}\}/).flatten) if scenario_conversation.present?
 
-    chatbot = Chatbot.find_by(id: scenario.chatbot_id)
+    chatbot = Chatbot.select(:id, :main_color, :icon, :title, :subtitle, :withdrawal_prevention_status,
+                             :withdrawal_prevention_link_url, :withdrawal_prevention_image_url)
+                     .find_by(id: scenario.chatbot_id)
 
     render json: {
       code: 1, data: {
         id: scenario.id,
         name: scenario.name,
         chatbot_id: scenario.chatbot_id,
-        conversation: JSON.parse(scenario_conversation),
+        conversation: scenario_conversation ? JSON.parse(scenario_conversation) : "",
         created_at: scenario.created_at,
         updated_at: scenario.updated_at
-      }, variables: variables, chatbot: chatbot
+      }, variables: variables ? variables : "", chatbot: chatbot
     }
   end
 
@@ -136,7 +138,8 @@ class Api::V1::Managements::ScenariosController < ApplicationController
 
   def get_list_scenario_by_client
     return render json: {code: 2, message: "No permission"} unless current_user.admin_deel?
-    chatbot_ids = Chatbot.where(user_id: params[:user_id]).pluck(:id)
+    user_ids = User.admin_client.where(client_id: params[:client_id]).pluck(:id)
+    chatbot_ids = Chatbot.where("user_id in (?)", user_ids).pluck(:id)
     render json: {code: 2, message: "No data"} if chatbot_ids.length == 0
     scenarios = Scenario.select(:id, :name)
                         .where("chatbot_id in (?)", chatbot_ids)
