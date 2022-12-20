@@ -49,7 +49,7 @@ class Api::V1::Analytics::ScenarioCountsController < ApplicationController
     begin_date = params[:begin_date].to_date
     end_date = params[:end_date].to_date
 
-    q = {created_at_lteq: end_date, created_at_gteq: begin_date}
+    q = {created_at_lteq: end_date.end_of_day, created_at_gteq: begin_date.beginning_of_day}
     analytic_scenarios = scenario.analytic_scenarios.ransack(q).result
 
 
