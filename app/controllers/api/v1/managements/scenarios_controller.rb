@@ -1,7 +1,7 @@
 class Api::V1::Managements::ScenariosController < ApplicationController
   skip_before_action :permision, only: [:preview, :get_scenario_selected]
   skip_before_action :verify_authenticity_token, only: [:preview, :get_scenario_selected]
-  before_action :check_chatbot_present, except: [:preview, :get_scenario_selected]
+  before_action :check_chatbot_present, except: [:preview, :get_scenario_selected, :get_list_scenario_by_client]
 
   SCAN_REGEX = /\{\{(.*?)\}\}/
 
@@ -140,7 +140,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     return render json: {code: 2, message: "No permission"} unless current_user.admin_deel?
     user_ids = User.admin_client.where(client_id: params[:client_id]).pluck(:id)
     chatbot_ids = Chatbot.where("user_id in (?)", user_ids).pluck(:id)
-    render json: {code: 2, message: "No data"} if chatbot_ids.length == 0
+    return render json: {code: 2, message: "No data"} if chatbot_ids.length == 0
     scenarios = Scenario.select(:id, :name)
                         .where("chatbot_id in (?)", chatbot_ids)
     render json: {code: 1, data: scenarios}
