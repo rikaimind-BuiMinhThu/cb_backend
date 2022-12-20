@@ -150,7 +150,7 @@ class Api::V1::Managements::EmailsController < ApplicationController
     email = Email.find_by(id: params[:id])
     return render json: {code: 2, data: "Cannot find email"} if email.blank?
     return render json: {code: 2, data: "No permission"} if current_user.admin_client? && email.chatbot.user_chatbots.where(role: [:bot_admin, :editor]).pluck(:user_id).exclude?(current_user.id)
-    EmailMailer.send_email(email).deliver
+    EmailMailer.send_email(email, params[:variables]).deliver
   end
 
   private
