@@ -33,7 +33,8 @@ class Api::V1::Managements::ClientsController < ApplicationController
     @total = @clients.size
     status_orders = [Client.statuses[:active], Client.statuses[:trial], Client.statuses[:pause], Client.statuses[:ended]]
     @clients = @clients.select(:id, :logo_url, :name, :plan, :price, :subscription_start_at,
-                               :subscription_end_at, :address, :prefecture, :building_name, :status, :municipality)
+                               :subscription_end_at, :address, :prefecture, :building_name,
+                               :status, :municipality, :is_instagram, :is_web, :is_line, :is_tiktok)
                        .order(Arel.sql("field(status, #{status_orders.join(',')})"), created_at: :desc)
                        .page(params[:page])
     # render json: {code: 1, data: {clients: clients, total: total}}
