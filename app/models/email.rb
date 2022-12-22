@@ -4,9 +4,8 @@ class Email < ApplicationRecord
   belongs_to :user
   belongs_to :chatbot
 
-  validates :to, presence: true, format: URI::MailTo::EMAIL_REGEXP
-  validates :email_template_name, presence: true
   validates :to, presence: true
+  validates :email_template_name, presence: true
   validates :subject, presence: true
   validates :content, presence: true
 end
