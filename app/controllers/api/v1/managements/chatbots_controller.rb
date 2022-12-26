@@ -79,6 +79,7 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
     ActiveRecord::Base.transaction do
       chatbot_dup = chatbot.dup
       chatbot_dup.user_id = current_user.id
+      # add validate: false to create chatbot with id, it will rollback if chatbot_dup.save! does not pass in line below
       chatbot_dup.save!(validate: false)
       chatbot.variables.each do |variable|
         variable_dup = variable.dup
