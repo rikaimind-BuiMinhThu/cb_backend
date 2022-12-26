@@ -70,4 +70,9 @@ Rails.application.configure do
 
   # Uncomment if you wish to allow Action Cable access from any origin.
   # config.action_cable.disable_request_forgery_protection = true
+
+  # config encryption
+  config.active_record.encryption.primary_key = 'x5qEz2JHsf5OfNvc5HOhj0YRdQfzUcZf'
+  config.active_record.encryption.deterministic_key = 'ArewJtvAxFCy3OBppWl2VoU35H7RGXkR'
+  config.active_record.encryption.key_derivation_salt = 'v9TUm7JMmvM2moPDQxlGv5qu47kni5Pp'
 end

@@ -1,7 +1,7 @@
 class Client < ApplicationRecord
   acts_as_paranoid
   has_many :users, dependent: :destroy
-  has_many :emails, dependent: :destroy
+  has_one :client_email, dependent: :destroy
 
   enum status: {active: 0, pause: 1, ended: 2, trial: 3}
   enum plan: {startup: 0, premium: 1, expert: 2, complete: 4}
