@@ -8,7 +8,11 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
     q = {}
     q[:bot_name_cont] = params[:name] if params[:name].present?
     q[:status_eq] = (params[:status] == 'on') ? 1 : 0 if params[:status].present? && (params[:status] == 'on' || params[:status] == 'off')
-    chatbots = chatbots.ransack(q).result(distinct: true)
+    q_ac = {}
+    q_ac[:chatbot_bot_name_cont] = params[:name] if params[:name].present?
+    q_ac[:chatbot_status_eq] = (params[:status] == 'on') ? 1 : 0 if params[:status].present? && (params[:status] == 'on' || params[:status] == 'off')
+    chatbots = chatbots.ransack(q).result(distinct: true) if current_user.admin_deel?
+    chatbots = chatbots.ransack(q_ac).result(distinct: true) unless current_user.admin_deel?
     total = chatbots.length
     chatbots = chatbots.page(params[:page]).per(10)
     unless current_user.admin_deel?
