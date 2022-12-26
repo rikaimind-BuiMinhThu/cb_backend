@@ -11,6 +11,11 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
     chatbots = chatbots.ransack(q).result(distinct: true)
     total = chatbots.length
     chatbots = chatbots.page(params[:page]).per(10)
+    unless current_user.admin_deel?
+      chatbots.each do |chatbot|
+        chatbot.status = chatbot.status == 0 ? 'off' : 'on'
+      end
+    end
     render json: {code: 1, data: chatbots, total: total}
   end
 
