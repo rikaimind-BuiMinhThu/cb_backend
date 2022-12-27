@@ -26,7 +26,11 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     #   scenario_conversation.gsub!("{{#{variable.variable_name}}}", variable.default_value)
     # end
     variables = Variable.select(:variable_name, :default_value)
+                        .where(chatbot_id: scenario.chatbot_id)
                         .where(variable_name: scenario_conversation.scan(/\{\{(.*?)\}\}/).flatten) if scenario_conversation.present?
+
+    all_variables = Variable.select(:variable_name, :default_value)
+                            .where(chatbot_id: scenario.chatbot_id)
 
     chatbot = Chatbot.select(:id, :main_color, :icon, :title, :subtitle, :withdrawal_prevention_status,
                              :withdrawal_prevention_link_url, :withdrawal_prevention_image_url)
@@ -40,7 +44,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         conversation: scenario_conversation ? JSON.parse(scenario_conversation) : "",
         created_at: scenario.created_at,
         updated_at: scenario.updated_at
-      }, variables: variables ? variables : "", chatbot: chatbot
+      }, variables: variables ? variables : "", chatbot: chatbot, all_variables: all_variables
     }
   end
 
