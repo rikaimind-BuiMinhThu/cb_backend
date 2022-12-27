@@ -3,7 +3,7 @@ class Api::V1::Analytics::ScenarioCountsController < ApplicationController
   skip_before_action :verify_authenticity_token, only: :update
 
   def show
-    return render json: {code: 2, data: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
+    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
     @scenario = Scenario.includes(:analytic_scenarios)
                         .find_by(id: params[:id])
     return render json: {code: 2, message: "Cannot find scenario"} if @scenario.blank?
@@ -13,7 +13,7 @@ class Api::V1::Analytics::ScenarioCountsController < ApplicationController
     end_date = params[:end_date].to_date
     q = {created_at_lteq: end_date.end_of_day, created_at_gteq: begin_date.beginning_of_day}
     @analytic_scenarios = @analytic_scenarios.ransack(q).result
-    # return render json: {code: 2, data: "No permission"} if current_user.admin_client? && chatbot.user_chatbots.where(role: [:bot_admin, :editor, :reader]).pluck(:user_id).exclude?(current_user.id)
+    # return render json: {code: 2, message: "No permission"} if current_user.admin_client? && chatbot.user_chatbots.where(role: [:bot_admin, :editor, :reader]).pluck(:user_id).exclude?(current_user.id)
 
     # list scenario pages
     list_scenario_pages = ScenarioPage.where(scenario: @scenario).ransack(q).result
@@ -43,7 +43,7 @@ class Api::V1::Analytics::ScenarioCountsController < ApplicationController
   end
 
   def download
-    return render json: {code: 2, data: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
+    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
     scenario = Scenario.find_by(id: params[:id])
     return render json: {code: 2, message: "Cannot find scenario"} if scenario.blank?
     begin_date = params[:begin_date].to_date

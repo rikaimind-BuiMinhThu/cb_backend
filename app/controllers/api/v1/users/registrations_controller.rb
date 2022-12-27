@@ -1,6 +1,6 @@
 class Api::V1::Users::RegistrationsController < ApplicationController
   def create
-    return render json: {code: 2, data: "Not have permission"} if current_user.client? || params[:user][:role] == "admin_deel" || params[:user][:role] == 0
+    return render json: {code: 2, message: "Not have permission"} if current_user.client? || params[:user][:role] == "admin_deel" || params[:user][:role] == 0
     params[:user][:role] = :client if current_user.admin_client? || params[:user][:role].blank?
     params[:user][:client_id] = current_user.client_id if current_user.admin_client?
     user = User.new(user_params)

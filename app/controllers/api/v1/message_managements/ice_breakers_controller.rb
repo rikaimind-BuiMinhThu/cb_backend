@@ -36,7 +36,7 @@ class Api::V1::MessageManagements::IceBreakersController < ApplicationController
 
   def destroy
     ice_breaker = IceBreaker.find_by(id: params[:id])
-    return render json: {code: 2, data: "Cannot find ice breaker"} if ice_breaker.blank?
+    return render json: {code: 2, message: "Cannot find ice breaker"} if ice_breaker.blank?
     return render json: {code: 2, message: "User can't permission"} if ice_breaker.instagram_account_id != current_user.instagram_account.id
     if ice_breaker.destroy
       render json: {code: 1, message: "Success!"}

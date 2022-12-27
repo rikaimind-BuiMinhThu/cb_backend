@@ -2,7 +2,7 @@ class Api::V1::InstagramUsers::LabelsController < ApplicationController
   skip_before_action :verify_authenticity_token
 
   def create
-    return render json: {code: 2, data: "No permission"} unless current_user.admin_deel?
+    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel?
     label = InstagramUserLabel.new(label_params)
     label.is_admin_add = true
     return render json: {code: 1, data: label} if label.save
@@ -16,9 +16,9 @@ class Api::V1::InstagramUsers::LabelsController < ApplicationController
   end
 
   def update
-    return render json: {code: 2, data: "No permission"} unless current_user.admin_deel?
+    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel?
     label = InstagramUserLabel.find_by(id: params[:id])
-    return render json: {code: 2, data: "Cannot find label"} if label.blank?
+    return render json: {code: 2, message: "Cannot find label"} if label.blank?
     if label.update label_params
       render json: {code: 1, data: label}
     else
@@ -27,9 +27,9 @@ class Api::V1::InstagramUsers::LabelsController < ApplicationController
   end
 
   def destroy
-    return render json: {code: 2, data: "No permission"} unless current_user.admin_deel?
+    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel?
     label = InstagramUserLabel.find_by(id: params[:id])
-    return render json: {code: 2, data: "Cannot find label"} if label.blank?
+    return render json: {code: 2, message: "Cannot find label"} if label.blank?
     if label.destroy
       render json: {code: 1, message: "Success!"}
     else
