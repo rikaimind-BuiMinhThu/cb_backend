@@ -5,4 +5,5 @@ json.data @client_emails.each do |client_email|
   json.client_id client_email.client.id
   json.full_name client_email.client.name
 end
+json.total @total
 json.message "Success"

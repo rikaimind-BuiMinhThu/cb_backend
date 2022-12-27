@@ -3,6 +3,8 @@ class Api::V1::Managements::ClientEmailsController < ApplicationController
   def index
     return render json: {code: 2, data: "No permission"} unless current_user.admin_deel?
     @client_emails = ClientEmail.all
+    @total = @client_emails.length
+    @client_emails = @client_emails.page(params[:page])
     # render json: {code: 1, data: emails}
   end
 
