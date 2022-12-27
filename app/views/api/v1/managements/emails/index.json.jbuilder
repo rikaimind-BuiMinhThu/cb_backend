@@ -5,3 +5,4 @@ json.data @emails.each do |email|
   json.bcc email.email_bccs
 end
 json.total @total
+json.client_email @chatbot&.user&.client&.client_email&.email
