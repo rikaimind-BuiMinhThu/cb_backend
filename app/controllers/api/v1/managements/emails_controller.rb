@@ -3,10 +3,10 @@ class Api::V1::Managements::EmailsController < ApplicationController
   skip_before_action :verify_authenticity_token, only: :send_email
 
   def index
-    return render json: {code: 2, data: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
+    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
     @chatbot = Chatbot.find_by(id: params[:chatbot_id])
-    return render json: {code: 2, data: "Cannot find chatbot"} if @chatbot.blank?
-    return render json: {code: 2, data: "No permission"} if current_user.admin_client? && @chatbot.user_chatbots.pluck(:user_id).include?(current_user.id)
+    return render json: {code: 2, message: "Cannot find chatbot"} if @chatbot.blank?
+    return render json: {code: 2, message: "No permission"} if current_user.admin_client? && @chatbot.user_chatbots.pluck(:user_id).include?(current_user.id)
     page = params[:page] || 1
     @emails = Email.where(chatbot_id: @chatbot.id).includes(:email_ccs, :email_bccs)
     if current_user.admin_client?
@@ -18,10 +18,10 @@ class Api::V1::Managements::EmailsController < ApplicationController
   end
 
   def create
-    return render json: {code: 2, data: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
+    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
     chatbot = Chatbot.find_by(id: params[:email][:chatbot_id])
-    return render json: {code: 2, data: "Cannot find chatbot"} if chatbot.blank?
-    return render json: {code: 2, data: "No permission"} if current_user.admin_client? && chatbot.user_chatbots.where(role: [:bot_admin, :editor]).pluck(:user_id).exclude?(current_user.id)
+    return render json: {code: 2, message: "Cannot find chatbot"} if chatbot.blank?
+    return render json: {code: 2, message: "No permission"} if current_user.admin_client? && chatbot.user_chatbots.where(role: [:bot_admin, :editor]).pluck(:user_id).exclude?(current_user.id)
     ActiveRecord::Base.transaction do
       email = Email.create!(email_params)
       if params[:email][:cc].present?
@@ -46,21 +46,21 @@ class Api::V1::Managements::EmailsController < ApplicationController
   end
 
   def show
-    return render json: {code: 2, data: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
+    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
     email = Email.find_by(id: params[:id])
-    return render json: {code: 2, data: "Cannot find email"} if email.blank?
-    return render json: {code: 2, data: "No permission"} if current_user.admin_client? && email.chatbot.user_chatbots.pluck(:user_id).include?(current_user.id)
+    return render json: {code: 2, message: "Cannot find email"} if email.blank?
+    return render json: {code: 2, message: "No permission"} if current_user.admin_client? && email.chatbot.user_chatbots.pluck(:user_id).include?(current_user.id)
     render json: {code: 1, data: {email: email, email_cc: email.email_ccs, email_bcc: email.email_bccs}}
   end
 
   def update
-    return render json: {code: 2, data: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
+    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
     email = Email.find_by(id: params[:id])
-    return render json: {code: 2, data: "Cannot find email"} if email.blank?
-    return render json: {code: 2, data: "No permission"} if current_user.admin_client? && email.chatbot.user_chatbots.where(role: [:bot_admin, :editor]).pluck(:user_id).exclude?(current_user.id)
+    return render json: {code: 2, message: "Cannot find email"} if email.blank?
+    return render json: {code: 2, message: "No permission"} if current_user.admin_client? && email.chatbot.user_chatbots.where(role: [:bot_admin, :editor]).pluck(:user_id).exclude?(current_user.id)
     chatbot = Chatbot.find_by(id: params[:email][:chatbot_id])
-    return render json: {code: 2, data: "Cannot find chatbot"} if chatbot.blank?
-    return render json: {code: 2, data: "No permission"} if current_user.admin_client? && chatbot.user_chatbots.where(role: [:bot_admin, :editor]).pluck(:user_id).exclude?(current_user.id)
+    return render json: {code: 2, message: "Cannot find chatbot"} if chatbot.blank?
+    return render json: {code: 2, message: "No permission"} if current_user.admin_client? && chatbot.user_chatbots.where(role: [:bot_admin, :editor]).pluck(:user_id).exclude?(current_user.id)
     ActiveRecord::Base.transaction do
       email.update!(email_params)
       email.email_ccs.each do |email_cc|
@@ -91,10 +91,10 @@ class Api::V1::Managements::EmailsController < ApplicationController
   end
 
   def destroy
-    return render json: {code: 2, data: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
+    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
     email = Email.find_by(id: params[:id])
-    return render json: {code: 2, data: "Cannot find email"} if email.blank?
-    return render json: {code: 2, data: "No permission"} if current_user.admin_client? && email.chatbot.user_chatbots.where(role: [:bot_admin, :editor]).pluck(:user_id).exclude?(current_user.id)
+    return render json: {code: 2, message: "Cannot find email"} if email.blank?
+    return render json: {code: 2, message: "No permission"} if current_user.admin_client? && email.chatbot.user_chatbots.where(role: [:bot_admin, :editor]).pluck(:user_id).exclude?(current_user.id)
     ActiveRecord::Base.transaction do
       email.email_ccs.each do |email_cc|
         email_cc.destroy!
@@ -114,10 +114,10 @@ class Api::V1::Managements::EmailsController < ApplicationController
   end
 
   def duplicate
-    return render json: {code: 2, data: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
+    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
     email = Email.find_by(id: params[:id])
-    return render json: {code: 2, data: "Cannot find email"} if email.blank?
-    return render json: {code: 2, data: "No permission"} if current_user.admin_client? && email.chatbot.user_chatbots.where(role: [:bot_admin, :editor]).pluck(:user_id).exclude?(current_user.id)
+    return render json: {code: 2, message: "Cannot find email"} if email.blank?
+    return render json: {code: 2, message: "No permission"} if current_user.admin_client? && email.chatbot.user_chatbots.where(role: [:bot_admin, :editor]).pluck(:user_id).exclude?(current_user.id)
     ActiveRecord::Base.transaction do
       new_email = email.dup
       new_email.user = current_user
@@ -139,25 +139,26 @@ class Api::V1::Managements::EmailsController < ApplicationController
   end
 
   def get_list_emails_by_chatbot
-    return render json: {code: 2, data: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
+    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
     chatbot = Chatbot.find_by(id: params[:chatbot_id])
-    return render json: {code: 2, data: "Cannot find chatbot"} if chatbot.blank?
-    return render json: {code: 2, data: "No permission"} if current_user.admin_client? && chatbot.user_chatbots.pluck(:user_id).include?(current_user.id)
+    return render json: {code: 2, message: "Cannot find chatbot"} if chatbot.blank?
+    return render json: {code: 2, message: "No permission"} if current_user.admin_client? && chatbot.user_chatbots.pluck(:user_id).include?(current_user.id)
     emails = Email.select(:id, :email_template_name)
                    .where(chatbot_id: chatbot.id)
     render json: {code: 1, data: emails}
   end
 
   def send_email
-    # return render json: {code: 2, data: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
+    # return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
     email = Email.find_by(id: params[:id])
-    return render json: {code: 2, data: "Cannot find email"} if email.blank?
-    # return render json: {code: 2, data: "No permission"} if current_user.admin_client? && email.chatbot.user_chatbots.where(role: [:bot_admin, :editor]).pluck(:user_id).exclude?(current_user.id)
+    return render json: {code: 2, message: "Cannot find email"} if email.blank?
+    # return render json: {code: 2, message: "No permission"} if current_user.admin_client? && email.chatbot.user_chatbots.where(role: [:bot_admin, :editor]).pluck(:user_id).exclude?(current_user.id)
     client_email_id = email.chatbot.user&.client.id
     client_email = ClientEmail.find_by(id: client_email_id)
-    return render json: {code: 2, data: "Cannot find client email"} if client_email.blank?
-    # return render json: {code: 2, data: "No permission"} if current_user.admin_client? && client_email.client_id == current_user.client_id
+    return render json: {code: 2, message: "Cannot find client email"} if client_email.blank?
+    # return render json: {code: 2, message: "No permission"} if current_user.admin_client? && client_email.client_id == current_user.client_id
     EmailMailer.send_email(email, client_email, params[:variables]).deliver
+    render json: {code: 1, message: "Success"}
   end
 
   private

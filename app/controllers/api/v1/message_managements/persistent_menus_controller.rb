@@ -25,7 +25,7 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
 
   def update
     persistent_menu = PersistentMenu.find_by(id: params[:id])
-    return render json: {code: 2, data: "Cannot find persistent menu"} if persistent_menu.blank?
+    return render json: {code: 2, message: "Cannot find persistent menu"} if persistent_menu.blank?
     return render json: {code: 2, message: "User can't permission"} if persistent_menu.instagram_account_id != current_user.instagram_account.id
     if persistent_menu.update persistent_menu_params
       render json: {code: 1, data: persistent_menu}
@@ -36,7 +36,7 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
 
   def destroy
     persistent_menu = PersistentMenu.find_by(id: params[:id])
-    return render json: {code: 2, data: "Cannot find persistent menu"} if persistent_menu.blank?
+    return render json: {code: 2, message: "Cannot find persistent menu"} if persistent_menu.blank?
     return render json: {code: 2, message: "User can't permission"} if persistent_menu.instagram_account_id != current_user.instagram_account.id
     if persistent_menu.destroy
       render json: {code: 1, message: "Success!"}

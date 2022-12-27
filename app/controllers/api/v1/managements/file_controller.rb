@@ -29,8 +29,8 @@ class Api::V1::Managements::FileController < ApplicationController
 
   def destroy
     user_file = UserFile.find_by(id: params[:id])
-    return render json: {code: 2, data: "Cannot find file"} if user_file.blank?
-    return render json: {code: 2, data: "Not have permission"} if user_file.user != current_user
+    return render json: {code: 2, message: "Cannot find file"} if user_file.blank?
+    return render json: {code: 2, message: "Not have permission"} if user_file.user != current_user
     if user_file.destroy!
       AmazonWebServices::DeleteFileS3.new(user_file.file_url).call
       return render json: {code: 1, message: 'success'}

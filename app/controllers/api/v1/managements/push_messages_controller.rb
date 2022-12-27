@@ -65,8 +65,8 @@ class Api::V1::Managements::PushMessagesController < ApplicationController
   def destroy
     push_message = find_push_message(true)
     return if push_message.blank?
-    return render json: {code: 2, data: "Cannot find push message"} if push_message.blank?
-    return render json: {code: 2, data: "No permission"} if current_user.admin_client? && push_message.chatbot.user_chatbots.where(role: [:bot_admin, :editor]).pluck(:user_id).exclude?(current_user.id)
+    return render json: {code: 2, message: "Cannot find push message"} if push_message.blank?
+    return render json: {code: 2, message: "No permission"} if current_user.admin_client? && push_message.chatbot.user_chatbots.where(role: [:bot_admin, :editor]).pluck(:user_id).exclude?(current_user.id)
     ActiveRecord::Base.transaction do
       push_message.push_message_variables.each do |push_message_variable|
         push_message_variable.destroy!

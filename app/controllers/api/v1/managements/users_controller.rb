@@ -1,6 +1,6 @@
 class Api::V1::Managements::UsersController < ApplicationController
   def index
-    return render json: {code: 2, data: "Not have permission"} if current_user.client?
+    return render json: {code: 2, message: "Not have permission"} if current_user.client?
     q = {full_name_or_email_or_client_name_cont: params[:name], client_id_eq: params[:client_id]} if current_user.admin_deel?
     q = {full_name_or_email_or_client_name_cont: params[:name], client_id_eq: current_user.client_id} if current_user.admin_client?
     @users = User.ransack(q).result(distinct: true).includes(:client)
@@ -11,16 +11,16 @@ class Api::V1::Managements::UsersController < ApplicationController
 
   def show
     user = User.find_by(id: params[:id])
-    return render json: {code: 2, data: "Not found"} if user.blank?
-    return render json: {code: 2, data: "Not have permission"} unless current_user.admin_deel? || user.client_id == current_user.client_id || user.id == current_user.id
+    return render json: {code: 2, message: "Not found"} if user.blank?
+    return render json: {code: 2, message: "Not have permission"} unless current_user.admin_deel? || user.client_id == current_user.client_id || user.id == current_user.id
     render json: {code: 1, data: user}
   end
 
   def update
     user = User.find_by(id: params[:id])
-    return render json: {code: 2, data: "Email duplicate"} if params[:user][:email].present? && User.where("id <> ?", params[:id]).find_by(email: params[:user][:email]).present?
-    return render json: {code: 2, data: "Not found"} if user.blank?
-    return render json: {code: 2, data: "Not have permission"} unless current_user.admin_deel? || user.client_id == current_user.client_id || user.id == current_user.id
+    return render json: {code: 2, message: "Email duplicate"} if params[:user][:email].present? && User.where("id <> ?", params[:id]).find_by(email: params[:user][:email]).present?
+    return render json: {code: 2, message: "Not found"} if user.blank?
+    return render json: {code: 2, message: "Not have permission"} unless current_user.admin_deel? || user.client_id == current_user.client_id || user.id == current_user.id
     if current_user.admin_deel?
       if params[:user][:password].blank? && params[:user][:password_confirmation].blank?
         user.attributes = admin_user_params
@@ -30,21 +30,21 @@ class Api::V1::Managements::UsersController < ApplicationController
           user.attributes = admin_with_password_user_params
           return render json: {code: 1, data: user} if user.save!(:validate => false)
         else
-          return render json: {code: 2, data: "Password Confirm not Comparing with Password"}
+          return render json: {code: 2, message: "Password Confirm not Comparing with Password"}
         end
       end
     end
     user.attributes = user_params
     return render json: {code: 1, data: user} if user.save!(:validate => false)
-    render json: {code: 2, data: "Fail"}
+    render json: {code: 2, message: "Fail"}
   end
 
   def destroy
-    return render json: {code: 2, data: "Cannot delete yourself"} if current_user.id == params[:id]
+    return render json: {code: 2, message: "Cannot delete yourself"} if current_user.id == params[:id]
     user = User.find_by(id: params[:id])
-    return render json: {code: 2, data: "Not have permission"} unless current_user.admin_deel? || user.client_id == current_user.client_id || user.id == current_user.id
-    return render json: {code: 1, data: "Success"} if user.destroy
-    render json: {code: 2, data: "Fail"}
+    return render json: {code: 2, message: "Not have permission"} unless current_user.admin_deel? || user.client_id == current_user.client_id || user.id == current_user.id
+    return render json: {code: 1, message: "Success"} if user.destroy
+    render json: {code: 2, message: "Fail"}
   end
 
   private

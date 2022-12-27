@@ -2,7 +2,7 @@ class Api::V1::Managements::ClientsController < ApplicationController
   skip_before_action :verify_authenticity_token
 
   def create
-    return render json: {code: 2, data: "No permission"} unless current_user.admin_deel?
+    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel?
     if Client.find_by_name(client_params[:name])
       render json: {:code => 2, message: "Client name has unique."}
       return
@@ -26,7 +26,7 @@ class Api::V1::Managements::ClientsController < ApplicationController
   end
 
   def index
-    return render json: {code: 2, data: "No permission"} unless current_user.admin_deel?
+    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel?
     @conversion_begin_date = params[:conversion_begin_date].to_date rescue ''
     @conversion_end_date = params[:conversion_end_date].to_date rescue ''
     @clients = Client.ransack(name_or_address_cont: params[:name], plan_eq: params[:plan]).result
@@ -42,30 +42,30 @@ class Api::V1::Managements::ClientsController < ApplicationController
 
   def show
     client = Client.find_by(id: params[:id])
-    return render json: {code: 2, data: "Not have permission"} unless current_user.admin_deel? || (current_user.admin_client? && client.id == current_user.client_id)
+    return render json: {code: 2, message: "Not have permission"} unless current_user.admin_deel? || (current_user.admin_client? && client.id == current_user.client_id)
     return render json: {code: 1, data: client} if client.present?
-    render json: {code: 2, data: "Not found"}
+    render json: {code: 2, message: "Not found"}
   end
 
   def update
     client = Client.find_by(id: params[:id])
-    return render json: {code: 2, data: "Not have permission"} unless current_user.admin_deel? || (current_user.admin_client? && client.id == current_user.client_id)
-    return render json: {code: 2, data: "Data not found"} if client.blank?
+    return render json: {code: 2, message: "Not have permission"} unless current_user.admin_deel? || (current_user.admin_client? && client.id == current_user.client_id)
+    return render json: {code: 2, message: "Data not found"} if client.blank?
     params[:client][:subscription_start_at] = params[:client][:subscription_start_at].to_time if params[:client][:subscription_start_at].present?
     params[:client][:subscription_end_at] = params[:client][:subscription_end_at].to_time if params[:client][:subscription_end_at].present?
-    return render json: {code: 1, data: "Success"} if client.update client_params
-    render json: {code: 2, data: "Fail"}
+    return render json: {code: 1, message: "Success"} if client.update client_params
+    render json: {code: 2, message: "Fail"}
   end
 
   def destroy
-    return render json: {code: 2, data: "No permission"} unless current_user.admin_deel?
+    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel?
     client = Client.find_by(id: params[:id])
-    return render json: {code: 1, data: "Success"} if client.destroy
-    render json: {code: 2, data: "Fail"}
+    return render json: {code: 1, message: "Success"} if client.destroy
+    render json: {code: 2, message: "Fail"}
   end
 
   def get_client_with_name
-    return render json: {code: 2, data: "Not have permission"} unless current_user.admin_deel?
+    return render json: {code: 2, message: "Not have permission"} unless current_user.admin_deel?
     clients = Client.select(:id, :name)
     render json: {code: 1, data: clients}
   end
