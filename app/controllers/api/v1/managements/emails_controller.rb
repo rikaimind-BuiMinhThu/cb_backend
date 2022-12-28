@@ -6,7 +6,7 @@ class Api::V1::Managements::EmailsController < ApplicationController
     return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
     @chatbot = Chatbot.find_by(id: params[:chatbot_id])
     return render json: {code: 2, message: "Cannot find chatbot"} if @chatbot.blank?
-    return render json: {code: 2, message: "No permission"} if current_user.admin_client? && @chatbot.user_chatbots.pluck(:user_id).include?(current_user.id)
+    return render json: {code: 2, message: "No permission"} if current_user.admin_client? && @chatbot.user_chatbots.pluck(:user_id).exclude?(current_user.id)
     page = params[:page] || 1
     @emails = Email.where(chatbot_id: @chatbot.id).includes(:email_ccs, :email_bccs)
     if current_user.admin_client?
@@ -49,7 +49,7 @@ class Api::V1::Managements::EmailsController < ApplicationController
     return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
     email = Email.find_by(id: params[:id])
     return render json: {code: 2, message: "Cannot find email"} if email.blank?
-    return render json: {code: 2, message: "No permission"} if current_user.admin_client? && email.chatbot.user_chatbots.pluck(:user_id).include?(current_user.id)
+    return render json: {code: 2, message: "No permission"} if current_user.admin_client? && email.chatbot.user_chatbots.pluck(:user_id).exclude?(current_user.id)
     render json: {code: 1, data: {email: email, email_cc: email.email_ccs, email_bcc: email.email_bccs}}
   end
 
@@ -57,7 +57,6 @@ class Api::V1::Managements::EmailsController < ApplicationController
     return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
     email = Email.find_by(id: params[:id])
     return render json: {code: 2, message: "Cannot find email"} if email.blank?
-    return render json: {code: 2, message: "No permission"} if current_user.admin_client? && email.chatbot.user_chatbots.where(role: [:bot_admin, :editor]).pluck(:user_id).exclude?(current_user.id)
     chatbot = Chatbot.find_by(id: params[:email][:chatbot_id])
     return render json: {code: 2, message: "Cannot find chatbot"} if chatbot.blank?
     return render json: {code: 2, message: "No permission"} if current_user.admin_client? && chatbot.user_chatbots.where(role: [:bot_admin, :editor]).pluck(:user_id).exclude?(current_user.id)
@@ -142,21 +141,18 @@ class Api::V1::Managements::EmailsController < ApplicationController
     return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
     chatbot = Chatbot.find_by(id: params[:chatbot_id])
     return render json: {code: 2, message: "Cannot find chatbot"} if chatbot.blank?
-    return render json: {code: 2, message: "No permission"} if current_user.admin_client? && chatbot.user_chatbots.pluck(:user_id).include?(current_user.id)
+    return render json: {code: 2, message: "No permission"} if current_user.admin_client? && chatbot.user_chatbots.pluck(:user_id).exclude?(current_user.id)
     emails = Email.select(:id, :email_template_name)
                    .where(chatbot_id: chatbot.id)
     render json: {code: 1, data: emails}
   end
 
   def send_email
-    # return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
     email = Email.find_by(id: params[:id])
     return render json: {code: 2, message: "Cannot find email"} if email.blank?
-    # return render json: {code: 2, message: "No permission"} if current_user.admin_client? && email.chatbot.user_chatbots.where(role: [:bot_admin, :editor]).pluck(:user_id).exclude?(current_user.id)
     client_email_id = email.chatbot.user&.client.id
     client_email = ClientEmail.find_by(id: client_email_id)
     return render json: {code: 2, message: "Cannot find client email"} if client_email.blank?
-    # return render json: {code: 2, message: "No permission"} if current_user.admin_client? && client_email.client_id == current_user.client_id
     EmailMailer.send_email(email, client_email, params[:variables]).deliver
     render json: {code: 1, message: "Success"}
   end
