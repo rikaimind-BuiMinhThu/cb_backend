@@ -1,7 +1,7 @@
 class Chatbot < ApplicationRecord
   has_many :user_chatbots, dependent: :destroy
   has_many :users, through: :user_chatbots
-  has_many :emails, through: :user_chatbots
+  has_many :emails, dependent: :destroy
   has_many :variables, dependent: :destroy
   has_many :scenarios, dependent: :destroy
   has_many :push_messages, dependent: :destroy
