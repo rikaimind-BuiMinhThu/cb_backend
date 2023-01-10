@@ -34,7 +34,8 @@ class Api::V1::Managements::ClientsController < ApplicationController
     status_orders = [Client.statuses[:active], Client.statuses[:trial], Client.statuses[:pause], Client.statuses[:ended]]
     @clients = @clients.select(:id, :logo_url, :name, :plan, :price, :subscription_start_at,
                                :subscription_end_at, :address, :prefecture, :building_name,
-                               :status, :municipality, :is_instagram, :is_web, :is_line, :is_tiktok)
+                               :status, :municipality, :is_instagram, :is_web, :is_line, :is_tiktok,
+                               :unit_price_instagram, :unit_price_web, :unit_price_line, :unit_price_tiktok)
                        .order(Arel.sql("field(status, #{status_orders.join(',')})"), created_at: :desc)
                        .page(params[:page])
     # render json: {code: 1, data: {clients: clients, total: total}}
@@ -77,7 +78,8 @@ class Api::V1::Managements::ClientsController < ApplicationController
       :price, :subscription_start_at, :subscription_end_at, :is_instagram, :is_line,
       :is_tiktok, :is_web, :note, :enterprise_type, :enterprise_type_2, :department_name,
       :title, :responsible_person, :logo_url, :url, :zip_code, :prefecture,
-      :municipality, :building_name, :email, :name_katakana, :responsible_person_katakana)
+      :municipality, :building_name, :email, :name_katakana, :responsible_person_katakana,
+      :unit_price_instagram, :unit_price_web, :unit_price_line, :unit_price_tiktok)
   end
 
   def user_params
