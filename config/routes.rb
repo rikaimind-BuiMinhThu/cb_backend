@@ -30,6 +30,8 @@ Rails.application.routes.draw do
         post "chatbots/:id/scenario_selected", :to => 'chatbots#scenario_selected'
         get "chatbots/:chatbot_id/all_scenarios", :to => 'scenarios#get_all'
         get "chatbots/:chatbot_id/get_scenario_selected", :to => 'scenarios#get_scenario_selected'
+        get "chatbots/:id/design_settings", :to => 'chatbots#get_design_settings'
+        post "chatbots/:id/design_settings", :to => 'chatbots#update_design_settings'
         get "get_list_chatbot_by_client", :to => 'chatbots#get_list_chatbot_by_client'
         get "get_list_scenario_by_client", :to => 'scenarios#get_list_scenario_by_client'
         resources :user_chatbots, only: [:index, :create, :update, :destroy]
