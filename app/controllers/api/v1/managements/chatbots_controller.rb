@@ -1,4 +1,6 @@
 class Api::V1::Managements::ChatbotsController < ApplicationController
+  skip_before_action :permision, only: [:webchat_sdk]
+  skip_before_action :verify_authenticity_token, only: [:webchat_sdk]
 
   def index
     chatbots = Chatbot.joins(:user).select("chatbots.*, users.full_name as owner_name") if current_user.admin_deel?
@@ -175,6 +177,50 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
       Rails.logger.debug(error)
       return render json: {code: 2, message: error}
     end
+  end
+
+  def webchat_sdk
+    chatbot = Chatbot.find_by(id: params[:id])
+    return render json: {code: 2, message: "Chatbot not found"} if chatbot.blank?
+    scenario = Scenario.find_by(id: chatbot.scenario_selected)
+    return render json: {code: 2, message: "Scenario not found"} if scenario.blank?
+    scenario_conversation = scenario.conversation
+
+    variables = Variable.select(:variable_name, :default_value)
+                        .where(chatbot_id: scenario.chatbot_id)
+                        .where(variable_name: scenario_conversation.scan(/\{\{(.*?)\}\}/).flatten) if scenario_conversation.present?
+
+    all_variables = Variable.select(:variable_name, :default_value)
+                            .where(chatbot_id: scenario.chatbot_id)
+
+    chatbot = Chatbot.select(:id, :main_color, :icon, :title, :subtitle, :withdrawal_prevention_status,
+                             :withdrawal_prevention_link_url, :withdrawal_prevention_image_url, :design_settings)
+                     .find_by(id: scenario.chatbot_id)
+
+    render json: {
+      code: 1,
+      data: {
+        id: scenario.id,
+        name: scenario.name,
+        chatbot_id: scenario.chatbot_id,
+        conversation: scenario_conversation ? JSON.parse(scenario_conversation) : "",
+        created_at: scenario.created_at,
+        updated_at: scenario.updated_at
+      },
+      variables: variables ? variables : "",
+      chatbot: {
+        id: chatbot.id,
+        main_color: chatbot.main_color,
+        icon: chatbot.icon,
+        title: chatbot.title,
+        subtitle: chatbot.subtitle,
+        withdrawal_prevention_status: chatbot.withdrawal_prevention_status,
+        withdrawal_prevention_link_url: chatbot.withdrawal_prevention_link_url,
+        withdrawal_prevention_image_url: chatbot.withdrawal_prevention_image_url
+      },
+      all_variables: all_variables,
+      design_settings: chatbot.design_settings ? JSON.parse(chatbot.design_settings) : ""
+    }
   end
 
   private
