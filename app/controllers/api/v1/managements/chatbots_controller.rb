@@ -172,11 +172,11 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
     return render json: {code: 2, message: "Chatbot not found"} if chatbot.blank?
     ActiveRecord::Base.transaction do
       chatbot.update!(design_settings: JSON.generate(params[:design_settings].as_json)) if params[:design_settings].present?
-      return render json: {code: 1, message: "Success"}
     rescue StandardError => error
       Rails.logger.debug(error)
       return render json: {code: 2, message: error}
     end
+    return render json: {code: 1, message: "Success"}
   end
 
   def webchat_sdk
