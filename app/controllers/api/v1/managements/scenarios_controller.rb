@@ -33,18 +33,32 @@ class Api::V1::Managements::ScenariosController < ApplicationController
                             .where(chatbot_id: scenario.chatbot_id)
 
     chatbot = Chatbot.select(:id, :main_color, :icon, :title, :subtitle, :withdrawal_prevention_status,
-                             :withdrawal_prevention_link_url, :withdrawal_prevention_image_url)
+                             :withdrawal_prevention_link_url, :withdrawal_prevention_image_url, :design_settings)
                      .find_by(id: scenario.chatbot_id)
 
     render json: {
-      code: 1, data: {
+      code: 1,
+      data: {
         id: scenario.id,
         name: scenario.name,
         chatbot_id: scenario.chatbot_id,
         conversation: scenario_conversation ? JSON.parse(scenario_conversation) : "",
         created_at: scenario.created_at,
         updated_at: scenario.updated_at
-      }, variables: variables ? variables : "", chatbot: chatbot, all_variables: all_variables
+      },
+      variables: variables ? variables : "",
+      chatbot: {
+        id: chatbot.id,
+        main_color: chatbot.main_color,
+        icon: chatbot.icon,
+        title: chatbot.title,
+        subtitle: chatbot.subtitle,
+        withdrawal_prevention_status: chatbot.withdrawal_prevention_status,
+        withdrawal_prevention_link_url: chatbot.withdrawal_prevention_link_url,
+        withdrawal_prevention_image_url: chatbot.withdrawal_prevention_image_url
+      },
+      all_variables: all_variables,
+      design_settings: chatbot.design_settings ? JSON.parse(chatbot.design_settings) : ""
     }
   end
 
