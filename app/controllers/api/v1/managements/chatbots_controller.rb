@@ -160,8 +160,9 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
     return render json: { code: 1, data: {
                           design_settings: design_settings,
                           title: chatbot.title,
-                          subtitle: chatbot.icon,
-                          icon: chatbot.icon} }
+                          subtitle: chatbot.subtitle,
+                          icon: chatbot.icon,
+                          main_color: chatbot.main_color} }
   end
 
   def update_design_settings
