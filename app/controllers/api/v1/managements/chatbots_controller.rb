@@ -171,7 +171,7 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
     chatbot = Chatbot.find_by(id: params[:id])
     return render json: {code: 2, message: "Chatbot not found"} if chatbot.blank?
     ActiveRecord::Base.transaction do
-      chatbot.update!(design_settings: JSON.generate(params[:design_settings].as_json)) if params.present?
+      chatbot.update!(design_settings: JSON.generate(params[:design_settings].as_json)) if params[:design_settings].present?
       return render json: {code: 1, message: "Success"}
     rescue StandardError => error
       Rails.logger.debug(error)
