@@ -1,5 +1,5 @@
 class ScenarioUserResponse < ApplicationRecord
-  belongs_to :scenario
+  # belongs_to :scenario
 
   def self.boolean data_input_name, options={}
     @list ||= {}
@@ -39,6 +39,14 @@ class ScenarioUserResponse < ApplicationRecord
       when :integer
         self.integer_value = value
       end
+    else
+      if value.is_a? String
+        self.string_value = value
+      elsif [true, false].include? value
+        self.boolean_value = value
+      elsif value.is_a? Integer
+        self.integer_value = value
+      end
     end
   end
 
@@ -53,7 +61,7 @@ class ScenarioUserResponse < ApplicationRecord
         self.integer_value
       end
     else
-      nil
+      self.boolean_value || self.string_value || self.integer_value
     end
   end
 
