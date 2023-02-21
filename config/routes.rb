@@ -104,6 +104,9 @@ Rails.application.routes.draw do
       namespace :chatbot_settings do
         resources :withdrawal_preventions, only: [:show, :update]
       end
+      namespace :scenario_users do
+        resources :scenario_user_responses, only: [:create]
+      end
     end
   end
 end
