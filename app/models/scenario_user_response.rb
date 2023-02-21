@@ -1,5 +1,5 @@
 class ScenarioUserResponse < ApplicationRecord
-  # belongs_to :scenario
+  belongs_to :scenario
 
   def self.boolean data_input_name, options={}
     @list ||= {}
