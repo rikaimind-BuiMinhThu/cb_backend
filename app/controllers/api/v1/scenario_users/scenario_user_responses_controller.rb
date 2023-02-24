@@ -1,15 +1,17 @@
 class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationController
+  skip_before_action :permision
+  skip_before_action :verify_authenticity_token
+
   def create
-    scenario = Scenario.find_by(user_response_params[:scenario_id])
-    scenario_user_response = ScenarioUserResponse.create(
-      message_bag_params.merge({ data_input_name: scenario.data_input_name })
-    )
+    scenario_user_response = ScenarioUserResponse.build_record(params)
+    scenario_user_response.save
     render json: {code: 1, data: scenario_user_response}
   end
 
-  private
-
-  def user_response_params
-    params.require(:user_response).permit(:scenario_id, :value)
+  def create_order
+    scenario = Scenario.find_by(params[:scenario_id])
+    conversations = scenario.scenario_user_responses.where(user_input_id: params[:user_id])
+    service = TamagoScenario::SeleniumService.new(scenario, conversations)
+    service.process
   end
 end

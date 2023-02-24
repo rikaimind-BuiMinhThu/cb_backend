@@ -12,4 +12,9 @@ class ChatbotUsage < ApplicationRecord
     scope
   }
 
+
+  def self.ransackable_attributes(auth_object = nil)
+    ["content", "created_at", "id", "instagram_account_id", "instagram_user_id", "media_id", "media_start_at", "updated_at", "usage_type"]
+  end
+
 end

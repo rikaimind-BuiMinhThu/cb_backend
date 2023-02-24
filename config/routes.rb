@@ -105,7 +105,11 @@ Rails.application.routes.draw do
         resources :withdrawal_preventions, only: [:show, :update]
       end
       namespace :scenario_users do
-        resources :scenario_user_responses, only: [:create]
+        resources :scenario_user_responses, only: [:create] do
+          collection do
+            post :create_order
+          end
+        end
       end
     end
   end
