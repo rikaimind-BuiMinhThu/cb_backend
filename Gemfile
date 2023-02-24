@@ -26,6 +26,7 @@ gem "carrierwave", "~> 2.2.2"
 gem "carrierwave-base64", "~> 2.10.0"
 gem "aws-sdk-s3", "~> 1.117"
 gem "selenium-webdriver"
+gem "socksify", '~> 1.7'
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

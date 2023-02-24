@@ -123,7 +123,7 @@ class ScenarioUserResponse < ApplicationRecord
         value = conversion[:card_payment_radio_button].to_json
       else
         data_input_name = 'cash_on_delivery_payment'
-        value = selected[:text]
+        value = 'cash on delivery'
       end
     end
     new_record = self.new(
