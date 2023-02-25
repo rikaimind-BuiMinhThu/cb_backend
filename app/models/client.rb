@@ -12,6 +12,11 @@ class Client < ApplicationRecord
 
   validate :subscription_start_at_cannot_be_greater_than_subscription_end_at
 
+  enum cart_system: {
+    cart_system_none: 0,
+    tamago_repeat: 1
+  }
+
   def subscription_start_at_cannot_be_greater_than_subscription_end_at
     if subscription_start_at.present? && subscription_end_at.present? && subscription_start_at > subscription_end_at
       errors.add(:subscription_start_at, "can't be greater than subscription end at")

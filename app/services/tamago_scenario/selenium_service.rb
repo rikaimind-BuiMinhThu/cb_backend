@@ -3,7 +3,7 @@ require 'selenium-webdriver'
 module TamagoScenario
   class SeleniumService
     SECRET_KEY = Rails.application.secrets.secret_refresh_token
-    attr_accessor :scenario, :conversations, :driver, :tamago_repeat_config
+    attr_accessor :scenario, :conversations, :driver, :tamago_repeat_config, :status
 
     def initialize(scenario, conversations)
       @scenario = scenario
@@ -11,8 +11,12 @@ module TamagoScenario
       # proxy = Selenium::WebDriver::Proxy.new( socks: '127.0.0.1:9050',socks_version: 5)
       # caps = Selenium::WebDriver::Remote::Capabilities.chrome(proxy: proxy)
       # @driver = Selenium::WebDriver.for :chrome, capabilities: caps
-      @driver = Selenium::WebDriver.for :chrome
+      options = Selenium::WebDriver::Chrome::Options.new
+      options.add_argument('--headless')
+      @driver = Selenium::WebDriver.for :chrome, options: options
+      # @driver = Selenium::WebDriver.for :chrome
       @tamago_repeat_config = @scenario.tamago_repeat_config
+      @status = false
     end
 
     def process
@@ -32,6 +36,7 @@ module TamagoScenario
       @driver.switch_to.default_content()
       # recaptcha_page
       #sleep(5)
+      binding.pry
       family_name = @driver.find_element(name: "shipping_address[family_name]")
       family_name.send_keys(conversations.find_by_data_input_name('user_name').value)
 
@@ -80,7 +85,7 @@ module TamagoScenario
       user_email = @driver.find_element(id: "user_email")
       user_email.send_keys(conversations.find_by_data_input_name('user_email').value)
 
-      if tamago_repeat_config.require_email_confirm?
+      if tamago_repeat_config.email_confirm_required?
         user_email_confirmation = @driver.find_element(id: "user_email_confirmation")
         user_email_confirmation.send_keys(conversations.find_by_data_input_name('user_email').value)
       end
@@ -132,10 +137,10 @@ module TamagoScenario
       card_number = @driver.find_element(id: "new_credit_card_number")
       card_number.send_keys(data_card['card_number'])
       card_name = @driver.find_element(id: "new_credit_card_name")
-      card_name.send_keys(data_card['card_name'])
+      card_name.send_keys(data_card['card_holder'])
       select_month = @driver.find_element(id: "new_credit_effective_date_2i")
       choose_select_month = Selenium::WebDriver::Support::Select.new(select_month)
-      choose_select_month.select_by(:value, data_card['month'])
+      choose_select_month.select_by(:value, data_card['month'].to_i.to_s)
 
       select_year = @driver.find_element(id: "new_credit_effective_date_1i")
       choose_select_year = Selenium::WebDriver::Support::Select.new(select_year)
@@ -143,8 +148,15 @@ module TamagoScenario
 
       security_code = @driver.find_element(id: "new_credit_security_code")
       security_code.send_keys(data_card['cvc'])
-      if data_card['payment_method'][0] == 'jcb'
+      case data_card['payment_method'][0]
+      when 'jcb'
         @driver.find_element(id: "new_credit_card_brand_jcb").click()
+      when 'diner_club'
+        @driver.find_element(id: "new_credit_card_brand_diners").click()
+      when 'american_express'
+        @driver.find_element(id: "new_credit_card_brand_amex").click()
+      else
+        @driver.find_element(id: "new_credit_card_brand_other").click()
       end
       @driver.find_element(css: "input#hide_display").click()
     end
@@ -153,6 +165,10 @@ module TamagoScenario
       @driver.switch_to.default_content()
       sleep(5)
       @driver.find_element(css: "input#hide_display1").click()
+      sleep(5)
+      @driver.switch_to.default_content()
+      @status = true
+      @driver.find_element(id: "order_infobox")
     end
   end
 end
