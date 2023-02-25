@@ -2,14 +2,14 @@ class TamagoRepeatConfig < ApplicationRecord
   belongs_to :scenario
 
   enum email_confirm_field: {
-    none_email_confirm: 0,
-    optional_email_confirm: 1,
-    required_email_confirm: 2
+    email_confirm_none: 0,
+    email_confirm_optional: 1,
+    email_confirm_required: 2
   }
 
   enum name_kana_field: {
-    none_name_kana: 0,
-    optional_name_kana: 1,
-    required_name_kana: 2
+    name_kana_none: 0,
+    name_kana_optional: 1,
+    name_kana_required: 2
   }
 end
