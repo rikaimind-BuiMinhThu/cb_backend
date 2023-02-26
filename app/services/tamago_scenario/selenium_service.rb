@@ -96,8 +96,9 @@ module TamagoScenario
       data_address = JSON.parse(conversations.find_by_data_input_name('zip_code_address').value)
       Log.info "\t\tdriver.find_element(name: \"shipping_address[zip]\")"
       shipping_address_zip = @driver.find_element(name: "shipping_address[zip]")
-      Log.info "\t\tshipping_address_zip.send_keys(#{data_address['post_code'].gsub('-', '')})"
-      shipping_address_zip.send_keys(data_address['post_code'].gsub('-', ''))
+      post_code = data_address['post_code'].present? ? data_address['post_code'] : data_address['value_post_code']
+      Log.info "\t\tshipping_address_zip.send_keys(#{post_code.gsub('-', '')})"
+      shipping_address_zip.send_keys(post_code.gsub('-', ''))
 
       Log.info "\t\t@driver.find_element(id: \"hide_display_shipping_address a\").click()"
       @driver.find_element(id: "hide_display_shipping_address a").click()
