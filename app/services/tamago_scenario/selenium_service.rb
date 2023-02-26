@@ -55,10 +55,10 @@ module TamagoScenario
         @driver.find_element(xpath: '//a[@href="/shop/add_to_cart/?item_qty_1[qty]=1&item_id_1=periodically_order&return_url=https://new-trial03.tamago-cart.com"]').click()
       end
       @driver.switch_to.default_content()
-      # quantity = conversations.find_by_data_input_name('quantity').value
-      # select_quantity = @driver.find_element(css: "select#select_order_qty_0")
-      # choose_select_quantity = Selenium::WebDriver::Support::Select.new(select_quantity)
-      # choose_select_quantity.select_by(:value, quantity)
+      quantity = conversations.find_by_data_input_name('quantity').value
+      select_quantity = @driver.find_element(name: "order_0")
+      choose_select_quantity = Selenium::WebDriver::Support::Select.new(select_quantity)
+      choose_select_quantity.select_by(:value, quantity.to_s)
 
       input = @driver.find_element(css: tamago_repeat_config.add_to_cart_button_selector)
       Log.info "\t\tinput.click"
@@ -195,6 +195,15 @@ module TamagoScenario
       Log.info "\tpayment_page"
       Log.info "\t\tdriver.switch_to.default_content()"
       @driver.switch_to.default_content()
+      Log.info "\t\t@driver.find_element(name: \"order[delivery_classification_id]\")"
+      select_delivery_method = @driver.find_element(name: "order[delivery_classification_id]")
+      choose_select_delivery_method = Selenium::WebDriver::Support::Select.new(select_delivery_method)
+      if conversations.find_by_data_input_name('delivery_method').value == 1
+        choose_select_delivery_method.select_by(:value, '1')
+      else
+        choose_select_delivery_method.select_by(:value, '3')
+      end
+
       if conversations.find_by_data_input_name('credit_card_payment').present?
         Log.info "\t\t@driver.find_element(id: \"order_payment_method_id_2\").click()"
         @driver.find_element(id: "order_payment_method_id_2").click()
@@ -228,7 +237,7 @@ module TamagoScenario
       select_month = @driver.find_element(id: "new_credit_effective_date_2i")
       choose_select_month = Selenium::WebDriver::Support::Select.new(select_month)
       Log.info "\t\tchoose_select_month.select_by(:value, #{data_card['month']})"
-      choose_select_month.select_by(:value, data_card['month'])
+      choose_select_month.select_by(:value, data_card['month'].to_i.to_s)
 
       Log.info "\t\t@driver.find_element(id: \"new_credit_effective_date_1i\")"
       select_year = @driver.find_element(id: "new_credit_effective_date_1i")
