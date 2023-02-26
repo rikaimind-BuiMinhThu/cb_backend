@@ -93,8 +93,6 @@ module TamagoScenario
       Log.info "\t\tfirst_name_kana.send_keys(#{conversations.find_by_data_input_name('user_name_kana')&.value})"
       first_name_kana.send_keys(second_data['valueRight'])
 
-      binding.pry
-
       data_address = JSON.parse(conversations.find_by_data_input_name('zip_code_address').value)
       Log.info "\t\tdriver.find_element(name: \"shipping_address[zip]\")"
       shipping_address_zip = @driver.find_element(name: "shipping_address[zip]")
