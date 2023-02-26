@@ -4,7 +4,7 @@ require File.dirname(__FILE__) + "/log"
 module TamagoScenario
   class SeleniumService
     SECRET_KEY = Rails.application.secrets.secret_refresh_token
-    attr_accessor :scenario, :conversations, :driver, :tamago_repeat_config
+    attr_accessor :scenario, :conversations, :driver, :tamago_repeat_config, :status
 
     def initialize(scenario, conversations)
       Log.info "Start selenium service for: \n\tscenario: #{scenario.inspect}\n\tconversations: #{conversations.inspect}"
@@ -23,6 +23,7 @@ module TamagoScenario
       # @driver = Selenium::WebDriver.for :chrome
       Log.info "Init OK selenium driver"
       @tamago_repeat_config = @scenario.tamago_repeat_config
+      @status = false
     end
 
     def process
@@ -259,6 +260,7 @@ module TamagoScenario
 
     def quit
       Log.info "\t\tdriver.quit"
+      @status = true
       @driver.quit
     end
   end
