@@ -18,11 +18,9 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
       begin
         conversations = @scenario.scenario_user_responses.where(user_input_id: params[:user_id])
         user_email = conversations.find_by(data_input_name: 'user_email').value
-        user_name = conversations.find_by(data_input_name: 'user_name').value
         data = {
           shop_name: @client.name,
-          user_email: user_email,
-          user_name: user_name
+          user_email: user_email
         }
         service = TamagoScenario::SeleniumService.new(@scenario, conversations)
         service.process

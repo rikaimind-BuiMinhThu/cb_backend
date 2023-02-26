@@ -38,10 +38,10 @@ class ScenarioUserResponse < ApplicationRecord
     payload = {
       exp: (Time.current + 72.hours).to_i
     }
-    if self.class.list[self.data_input_name.to_sym]
+    if self.class.list[self.data_input_name&.to_sym]
       case self.class.list[self.data_input_name.to_sym][:value_type]
       when :boolean
-        self.boolean_value = value
+        self.boolean_value = value || false
       when :string
         if self.class.list[self.data_input_name.to_sym][:is_encrypt]
           payload[:data] = value
@@ -69,7 +69,7 @@ class ScenarioUserResponse < ApplicationRecord
   end
 
   def value
-    if self.class.list[self.data_input_name.to_sym]
+    if self.class.list[self.data_input_name&.to_sym]
       case self.class.list[self.data_input_name.to_sym][:value_type]
       when :boolean
         self.boolean_value
@@ -96,34 +96,60 @@ class ScenarioUserResponse < ApplicationRecord
         data_input_name = 'user_email'
         value = conversion.dig(:text_input, :email_address, :value)
       when 'text'
-        if conversion.dig(:text_input, :text, :range) == 'full_width_katakana'
-          data_input_name = 'user_name_kana'
-        elsif conversion.dig(:text_input, :text, :range) == 'no_input'
-          data_input_name = 'user_name'
-        else
-          data_input_name = 'birth_date'
+        if params[:message][:message_content].size == 2
+          data_input_name = 'data_name'
+          value = params[:message][:message_content].to_json
         end
-        value = conversion.dig(:text_input, :text, :value)
       when 'phone_number'
         data_input_name = 'phone_number'
         value = conversion.dig(:text_input, :phone_number, :value)
-      when 'password'
+      when 'password_confirmation'
         data_input_name = 'user_password'
-        value = conversion.dig(:text_input, :password, :value)
+        value = conversion.dig(:text_input, :password_confirmation, :value)
       end
     when 'zip_code_address'
       data_input_name = 'zip_code_address'
       value = conversion[:zip_code_address].to_json
     when 'radio_button'
-      data_input_name = 'sex'
-      value = conversion[:radio_button][:initial_selection]
+      case conversion[:radio_button][:save_input_content]
+      when 'is_regular_order'
+        if conversion[:radio_button][:initial_selection] == 1
+          value = true
+        else
+          value = false
+        end
+        data_input_name = 'is_regular_order'
+      else
+        if conversion[:radio_button][:default][0][:text] == "30日ごとに"
+          value = "30日ごとに"
+          data_input_name = 'delivery_squency'
+        elsif conversion[:radio_button][:default][0][:text] == "佐川急便"
+          data_input_name = 'delivery_method'
+          value = conversion[:radio_button][:initial_selection]
+        else
+          data_input_name = 'sex'
+          value = conversion[:radio_button][:initial_selection]
+        end
+      end
     when 'card_payment_radio_button'
       if conversion[:card_payment_radio_button][:initial_selection] == conversion[:card_payment_radio_button][:card_linked_setting]
         data_input_name = 'credit_card_payment'
         value = conversion[:card_payment_radio_button].to_json
       else
-        data_input_name = 'cash_on_delivery_payment'
-        value = 'cash on delivery'
+        data_input_name = 'np_delivery_payment'
+        value = 'NP delivery payment'
+      end
+    when 'pull_down'
+      if conversion[:pull_down][:type] == "date_ymd"
+        data_date = conversion[:pull_down][:date_ymd]
+        value = conversion[:pull_down][:date_ymd].to_json
+        data_input_name = 'birth_date'
+      elsif conversion[:pull_down][:customization][:title_comment] == "お届け希望日"
+        data_input_name = 'delivery_date'
+        value = '最短お届け'
+      else
+        value = conversion[:pull_down][:customization][:value].to_i
+        data_input_name = 'quantity'
       end
     end
     new_record = self.new(
@@ -135,14 +161,19 @@ class ScenarioUserResponse < ApplicationRecord
     new_record
   end
 
-  string :user_name, is_encrypt: false
-  string :user_name_kana, is_encrypt: false
+  text :data_name, is_encrypt: false
   text :zip_code_address, is_encrypt: false
   string :phone_number, is_encrypt: false
   string :user_email, is_encrypt: false
   string :user_password, is_encrypt: true
   integer :sex, is_encrypt: false
-  string :birth_date, is_encrypt: false
+  text :birth_date, is_encrypt: false
   text :credit_card_payment, is_encrypt: true
   string :cash_on_delivery_payment, is_encrypt: false
+  string :np_delivery_payment, is_encrypt: false
+  boolean :is_regular_order
+  string :delivery_squency, is_encrypt: false
+  integer :quantity, is_encrypt: false
+  integer :delivery_method, is_encrypt: false
+  string :delivery_date, is_encrypt: false
 end
