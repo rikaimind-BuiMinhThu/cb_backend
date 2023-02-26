@@ -17,7 +17,10 @@ module TamagoScenario
       Selenium::WebDriver.logger.level = :debug
 
       Log.info "Init selenium driver"
-      @driver = Selenium::WebDriver.for :chrome
+      options = Selenium::WebDriver::Chrome::Options.new
+      options.add_argument('--headless')
+      @driver = Selenium::WebDriver.for :chrome, options: options
+      # @driver = Selenium::WebDriver.for :chrome
       Log.info "Init OK selenium driver"
       @tamago_repeat_config = @scenario.tamago_repeat_config
     end
