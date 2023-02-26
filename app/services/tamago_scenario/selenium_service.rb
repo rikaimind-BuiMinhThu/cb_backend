@@ -103,10 +103,10 @@ module TamagoScenario
       @driver.find_element(id: "hide_display_shipping_address a").click()
       Log.info "\t\tsleep(5)"
       sleep(5)
-      # Log.info "\t\t@driver.find_element(name: \"shipping_address[address]\")"
-      # shipping_address_address = @driver.find_element(name: "shipping_address[address]")
-      # Log.info "\t\tshipping_address_address.send_keys(#{data_address['value_address']})"
-      # shipping_address_address.send_keys(data_address['value_address'])
+      Log.info "\t\t@driver.find_element(name: \"shipping_address[address]\")"
+      shipping_address_address = @driver.find_element(name: "shipping_address[address]")
+      Log.info "\t\tshipping_address_address.send_keys(#{data_address['value_address']})"
+      shipping_address_address.send_keys(data_address['value_address'])
 
       Log.info "\t\t@driver.find_element(name: \"shipping_address[building]\")"
       shipping_address_building = @driver.find_element(name: "shipping_address[building]")
