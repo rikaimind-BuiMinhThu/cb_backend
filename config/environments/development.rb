@@ -75,4 +75,16 @@ Rails.application.configure do
   config.active_record.encryption.primary_key = 'x5qEz2JHsf5OfNvc5HOhj0YRdQfzUcZf'
   config.active_record.encryption.deterministic_key = 'ArewJtvAxFCy3OBppWl2VoU35H7RGXkR'
   config.active_record.encryption.key_derivation_salt = 'v9TUm7JMmvM2moPDQxlGv5qu47kni5Pp'
+
+  config.action_mailer.default_url_options = {host: "localhost:3000"}
+  config.action_mailer.perform_deliveries = true
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.smtp_settings = {
+    :address              => "smtp.gmail.com",
+    :port                 => 587,
+    :user_name            => Settings.GMAIL_USERNAME,
+    :password             => Settings.GMAIL_PASSWORD,
+    :authentication       => "plain",
+    :enable_starttls_auto => true
+  }
 end

@@ -17,10 +17,20 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
     if @client.tamago_repeat?
       begin
         conversations = @scenario.scenario_user_responses.where(user_input_id: params[:user_id])
+        user_email = conversations.find_by(data_input_name: 'user_email').value
+        user_name = conversations.find_by(data_input_name: 'user_name').value
+        data = {
+          shop_name: @client.name,
+          user_email: user_email,
+          user_name: user_name
+        }
         service = TamagoScenario::SeleniumService.new(@scenario, conversations)
         service.process
-      rescue StandardError => e
-
+        if !service.status
+          OrderFailedMailer.send_email(user_email, @client.email, data).deliver_later
+        end
+      rescue Selenium::WebDriver::Error::UnexpectedAlertOpenError => e
+        OrderFailedMailer.send_email(user_email, @client.email, data).deliver_later
       end
     else
       render json: {code: 1, message: 'not create order'}
