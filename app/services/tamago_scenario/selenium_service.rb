@@ -13,7 +13,7 @@ module TamagoScenario
       # proxy = Selenium::WebDriver::Proxy.new( socks: '127.0.0.1:9050',socks_version: 5)
       # caps = Selenium::WebDriver::Remote::Capabilities.chrome(proxy: proxy)
       # @driver = Selenium::WebDriver.for :chrome, capabilities: caps
-      Selenium::WebDriver.logger.output = File.join("#{Rails.root}/tmp", "selenium.log")
+      Selenium::WebDriver.logger.output = File.join("#{Rails.root}/log", "selenium.log")
       Selenium::WebDriver.logger.level = :debug
 
       Log.info "Init selenium driver"
