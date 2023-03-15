@@ -31,11 +31,10 @@
 # Ignore master key for decrypting credentials and more.
 /config/master.key
 
-/config/database.yml
-
 config/settings.local.yml
 config/settings/*.local.yml
 config/environments/*.local.yml
 .byebug_history
 db/schema.rb
 Gemfile.lock
+/mysql
