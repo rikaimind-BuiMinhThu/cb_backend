@@ -9,7 +9,7 @@ services:
     environment:
       MYSQL_DATABASE: instagram_chatbot
       MYSQL_ROOT_PASSWORD:
-      MYSQL_ALLOW_EMPTY_PASSWORD: true
+      MYSQL_ALLOW_EMPTY_PASSWORD: "true"
     volumes:
       - ./mysql:/var/lib/mysql
     networks:
