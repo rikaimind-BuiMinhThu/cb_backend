@@ -4,9 +4,24 @@ RUN curl -sL https://deb.nodesource.com/setup_10.x | bash -
 
 RUN apt-get update -qq && apt-get install -y build-essential libpq-dev nodejs
 
+RUN apt list --installed google*
+
+RUN sh -c 'echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
+
+RUN ls -l /etc/apt/sources.list.d
+RUN cat /etc/apt/sources.list.d/google.list
+
+RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+RUN apt update
+
+RUN apt-get install google-chrome-stable -y
+
+RUN ln -s /usr/bin/google-chrome-stable /usr/local/bin/chrome
+RUN ln -s /usr/bin/google-chrome-stable /usr/bin/chrome
+
 RUN apt-get install -y libappindicator1 fonts-liberation
 
-RUN curl -O https://chromedriver.storage.googleapis.com/2.29/chromedriver_linux64.zip
+RUN curl -O https://chromedriver.storage.googleapis.com/111.0.5563.64/chromedriver_linux64.zip
 
 RUN unzip chromedriver_linux64.zip
 RUN chmod +x chromedriver

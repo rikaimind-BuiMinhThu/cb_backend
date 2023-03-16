@@ -21,6 +21,8 @@ module TamagoScenario
       Log.info "Init selenium driver"
       options = Selenium::WebDriver::Chrome::Options.new
       options.add_argument('--headless')
+      options.add_argument('--no-sandbox')
+
       @driver = Selenium::WebDriver.for :chrome, options: options
       # @driver = Selenium::WebDriver.for :chrome
       Log.info "Init OK selenium driver"
@@ -72,7 +74,6 @@ module TamagoScenario
       data_name = JSON.parse(conversations.find_by_data_input_name('data_name').value)
       first_data = data_name[0]['text_input']['text']
       second_data = data_name[1]['text_input']['text']
-      
 
       Log.info "\t\tfamily_name = driver.find_element(id: shipping_address_family_name)"
       family_name = @driver.find_element(id: "shipping_address_family_name")
@@ -265,7 +266,6 @@ module TamagoScenario
           when "other" then
             "new_credit_card_brand_other"
           end
-        end
 
         Log.info "\t\t@driver.find_element(id: #{installment_payment_radio_btn_id}).click()"
         @driver.find_element(id: installment_payment_radio_btn_id).click()
