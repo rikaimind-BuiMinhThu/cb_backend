@@ -10,7 +10,7 @@ WORKDIR /myapp
 
 COPY Gemfile Gemfile
 
-COPY Gemfile.lock Gemfile.lock
+# COPY Gemfile.lock Gemfile.lock
 
 RUN bundle install
 
