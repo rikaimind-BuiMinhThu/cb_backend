@@ -32,7 +32,7 @@ module TamagoScenario
       Log.info "Start process"
       cart_page
       entry_login_page
-      payment_page
+      shipping_method_and_payment_method_select_page
       confirm_page
       quit
     end
@@ -194,18 +194,17 @@ module TamagoScenario
       @driver.find_element(id: "audio-response").send_keys("\n").perform
     end
 
-    def payment_page
-      Log.info "\tpayment_page"
+    def shipping_method_and_payment_method_select_page
+      Log.info "\tshipping_method_and_payment_method_select_page"
       Log.info "\t\tdriver.switch_to.default_content()"
       @driver.switch_to.default_content()
-      Log.info "\t\t@driver.find_element(name: \"order[delivery_classification_id]\")"
+      Log.info "\t\tselect_delivery_method = @driver.find_element(name: \"order[delivery_classification_id]\")"
       select_delivery_method = @driver.find_element(name: "order[delivery_classification_id]")
       choose_select_delivery_method = Selenium::WebDriver::Support::Select.new(select_delivery_method)
-      if conversations.find_by_data_input_name('delivery_method').value == 1
-        choose_select_delivery_method.select_by(:value, '1')
-      else
-        choose_select_delivery_method.select_by(:value, '3')
-      end
+
+      select_delivery_method_value = conversations.find_by_data_input_name('delivery_method').value
+      Log.info "\t\tchoose_select_delivery_method.select_by(:value, #{select_delivery_method_value.to_s})"
+      choose_select_delivery_method.select_by(:value, select_delivery_method_value.to_s)
 
       if conversations.find_by_data_input_name('credit_card_payment').present?
         Log.info "\t\t@driver.find_element(id: \"order_payment_method_id_2\").click()"
@@ -228,7 +227,7 @@ module TamagoScenario
       # recaptcha_page
       data_card = conversations.find_by_data_input_name('credit_card_payment').value
       data_card = JSON.parse(JWT.decode(data_card, SECRET_KEY)[0]["data"])
-      Log.info "\t\t@driver.find_element(id: \"new_credit_card_number\")"
+      Log.info "\t\tcard_number = @driver.find_element(id: \"new_credit_card_number\")"
       card_number = @driver.find_element(id: "new_credit_card_number")
       Log.info "\t\tcard_number.send_keys(data_card['card_number'])"
       card_number.send_keys(data_card['card_number'])
@@ -236,26 +235,42 @@ module TamagoScenario
       card_name = @driver.find_element(id: "new_credit_card_name")
       Log.info "\t\tcard_name.send_keys(data_card['card_name'])"
       card_name.send_keys(data_card['card_name'])
-      Log.info "\t\t@driver.find_element(id: \"new_credit_effective_date_2i\")"
+      Log.info "\t\tselect_month = @driver.find_element(id: \"new_credit_effective_date_2i\")"
       select_month = @driver.find_element(id: "new_credit_effective_date_2i")
       choose_select_month = Selenium::WebDriver::Support::Select.new(select_month)
       Log.info "\t\tchoose_select_month.select_by(:value, #{data_card['month']})"
       choose_select_month.select_by(:value, data_card['month'].to_i.to_s)
 
-      Log.info "\t\t@driver.find_element(id: \"new_credit_effective_date_1i\")"
+      Log.info "\t\tselect_year = @driver.find_element(id: \"new_credit_effective_date_1i\")"
       select_year = @driver.find_element(id: "new_credit_effective_date_1i")
       choose_select_year = Selenium::WebDriver::Support::Select.new(select_year)
       Log.info "\t\tchoose_select_month.select_by(:value, #{data_card['year']})"
       choose_select_year.select_by(:value, data_card['year'])
 
-      Log.info "\t\t@driver.find_element(id: \"new_credit_security_code\")"
+      Log.info "\t\tsecurity_code = @driver.find_element(id: \"new_credit_security_code\")"
       security_code = @driver.find_element(id: "new_credit_security_code")
       Log.info "\t\tsecurity_code.send_keys(#{data_card['cvc']})"
       security_code.send_keys(data_card['cvc'])
 
-      if data_card['payment_method'][0] == 'jcb'
-        @driver.find_element(id: "new_credit_card_brand_jcb").click()
+      installment_payment_value = data_card['payment_method'][0]
+      
+      if installment_payment_value.present?
+        installment_payment_radio_btn_id = case installment_payment_value
+          when "jcb" then
+            "new_credit_card_brand_jcb"
+          when "diners" then
+            "new_credit_card_brand_diners"
+          when "amex" then
+            "new_credit_card_brand_amex"
+          when "other" then
+            "new_credit_card_brand_other"
+          end
+        end
+
+        Log.info "\t\t@driver.find_element(id: #{installment_payment_radio_btn_id}).click()"
+        @driver.find_element(id: installment_payment_radio_btn_id).click()
       end
+      
       Log.info "\t\t@driver.find_element(css: \"input#hide_display\").click()"
       @driver.find_element(css: "input#hide_display").click()
     end
