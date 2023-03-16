@@ -69,54 +69,58 @@ class Api::V1::Managements::ScenariosController < ApplicationController
       scenario.save!
     rescue StandardError => error
       Rails.logger.debug(error)
-      return render json: {code: 2, message: error}
+      return render json: {code: 2, message: error}, status: 500
     end
     render json: {code: 1, data: scenario}
   end
 
   def update
     scenario = Scenario.find_by(id: params[:id])
-    return render json: {code: 2, message: "Scenario not found"} if scenario.blank?
+    return render json: {code: 2, message: "Scenario not found"}, status: 404 if scenario.blank?
     ActiveRecord::Base.transaction do
       scenario.update!(scenario_params)
     rescue StandardError => error
       Rails.logger.debug(error)
-      return render json: {code: 2, message: error}
+      return render json: {code: 2, message: error}, status: 500
     end
     render json: {code: 1, data: scenario}
   end
 
   def destroy
     scenario = Scenario.find_by(id: params[:id])
-    return render json: {code: 2, message: "Scenario not found"} if scenario.blank?
+    return render json: {code: 2, message: "Scenario not found"}, status: 404 if scenario.blank?
     ActiveRecord::Base.transaction do
       scenario.destroy!
     rescue StandardError => error
       Rails.logger.debug(error)
-      return render json: {code: 2, message: error}
+      return render json: {code: 2, message: error}, status: 500
     end
     render json: {code: 1, message: "Success"}
   end
 
   def detail_conversation
     @scenario = Scenario.find_by(id: params[:id])
-    return render json: {code: 2, message: "Scenario not found"} if @scenario.blank?
+    return render json: {code: 2, message: "Scenario not found"}, status: 404 if @scenario.blank?
   end
 
   def conversation
     @scenario = Scenario.find_by(id: params[:id])
-    return render json: {code: 2, message: "Scenario not found"} if @scenario.blank?
+    return render json: {code: 2, message: "Scenario not found"}, status: 404 if @scenario.blank?
     ActiveRecord::Base.transaction do
-      @scenario.update!(conversation: JSON.generate(params[:conversation].as_json), name: params[:scenario_name]) if params[:conversation].present?
+      build_tamago_repeat_config if params[:tamago_landing_page_url].present?
+      @scenario.conversation = JSON.generate(params[:conversation].as_json) if params[:conversation].present?
+      @scenario.name = params[:scenario_name]
+
+      @scenario.save!
     rescue StandardError => error
       Rails.logger.debug(error)
-      return render json: {code: 2, message: error}
+      return render json: {code: 2, message: error}, status: 500
     end
   end
 
   def duplicate
     scenario = Scenario.find_by(id: params[:id])
-    return render json: {code: 2, message: "Scenario not found"} if scenario.blank?
+    return render json: {code: 2, message: "Scenario not found"}, status: 404 if scenario.blank?
     scenario_dup = scenario.dup
     if Scenario.find_by(name: scenario.name + " (1)",
                         chatbot_id: params[:chatbot_id]).present?
@@ -135,7 +139,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
       scenario_dup.save!
     rescue StandardError => error
       Rails.logger.debug(error)
-      return render json: {code: 2, message: error}
+      return render json: {code: 2, message: error}, status: 500
     end
     render json: {code: 1, data: scenario}
   end
@@ -168,6 +172,18 @@ class Api::V1::Managements::ScenariosController < ApplicationController
 
   def scenario_params
     params.require(:scenario).permit(:name)
+  end
+
+  def build_tamago_repeat_config
+    if @scenario.tamago_repeat_config.nil?
+      @scenario.build_tamago_repeat_config
+    end
+
+    @scenario.tamago_repeat_config.tamago_landing_page_url = params[:tamago_landing_page_url] if params[:tamago_landing_page_url].present?
+    @scenario.tamago_repeat_config.add_to_cart_button_selector = params[:add_to_cart_button_selector] if params[:add_to_cart_button_selector].present?
+    @scenario.tamago_repeat_config.email_confirm_field = params[:email_confirm_field] if params[:email_confirm_field].present?
+    @scenario.tamago_repeat_config.name_kana_field = params[:name_kana_field] if params[:name_kana_field].present?
+    @scenario.tamago_repeat_config.save!
   end
 
   def check_chatbot_present
