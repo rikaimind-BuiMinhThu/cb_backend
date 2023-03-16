@@ -5,6 +5,7 @@ module TamagoScenario
   class SeleniumService
     REGULAR_ORDER_SELECT_QUANTITY_SELECTOR = "#periodically_order_order_qty_0"
     NORMAL_ORDER_SELECT_QUANTITY_SELECTOR = "#order_order_qty_0"
+
     SECRET_KEY = Rails.application.secrets.secret_refresh_token
     attr_accessor :scenario, :conversations, :driver, :tamago_repeat_config, :status
 
@@ -12,6 +13,7 @@ module TamagoScenario
       Log.info "Start selenium service for: \n\tscenario: #{scenario.inspect}\n\tconversations: #{conversations.inspect}"
       @scenario = scenario
       @conversations = conversations
+      @user_input_id = conversations.first.user_input_id
       # proxy = Selenium::WebDriver::Proxy.new( socks: '127.0.0.1:9050',socks_version: 5)
       # caps = Selenium::WebDriver::Remote::Capabilities.chrome(proxy: proxy)
       # @driver = Selenium::WebDriver.for :chrome, capabilities: caps
@@ -28,15 +30,27 @@ module TamagoScenario
       Log.info "Init OK selenium driver"
       @tamago_repeat_config = @scenario.tamago_repeat_config
       @status = false
+      @screenshot_path = "#{Rails.root}/tmp/selenium"
+      @step = 1
     end
 
     def process
       Log.info "Start process"
-      cart_page
-      entry_login_page
-      shipping_method_and_payment_method_select_page
-      confirm_page
-      quit
+
+      begin
+        cart_page
+        entry_login_page
+        shipping_method_and_payment_method_select_page
+        confirm_page
+        quit
+      rescue => e
+        Log.error e.message
+        Log.error e.backtrace.join("\n\t")
+
+        capture true
+
+        quit
+      end
     end
 
     def cart_page
@@ -58,11 +72,13 @@ module TamagoScenario
       choose_select_quantity = Selenium::WebDriver::Support::Select.new(select_quantity)
       Log.info "\t\tchoose_select_quantity.select(:value, \"#{quantity}\"))"
       choose_select_quantity.select_by(:value, quantity.to_s)
+      capture
 
       Log.info "\t\tinput = @driver.find_element(css: #{tamago_repeat_config.add_to_cart_button_selector})"
       input = @driver.find_element(css: tamago_repeat_config.add_to_cart_button_selector)
       Log.info "\t\tinput.click"
       input.click()
+      capture
     end
 
     def entry_login_page
@@ -79,30 +95,33 @@ module TamagoScenario
       family_name = @driver.find_element(id: "shipping_address_family_name")
       Log.info "\t\tfamily_name.send_keys(#{first_data['valueLeft']})"
       family_name.send_keys(first_data['valueLeft'])
+      capture
 
       Log.info "\t\tfirst_name = driver.find_element(id: shipping_address_first_name"
       first_name = @driver.find_element(id: "shipping_address_first_name")
-      # Log.info "\t\tfirst_name.send_keys(#{conversations.find_by_data_input_name('user_name')&.value})"
       Log.info "\t\tfirst_name.send_keys(#{first_data['valueRight']})"
       first_name.send_keys(first_data['valueRight'])
+      capture
 
       Log.info "\t\tfamily_name_kana = @driver.find_element(id: shipping_address_family_name_kana)"
       family_name_kana = @driver.find_element(id: "shipping_address_family_name_kana")
       Log.info "\t\tfamily_name_kana.send_keys(#{second_data['valueLeft']})"
-      # Log.info "\t\tfamily_name_kana.send_keys(#{conversations.find_by_data_input_name('user_name_kana')&.value})"
       family_name_kana.send_keys(second_data['valueLeft'])
+      capture
 
       Log.info "\t\tfirst_name_kana = @driver.find_element(id: shipping_address_first_name_kana)"
       first_name_kana = @driver.find_element(id: "shipping_address_first_name_kana")
       Log.info "\t\tfirst_name_kana.send_keys(#{second_data['valueRight']})"
       first_name_kana.send_keys(second_data['valueRight'])
+      capture
 
       data_address = JSON.parse(conversations.find_by_data_input_name('zip_code_address').value)
-      Log.info "\t\tshipping_address_zip = @driver.find_element(id: shipping_address_zip)"
-      shipping_address_zip = @driver.find_element(id: "shipping_address_zip")
+      Log.info "\t\tshipping_address_zip = @driver.find_element(css: input#shipping_address_zip)"
+      shipping_address_zip = @driver.find_element(css: "input#shipping_address_zip")
       post_code = data_address['post_code'].present? ? data_address['post_code'] : data_address['value_post_code']
       Log.info "\t\tshipping_address_zip.send_keys(#{post_code.gsub('-', '')})"
       shipping_address_zip.send_keys(post_code.gsub('-', ''))
+      capture
 
       Log.info "\t\t@driver.find_element(id: \"hide_display_shipping_address a\").click()"
       @driver.find_element(id: "hide_display_shipping_address a").click()
@@ -112,16 +131,21 @@ module TamagoScenario
       shipping_address_address = @driver.find_element(name: "shipping_address[address]")
       Log.info "\t\tshipping_address_address.send_keys(#{data_address['value_address']})"
       shipping_address_address.send_keys(data_address['value_address'])
+      Log.info "\t\tsleep(2)"
+      sleep(2)
+      capture
 
       Log.info "\t\t@driver.find_element(name: \"shipping_address[building]\")"
       shipping_address_building = @driver.find_element(name: "shipping_address[building]")
       Log.info "\t\tshipping_address_building.send_keys(#{data_address['value_building_name']})"
       shipping_address_building.send_keys(data_address['value_building_name'])
+      capture
 
       Log.info "\t\tdriver.find_element(id: \"shipping_address_tel\")"
       shipping_address_tel = @driver.find_element(id: "shipping_address_tel")
       Log.info "\t\tshipping_address_tel.send_keys(#{conversations.find_by_data_input_name('phone_number').value})"
       shipping_address_tel.send_keys(conversations.find_by_data_input_name('phone_number').value)
+      capture
 
       sex_value = conversations.find_by_data_input_name('sex').value  
       if sex_value == 1
@@ -131,6 +155,7 @@ module TamagoScenario
         Log.info "\t\t@driver.find_element(id: \"sex_2\").click()"
         @driver.find_element(id: "sex_2").click()
       end
+      capture
       birth_date = JSON.parse(conversations.find_by_data_input_name('birth_date').value)
 
       Log.info "\t\tselect_year = @driver.find_element(id: \"user_birthday_1i\")"
@@ -138,43 +163,59 @@ module TamagoScenario
       choose_select_year = Selenium::WebDriver::Support::Select.new(select_year)
       Log.info "\t\tchoose_select_year.select_by(:value, #{birth_date['valueYear']})"
       choose_select_year.select_by(:value, birth_date['valueYear'])
+      capture
 
       Log.info "\t\tselect_month = @driver.find_element(id: \"user_birthday_2i\")"
       select_month = @driver.find_element(id: "user_birthday_2i")
       choose_select_month = Selenium::WebDriver::Support::Select.new(select_month)
       Log.info "\t\tchoose_select_year.select_by(:value, #{birth_date['valueMonth']})"
       choose_select_month.select_by(:value, birth_date['valueMonth'].to_i.to_s)
+      capture
 
       Log.info "\t\tselect_day = @driver.find_element(id: \"user_birthday_3i\")"
       select_day = @driver.find_element(id: "user_birthday_3i")
       choose_select_day = Selenium::WebDriver::Support::Select.new(select_day)
       Log.info "\t\tchoose_select_year.select_by(:value, #{birth_date['valueDay']})"
       choose_select_day.select_by(:value, birth_date['valueDay'].to_i.to_s)
+      capture
 
       Log.info "\t\tuser_email = @driver.find_element(id: \"user_email\")"
       user_email = @driver.find_element(id: "user_email")
       Log.info "\t\tuser_email.send_keys(conversations.find_by_data_input_name('user_email').value)"
       user_email.send_keys(conversations.find_by_data_input_name('user_email').value)
+      capture
 
       if tamago_repeat_config.email_confirm_required?
         Log.info "\t\tuser_email_confirmation = @driver.find_element(id: \"user_email_confirmation\")"
         user_email_confirmation = @driver.find_element(id: "user_email_confirmation")
         Log.info "\t\tuser_email_confirmation.send_keys(#{conversations.find_by_data_input_name('user_email').value})"
         user_email_confirmation.send_keys(conversations.find_by_data_input_name('user_email').value)
+        capture
       end
+
+      encrypted_password_value = conversations.find_by_data_input_name('user_password').value
+      password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"]
 
       Log.info "\t\tuser_password = @driver.find_element(id: \"user_password\")"
       user_password = @driver.find_element(id: "user_password")
-      Log.info "\t\tuser_password.send_keys(#{conversations.find_by_data_input_name('user_password').value})"
-      user_password.send_keys(conversations.find_by_data_input_name('user_password').value)
+      Log.info "\t\tuser_password.send_keys(#{password_value})"
+      user_password.send_keys(password_value)
+      capture
 
       Log.info "\t\tuser_password_confirmation = @driver.find_element(id: \"user_password_confirmation\")"
       user_password_confirmation = @driver.find_element(id: "user_password_confirmation")
-      Log.info "\t\tuser_password_confirmation.send_keys(#{conversations.find_by_data_input_name('user_password').value})"
-      user_password_confirmation.send_keys(conversations.find_by_data_input_name('user_password').value)
+      Log.info "\t\tuser_password_confirmation.send_keys(#{password_value})"
+      user_password_confirmation.send_keys(password_value)
+      capture
 
-      Log.info "\t\t@driver.find_element(id: \"hide_display2\").click()"
-      @driver.find_element(id: "hide_display2").click()
+      Log.info "\t\tcreate_user_and_next_btn = @driver.find_element(css: input#hide_display2)"
+      create_user_and_next_btn = @driver.find_element(css: "input#hide_display2")
+
+      Log.info "\t\tcreate_user_and_next_btn.click()"
+      create_user_and_next_btn.click()
+      Log.info "\t\tsleep 10"
+      sleep 10
+      capture
     end
 
     def recaptcha_page
@@ -199,9 +240,13 @@ module TamagoScenario
       Log.info "\tshipping_method_and_payment_method_select_page"
       Log.info "\t\tdriver.switch_to.default_content()"
       @driver.switch_to.default_content()
-      Log.info "\t\tselect_delivery_method = @driver.find_element(name: \"order[delivery_classification_id]\")"
-      select_delivery_method = @driver.find_element(name: "order[delivery_classification_id]")
+      capture
+      Log.info "\t\tCurrent URL: #{@driver.current_url}"
+      Log.info "\t\tselect_delivery_method = @driver.find_element(id: order_delivery_classification_id)"
+      select_delivery_method = @driver.find_element(id: "order_delivery_classification_id")
+      Log.info "\t\tchoose_select_delivery_method = Selenium::WebDriver::Support::Select.new(select_delivery_method)"
       choose_select_delivery_method = Selenium::WebDriver::Support::Select.new(select_delivery_method)
+      capture
 
       select_delivery_method_value = conversations.find_by_data_input_name('delivery_method').value
       Log.info "\t\tchoose_select_delivery_method.select_by(:value, #{select_delivery_method_value.to_s})"
@@ -289,6 +334,14 @@ module TamagoScenario
       Log.info "\t\tdriver.quit"
       @status = true
       @driver.quit
+    end
+
+    def capture is_capture = false
+      if !is_capture
+        Log.info "\t\t\t#{@step} capture"
+        @driver.save_screenshot("#{@screenshot_path}/#{@scenario.id}_#{@user_input_id}_#{@step}.png")
+      end
+      @step += 1
     end
   end
 end

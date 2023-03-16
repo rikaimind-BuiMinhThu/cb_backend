@@ -29,6 +29,8 @@ services:
       RAILS_DATABASE_PASSWORD: 
       RAILS_DATABASE_HOST: host.docker.internal
       RAILS_DATABASE: instagram_chatbot
+    volumes:
+      - ./:/myapp
 
 networks:
   db:
