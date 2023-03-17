@@ -213,8 +213,15 @@ module TamagoScenario
 
       Log.info "\t\tcreate_user_and_next_btn.click()"
       create_user_and_next_btn.click()
-      Log.info "\t\tsleep 10"
-      sleep 10
+
+      max_sleep = 60
+      sleep_count = 1
+      while sleep_count <= max_sleep && !@driver.current_url.include?("order/select_order_method")
+        Log.info "\t\tsleep 1"
+        sleep 1
+        sleep_count += 1
+      end
+      
       capture
     end
 
@@ -242,6 +249,8 @@ module TamagoScenario
       @driver.switch_to.default_content()
       capture
       Log.info "\t\tCurrent URL: #{@driver.current_url}"
+      Log.info "\t\tsleep 20"
+      sleep 20
       Log.info "\t\tselect_delivery_method = @driver.find_element(id: order_delivery_classification_id)"
       select_delivery_method = @driver.find_element(id: "order_delivery_classification_id")
       Log.info "\t\tchoose_select_delivery_method = Selenium::WebDriver::Support::Select.new(select_delivery_method)"
@@ -337,7 +346,7 @@ module TamagoScenario
     end
 
     def capture is_capture = false
-      if !is_capture
+      if is_capture
         Log.info "\t\t\t#{@step} capture"
         @driver.save_screenshot("#{@screenshot_path}/#{@scenario.id}_#{@user_input_id}_#{@step}.png")
       end
