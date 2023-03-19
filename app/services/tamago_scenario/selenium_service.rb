@@ -257,11 +257,19 @@ module TamagoScenario
       sleep 20
       # 定期・頒布会配送頻度
       if @scenario.is_use_only_regular_order || conversations.find_by_data_input_name('is_regular_order')&.value
-        Log.info "\t\tfrequency_select = @driver.find_element(id: order1_periodically_term_id)"
-        frequency_seletors = @driver.find_elements(id: "order1_periodically_term_id")
-        if frequency_seletors.present?
-          frequency_seletor = frequency_seletors.first
-          # frequency_value = 
+        Log.info "\t\tfrequency_select = @driver.find_elements(id: order1_periodically_term_id)"
+        frequency_selectors = @driver.find_elements(id: "order1_periodically_term_id")
+        if frequency_selectors.present?
+          frequency_selector = frequency_selectors.first
+          frequency_value = conversations.find_by_data_input_name("delivery_frequency")&.value
+          
+          Log.info "\t\tchoose_frequence = Selenium::WebDriver::Support::Select.new(frequency_selector)"
+          choose_frequence = Selenium::WebDriver::Support::Select.new(frequency_selector)
+          capture
+
+          Log.info "\t\tchoose_frequence.select_by(:value, frequency_value.to_s)"
+          choose_frequence.select_by(:value, frequency_value.to_s)
+          capture
         end
       end
 
@@ -271,8 +279,6 @@ module TamagoScenario
       Log.info "\t\tchoose_select_delivery_method = Selenium::WebDriver::Support::Select.new(select_delivery_method)"
       choose_select_delivery_method = Selenium::WebDriver::Support::Select.new(select_delivery_method)
       capture
-
-
 
       select_delivery_method_value = conversations.find_by_data_input_name('delivery_method').value
       Log.info "\t\tchoose_select_delivery_method.select_by(:value, #{select_delivery_method_value.to_s})"
