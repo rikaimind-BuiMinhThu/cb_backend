@@ -63,7 +63,7 @@ module TamagoScenario
 
       if quantity.present?
         select_quantity =
-          if conversations.find_by_data_input_name('is_regular_order').value
+          if @scenario.is_use_only_regular_order || conversations.find_by_data_input_name('is_regular_order').value
             Log.info "\t\tFor regular_order: driver.find_element(css: \"#{REGULAR_ORDER_SELECT_QUANTITY_SELECTOR}\")"
             @driver.find_element css: REGULAR_ORDER_SELECT_QUANTITY_SELECTOR
           else
