@@ -1,4 +1,5 @@
 require 'selenium-webdriver'
+require 'speech'
 require File.dirname(__FILE__) + "/log"
 
 module TamagoScenario
@@ -26,6 +27,7 @@ module TamagoScenario
       options.add_argument('--no-sandbox')
 
       @driver = Selenium::WebDriver.for :chrome, options: options
+      @driver.manage.timeouts.implicit_wait = 30
       # @driver = Selenium::WebDriver.for :chrome
       Log.info "Init OK selenium driver"
       @tamago_repeat_config = @scenario.tamago_repeat_config
@@ -59,60 +61,66 @@ module TamagoScenario
       @driver.navigate.to tamago_repeat_config.tamago_landing_page_url
       sleep(5)
       
-      quantity = conversations.find_by_data_input_name('quantity').value
-      select_quantity = 
-        if conversations.find_by_data_input_name('is_regular_order').value
-          Log.info "\t\tFor regular_order: driver.find_element(css: \"#{REGULAR_ORDER_SELECT_QUANTITY_SELECTOR}\")"
-          @driver.find_element css: REGULAR_ORDER_SELECT_QUANTITY_SELECTOR
-        else
-          Log.info "\t\tFor normal_order: driver.find_element(css: \"#{NORMAL_ORDER_SELECT_QUANTITY_SELECTOR}\")"
-          @driver.find_element css: NORMAL_ORDER_SELECT_QUANTITY_SELECTOR
-        end
-      Log.info "\t\tchoose_select_quantity = Selenium::WebDriver::Support::Select.new(select_quantity)"
-      choose_select_quantity = Selenium::WebDriver::Support::Select.new(select_quantity)
-      Log.info "\t\tchoose_select_quantity.select(:value, \"#{quantity}\"))"
-      choose_select_quantity.select_by(:value, quantity.to_s)
-      capture
+      quantity = conversations.find_by_data_input_name('quantity')&.value
 
-      Log.info "\t\tinput = @driver.find_element(css: #{tamago_repeat_config.add_to_cart_button_selector})"
-      input = @driver.find_element(css: tamago_repeat_config.add_to_cart_button_selector)
+      if quantity.present?
+        select_quantity =
+          if @scenario.is_use_only_regular_order || conversations.find_by_data_input_name('is_regular_order')&.value
+            Log.info "\t\tFor regular_order: driver.find_element(css: \"#{REGULAR_ORDER_SELECT_QUANTITY_SELECTOR}\")"
+            @driver.find_element css: REGULAR_ORDER_SELECT_QUANTITY_SELECTOR
+          else
+            Log.info "\t\tFor normal_order: driver.find_element(css: \"#{NORMAL_ORDER_SELECT_QUANTITY_SELECTOR}\")"
+            @driver.find_element css: NORMAL_ORDER_SELECT_QUANTITY_SELECTOR
+          end
+
+        Log.info "\t\tchoose_select_quantity = Selenium::WebDriver::Support::Select.new(select_quantity)"
+        choose_select_quantity = Selenium::WebDriver::Support::Select.new(select_quantity)
+        Log.info "\t\tchoose_select_quantity.select(:value, \"#{quantity}\"))"
+        choose_select_quantity.select_by(:value, quantity.to_s)
+        capture
+      end
+
+      Log.info "\t\tinput = @driver.find_element(css: input#hide_display)"
+      input = @driver.find_element(css: "input#hide_display")
       Log.info "\t\tinput.click"
       input.click()
       capture
+      Log.info "\t\tsleep 20"
+      sleep(60)
     end
 
     def entry_login_page
       Log.info "\tentry_login_page"
+      Log.info "\t\tCurrent URL: #{@driver.current_url}"
       Log.info "\t\tdriver.switch_to.default_content()"
       @driver.switch_to.default_content()
-      # recaptcha_page
-      #sleep(5)
-      data_name = JSON.parse(conversations.find_by_data_input_name('data_name').value)
-      first_data = data_name[0]['text_input']['text']
-      second_data = data_name[1]['text_input']['text']
+      recaptcha_page
+      sleep(10)
+      user_name = JSON.parse(conversations.find_by_data_input_name('user_name').value)
+      user_name_kana = JSON.parse(conversations.find_by_data_input_name('user_name_kana').value)
 
       Log.info "\t\tfamily_name = driver.find_element(id: shipping_address_family_name)"
       family_name = @driver.find_element(id: "shipping_address_family_name")
-      Log.info "\t\tfamily_name.send_keys(#{first_data['valueLeft']})"
-      family_name.send_keys(first_data['valueLeft'])
+      Log.info "\t\tfamily_name.send_keys(#{user_name['valueLeft']})"
+      family_name.send_keys(user_name['valueLeft'])
       capture
 
       Log.info "\t\tfirst_name = driver.find_element(id: shipping_address_first_name"
       first_name = @driver.find_element(id: "shipping_address_first_name")
-      Log.info "\t\tfirst_name.send_keys(#{first_data['valueRight']})"
-      first_name.send_keys(first_data['valueRight'])
+      Log.info "\t\tfirst_name.send_keys(#{user_name['valueRight']})"
+      first_name.send_keys(user_name['valueRight'])
       capture
 
       Log.info "\t\tfamily_name_kana = @driver.find_element(id: shipping_address_family_name_kana)"
       family_name_kana = @driver.find_element(id: "shipping_address_family_name_kana")
-      Log.info "\t\tfamily_name_kana.send_keys(#{second_data['valueLeft']})"
-      family_name_kana.send_keys(second_data['valueLeft'])
+      Log.info "\t\tfamily_name_kana.send_keys(#{user_name_kana['valueLeft']})"
+      family_name_kana.send_keys(user_name_kana['valueLeft'])
       capture
 
       Log.info "\t\tfirst_name_kana = @driver.find_element(id: shipping_address_first_name_kana)"
       first_name_kana = @driver.find_element(id: "shipping_address_first_name_kana")
-      Log.info "\t\tfirst_name_kana.send_keys(#{second_data['valueRight']})"
-      first_name_kana.send_keys(second_data['valueRight'])
+      Log.info "\t\tfirst_name_kana.send_keys(#{user_name_kana['valueRight']})"
+      first_name_kana.send_keys(user_name_kana['valueRight'])
       capture
 
       data_address = JSON.parse(conversations.find_by_data_input_name('zip_code_address').value)
@@ -226,11 +234,16 @@ module TamagoScenario
     end
 
     def recaptcha_page
+      Log.info "\t\tframe = @driver.find_element(css: iframe[title^='recaptcha'])"
       frame = @driver.find_element(css: "iframe[title^='recaptcha']")
-      #sleep(5)
+      sleep(5)
+      Log.info "\t\t@driver.switch_to.frame(frame)"
       @driver.switch_to.frame(frame)
+      sleep 1
+      Log.info "\t\t@driver.find_element(id: recaptcha-audio-button).click()"
       @driver.find_element(id: "recaptcha-audio-button").click()
-      #sleep(5)
+      sleep(5)
+      Log.info "\t\tsrc = @driver.find_element(id: audio-source).attribute(src)"
       src = @driver.find_element(id: "audio-source").attribute("src")
       uri = URI(src)
       file_data = Net::HTTP.get_response(uri).body
@@ -239,7 +252,11 @@ module TamagoScenario
       File.open(file, 'w:UTF-8') {|file| file.write(file_data.force_encoding("UTF-8"))}
       audio = Speech::AudioToText.new(file)
       key = audio.to_text.inspect["captured_json"].first.first
+
+      Log.info "\t\tkey: #{key}"
+      Log.info "\t\t@driver.find_element(id: audio-response).send_keys(#{key.lower()})"
       @driver.find_element(id: "audio-response").send_keys(key.lower())
+      Log.info "\t\t@driver.find_element(id: audio-response).send_keys(\n).perform"
       @driver.find_element(id: "audio-response").send_keys("\n").perform
     end
 
@@ -251,6 +268,25 @@ module TamagoScenario
       Log.info "\t\tCurrent URL: #{@driver.current_url}"
       Log.info "\t\tsleep 20"
       sleep 20
+      # 定期・頒布会配送頻度
+      if @scenario.is_use_only_regular_order || conversations.find_by_data_input_name('is_regular_order')&.value
+        Log.info "\t\tfrequency_select = @driver.find_elements(id: order1_periodically_term_id)"
+        frequency_selectors = @driver.find_elements(id: "order1_periodically_term_id")
+        if frequency_selectors.present?
+          frequency_selector = frequency_selectors.first
+          frequency_value = conversations.find_by_data_input_name("delivery_frequency")&.value
+          
+          Log.info "\t\tchoose_frequence = Selenium::WebDriver::Support::Select.new(frequency_selector)"
+          choose_frequence = Selenium::WebDriver::Support::Select.new(frequency_selector)
+          capture
+
+          Log.info "\t\tchoose_frequence.select_by(:value, frequency_value.to_s)"
+          choose_frequence.select_by(:value, frequency_value.to_s)
+          capture
+        end
+      end
+
+      # 配送方法
       Log.info "\t\tselect_delivery_method = @driver.find_element(id: order_delivery_classification_id)"
       select_delivery_method = @driver.find_element(id: "order_delivery_classification_id")
       Log.info "\t\tchoose_select_delivery_method = Selenium::WebDriver::Support::Select.new(select_delivery_method)"
@@ -260,6 +296,17 @@ module TamagoScenario
       select_delivery_method_value = conversations.find_by_data_input_name('delivery_method').value
       Log.info "\t\tchoose_select_delivery_method.select_by(:value, #{select_delivery_method_value.to_s})"
       choose_select_delivery_method.select_by(:value, select_delivery_method_value.to_s)
+
+      # お届け希望日
+      # TODO
+
+      # 時間帯指定
+      delivery_time_value = conversations.find_by_data_input_name('delivery_time').value
+      Log.info "\t\tdelivery_time_select = @driver.find_element(id: order_expected_arrival_time_zone)"
+      delivery_time_select = @driver.find_element(id: "order_expected_arrival_time_zone")
+      Log.info "\t\tchoose_delivery_time = Selenium::WebDriver::Support::Select.new(delivery_time_select)"
+      choose_delivery_time = Selenium::WebDriver::Support::Select.new(delivery_time_select)
+      choose_delivery_time.select_by(:value, delivery_time_value.to_s)
 
       if conversations.find_by_data_input_name('credit_card_payment').present?
         Log.info "\t\t@driver.find_element(id: \"order_payment_method_id_2\").click()"
@@ -345,7 +392,8 @@ module TamagoScenario
       @driver.quit
     end
 
-    def capture is_capture = false
+    def capture is_capture = true
+      sleep 2
       if is_capture
         Log.info "\t\t\t#{@step} capture"
         @driver.save_screenshot("#{@screenshot_path}/#{@scenario.id}_#{@user_input_id}_#{@step}.png")

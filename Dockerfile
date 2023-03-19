@@ -33,6 +33,10 @@ RUN apt-cache search libnss
 RUN apt --fix-broken install
 RUN apt install -y libgconf-2-4 libatk1.0-0 libatk-bridge2.0-0 libgdk-pixbuf2.0-0 libgtk-3-0 libgbm-dev libnss3-dev libxss-dev
 
+RUN apt install -y ffmpeg
+RUN ffmpeg -version
+RUN apt install -y software-properties-common
+RUN apt-get install python3.7
 
 RUN mkdir /myapp
 
@@ -40,7 +44,7 @@ WORKDIR /myapp
 
 COPY Gemfile Gemfile
 
-# COPY Gemfile.lock Gemfile.lock
+COPY Gemfile.lock Gemfile.lock
 
 RUN bundle install
 

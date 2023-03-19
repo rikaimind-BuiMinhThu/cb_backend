@@ -110,6 +110,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
       build_tamago_repeat_config if params[:tamago_landing_page_url].present?
       @scenario.conversation = JSON.generate(params[:conversation].as_json) if params[:conversation].present?
       @scenario.name = params[:scenario_name]
+      @scenario.is_use_only_regular_order = params[:is_use_only_regular_order]
 
       @scenario.save!
     rescue StandardError => error
