@@ -59,20 +59,24 @@ module TamagoScenario
       @driver.navigate.to tamago_repeat_config.tamago_landing_page_url
       sleep(5)
       
-      quantity = conversations.find_by_data_input_name('quantity').value
-      select_quantity = 
-        if conversations.find_by_data_input_name('is_regular_order').value
-          Log.info "\t\tFor regular_order: driver.find_element(css: \"#{REGULAR_ORDER_SELECT_QUANTITY_SELECTOR}\")"
-          @driver.find_element css: REGULAR_ORDER_SELECT_QUANTITY_SELECTOR
-        else
-          Log.info "\t\tFor normal_order: driver.find_element(css: \"#{NORMAL_ORDER_SELECT_QUANTITY_SELECTOR}\")"
-          @driver.find_element css: NORMAL_ORDER_SELECT_QUANTITY_SELECTOR
-        end
-      Log.info "\t\tchoose_select_quantity = Selenium::WebDriver::Support::Select.new(select_quantity)"
-      choose_select_quantity = Selenium::WebDriver::Support::Select.new(select_quantity)
-      Log.info "\t\tchoose_select_quantity.select(:value, \"#{quantity}\"))"
-      choose_select_quantity.select_by(:value, quantity.to_s)
-      capture
+      quantity = conversations.find_by_data_input_name('quantity')&.value
+
+      if quantity.present?
+        select_quantity =
+          if conversations.find_by_data_input_name('is_regular_order').value
+            Log.info "\t\tFor regular_order: driver.find_element(css: \"#{REGULAR_ORDER_SELECT_QUANTITY_SELECTOR}\")"
+            @driver.find_element css: REGULAR_ORDER_SELECT_QUANTITY_SELECTOR
+          else
+            Log.info "\t\tFor normal_order: driver.find_element(css: \"#{NORMAL_ORDER_SELECT_QUANTITY_SELECTOR}\")"
+            @driver.find_element css: NORMAL_ORDER_SELECT_QUANTITY_SELECTOR
+          end
+
+        Log.info "\t\tchoose_select_quantity = Selenium::WebDriver::Support::Select.new(select_quantity)"
+        choose_select_quantity = Selenium::WebDriver::Support::Select.new(select_quantity)
+        Log.info "\t\tchoose_select_quantity.select(:value, \"#{quantity}\"))"
+        choose_select_quantity.select_by(:value, quantity.to_s)
+        capture
+      end
 
       Log.info "\t\tinput = @driver.find_element(css: #{tamago_repeat_config.add_to_cart_button_selector})"
       input = @driver.find_element(css: tamago_repeat_config.add_to_cart_button_selector)
