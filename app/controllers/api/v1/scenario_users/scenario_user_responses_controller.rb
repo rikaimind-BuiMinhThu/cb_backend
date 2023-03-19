@@ -6,7 +6,7 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
   def create
     if @client.tamago_repeat?
       scenario_user_response = ScenarioUserResponse.build_record(params)
-      scenario_user_response.save
+      scenario_user_response.save! if scenario_user_response.present?
       render json: {code: 1, data: scenario_user_response}
     else
       render json: {code: 1, data: []}
