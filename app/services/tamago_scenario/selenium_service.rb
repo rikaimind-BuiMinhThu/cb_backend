@@ -284,6 +284,17 @@ module TamagoScenario
       Log.info "\t\tchoose_select_delivery_method.select_by(:value, #{select_delivery_method_value.to_s})"
       choose_select_delivery_method.select_by(:value, select_delivery_method_value.to_s)
 
+      # お届け希望日
+      # TODO
+
+      # 時間帯指定
+      delivery_time_value = conversations.find_by_data_input_name('delivery_time').value
+      Log.info "\t\tdelivery_time_select = @driver.find_element(id: order_expected_arrival_time_zone)"
+      delivery_time_select = @driver.find_element(id: "order_expected_arrival_time_zone")
+      Log.info "\t\tchoose_delivery_time = Selenium::WebDriver::Support::Select.new(delivery_time_select)"
+      choose_delivery_time = Selenium::WebDriver::Support::Select.new(delivery_time_select)
+      choose_delivery_time.select_by(:value, delivery_time_value.to_s)
+
       if conversations.find_by_data_input_name('credit_card_payment').present?
         Log.info "\t\t@driver.find_element(id: \"order_payment_method_id_2\").click()"
         @driver.find_element(id: "order_payment_method_id_2").click()
