@@ -236,13 +236,13 @@ module TamagoScenario
     def recaptcha_page
       Log.info "\t\tframe = @driver.find_element(css: iframe[title^='recaptcha'])"
       frame = @driver.find_element(css: "iframe[title^='recaptcha']")
-      sleep(5)
+      sleep(3)
       Log.info "\t\t@driver.switch_to.frame(frame)"
       @driver.switch_to.frame(frame)
       sleep 1
       Log.info "\t\t@driver.find_element(id: recaptcha-audio-button).click()"
       @driver.find_element(id: "recaptcha-audio-button").click()
-      sleep(5)
+      sleep(3)
       Log.info "\t\tsrc = @driver.find_element(id: audio-source).attribute(src)"
       src = @driver.find_element(id: "audio-source").attribute("src")
       uri = URI(src)
@@ -250,14 +250,14 @@ module TamagoScenario
       file_name = SecureRandom.hex(32)
       file = File.join(Rails.root, 'public', "#{file_name}.mp3")
       File.open(file, 'w:UTF-8') {|file| file.write(file_data.force_encoding("UTF-8"))}
-      audio = Speech::AudioToText.new(file)
-      key = audio.to_text.inspect["captured_json"].first.first
+      current_folder = File.join(Rails.root, 'public')
+      key = GoogleApi.speech_to_text.new(file_name, current_folder)
 
       Log.info "\t\tkey: #{key}"
       Log.info "\t\t@driver.find_element(id: audio-response).send_keys(#{key.lower()})"
       @driver.find_element(id: "audio-response").send_keys(key.lower())
-      Log.info "\t\t@driver.find_element(id: audio-response).send_keys(\n).perform"
-      @driver.find_element(id: "audio-response").send_keys("\n").perform
+      Log.info "\t\t@driver.find_element(id: recaptcha-verify-button).click()"
+      @driver.find_element(id: "recaptcha-verify-button").click()
     end
 
     def shipping_method_and_payment_method_select_page
