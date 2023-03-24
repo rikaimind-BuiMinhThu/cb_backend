@@ -334,7 +334,7 @@ module TamagoScenario
       Log.info "\tcredit_card_page"
       Log.info "\t\tdriver.switch_to.default_content()"
       @driver.switch_to.default_content()
-      # recaptcha_page
+      recaptcha_page
       data_card = conversations.find_by_data_input_name('credit_card_payment').value
       data_card = JSON.parse(JWT.decode(data_card, SECRET_KEY)[0]["data"])
       Log.info "\t\tcard_number = @driver.find_element(id: \"new_credit_card_number\")"
