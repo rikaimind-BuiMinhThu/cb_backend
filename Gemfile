@@ -28,7 +28,7 @@ gem "aws-sdk-s3", "~> 1.117"
 gem "selenium-webdriver"
 gem "socksify", '~> 1.7'
 gem "colorize"
-gem "speech2text"
+gem 'google-cloud-speech', '~> 1.5'
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
