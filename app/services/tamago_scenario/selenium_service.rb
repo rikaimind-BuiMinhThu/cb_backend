@@ -1,5 +1,4 @@
 require 'selenium-webdriver'
-require 'speech'
 require File.dirname(__FILE__) + "/log"
 
 module TamagoScenario
@@ -15,8 +14,8 @@ module TamagoScenario
       @scenario = scenario
       @conversations = conversations
       @user_input_id = conversations.first.user_input_id
-      # proxy = Selenium::WebDriver::Proxy.new( socks: '127.0.0.1:9050',socks_version: 5)
-      # caps = Selenium::WebDriver::Remote::Capabilities.chrome(proxy: proxy)
+      proxy = Selenium::WebDriver::Proxy.new( socks: '127.0.0.1:9050',socks_version: 5)
+      capabilities = Selenium::WebDriver::Remote::Capabilities.chrome(proxy: proxy)
       # @driver = Selenium::WebDriver.for :chrome, capabilities: caps
       Selenium::WebDriver.logger.output = File.join("#{Rails.root}/log", "selenium.log")
       Selenium::WebDriver.logger.level = :debug
@@ -25,8 +24,8 @@ module TamagoScenario
       options = Selenium::WebDriver::Chrome::Options.new
       options.add_argument('--headless')
       options.add_argument('--no-sandbox')
-
-      @driver = Selenium::WebDriver.for :chrome, options: options
+      caps = [options, capabilities]
+      @driver = Selenium::WebDriver.for :chrome, capabilities: caps
       @driver.manage.timeouts.implicit_wait = 30
       # @driver = Selenium::WebDriver.for :chrome
       Log.info "Init OK selenium driver"
@@ -86,7 +85,7 @@ module TamagoScenario
       input.click()
       capture
       Log.info "\t\tsleep 20"
-      sleep(60)
+      sleep(20)
     end
 
     def entry_login_page
@@ -94,6 +93,7 @@ module TamagoScenario
       Log.info "\t\tCurrent URL: #{@driver.current_url}"
       Log.info "\t\tdriver.switch_to.default_content()"
       @driver.switch_to.default_content()
+      sleep(10)
       recaptcha_page
       sleep(10)
       user_name = JSON.parse(conversations.find_by_data_input_name('user_name').value)
@@ -234,15 +234,23 @@ module TamagoScenario
     end
 
     def recaptcha_page
+      begin
+        verify_recaptcha
+      rescue StandardError => e
+        verify_recaptcha
+      end
+    end
+
+    def verify_recaptcha
       Log.info "\t\tframe = @driver.find_element(css: iframe[title^='recaptcha'])"
       frame = @driver.find_element(css: "iframe[title^='recaptcha']")
-      sleep(3)
+      sleep(1)
       Log.info "\t\t@driver.switch_to.frame(frame)"
       @driver.switch_to.frame(frame)
-      sleep 1
+      sleep(1)
       Log.info "\t\t@driver.find_element(id: recaptcha-audio-button).click()"
       @driver.find_element(id: "recaptcha-audio-button").click()
-      sleep(3)
+      sleep(1)
       Log.info "\t\tsrc = @driver.find_element(id: audio-source).attribute(src)"
       src = @driver.find_element(id: "audio-source").attribute("src")
       uri = URI(src)
@@ -254,8 +262,8 @@ module TamagoScenario
       key = GoogleApi.speech_to_text(file_name, current_folder)
 
       Log.info "\t\tkey: #{key}"
-      Log.info "\t\t@driver.find_element(id: audio-response).send_keys(#{key.lower()})"
-      @driver.find_element(id: "audio-response").send_keys(key.lower())
+      Log.info "\t\t@driver.find_element(id: audio-response).send_keys(#{key})"
+      @driver.find_element(id: "audio-response").send_keys(key)
       Log.info "\t\t@driver.find_element(id: recaptcha-verify-button).click()"
       @driver.find_element(id: "recaptcha-verify-button").click()
     end
