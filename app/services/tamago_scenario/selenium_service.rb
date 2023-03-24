@@ -251,7 +251,7 @@ module TamagoScenario
       file = File.join(Rails.root, 'public', "#{file_name}.mp3")
       File.open(file, 'w:UTF-8') {|file| file.write(file_data.force_encoding("UTF-8"))}
       current_folder = File.join(Rails.root, 'public')
-      key = GoogleApi.speech_to_text.new(file_name, current_folder)
+      key = GoogleApi.speech_to_text(file_name, current_folder)
 
       Log.info "\t\tkey: #{key}"
       Log.info "\t\t@driver.find_element(id: audio-response).send_keys(#{key.lower()})"
