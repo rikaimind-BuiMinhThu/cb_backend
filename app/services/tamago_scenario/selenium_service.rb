@@ -45,12 +45,35 @@ module TamagoScenario
       end
     end
 
+    def start_tor
+      @log_tab_level += 1
+      `tor &`
+      Log.info "Started tor", @log_tab_level
+      sleep_by_seconds 30
+      @log_tab_level -= 1
+    end
+
+    def quit_tor
+      @log_tab_level += 1
+      process_id = `pgrep tor`.strip
+
+      if process_id.present?
+        `kill -9 #{process_id}`
+        Log.info "Killed tor process #{process_id}", @log_tab_level
+      end
+      
+      @log_tab_level -= 1
+    end
+
     def init_selenium_driver
+      @log_tab_level += 1
+
+      start_tor
+
       Selenium::WebDriver.logger.output = File.join("#{Rails.root}/log", "selenium.log")
       Selenium::WebDriver.logger.level = :debug
-
-      @log_tab_level += 1
       Log.info "Init selenium driver for chrome", @log_tab_level
+      tor_proxy = "127.0.0.1:9050"
       options = Selenium::WebDriver::Chrome::Options.new(
         args: [
           '--test-type',
@@ -62,7 +85,8 @@ module TamagoScenario
           "--no-sandbox",
           "--disable-gpu",
           "--disable-dev-shm-usage",
-          "--remote-debugging-port=9222"
+          "--remote-debugging-port=9222",
+          "--proxy-server=socks5://#{tor_proxy}"
       ])
       @driver = Selenium::WebDriver.for :chrome, options: options
       @driver.manage.timeouts.implicit_wait = 300
@@ -340,9 +364,12 @@ module TamagoScenario
     end
 
     def quit
-      Log.info "\t\tdriver.quit"
+      @log_tab_level += 1
+      Log.info "driver.quit"
       @status = true
       @driver.quit
+      quit_tor
+      @log_tab_level -= 1
     end
 
     def capture is_capture = true
