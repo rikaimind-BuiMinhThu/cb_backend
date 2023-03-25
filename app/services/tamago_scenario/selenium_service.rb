@@ -5,6 +5,7 @@ module TamagoScenario
   class SeleniumService
     REGULAR_ORDER_SELECT_QUANTITY_SELECTOR = "#periodically_order_order_qty_0"
     NORMAL_ORDER_SELECT_QUANTITY_SELECTOR = "#order_order_qty_0"
+    TIMEOUT = 300
 
     SECRET_KEY = Rails.application.secrets.secret_refresh_token
     attr_accessor :scenario, :conversations, :driver, :tamago_repeat_config, :status
@@ -27,10 +28,11 @@ module TamagoScenario
       options.add_argument('--disable-gpu')
       options.add_argument('--disable-dev-shm-usage')
       options.add_argument('--remote-debugging-port=9222')
-      # caps = [options, capabilities]
-      # @driver = Selenium::WebDriver.for :chrome, capabilities: caps
-      @driver = Selenium::WebDriver.for :chrome, options: options
+      caps = [options, capabilities]
+      @driver = Selenium::WebDriver.for :chrome, capabilities: caps
+      # @driver = Selenium::WebDriver.for :chrome, options: options
       @driver.manage.timeouts.implicit_wait = 120
+      @driver.manage.delete_all_cookies
       Log.info "Init OK selenium driver"
       @tamago_repeat_config = @scenario.tamago_repeat_config
       @status = false
@@ -59,81 +61,35 @@ module TamagoScenario
 
     def cart_page
       Log.info "\tcart_page"
-      Log.info "\t\tdriver.navigate.to #{tamago_repeat_config.tamago_landing_page_url}"
-      @driver.navigate.to tamago_repeat_config.tamago_landing_page_url
-      sleep(5)
-
+      navigate tamago_repeat_config.tamago_landing_page_url
+      wait_element_load "input#hide_display"
       capture
-      
-      quantity = conversations.find_by_data_input_name('quantity')&.value
 
-      if quantity.present?
-        select_quantity =
+      quantity_value = conversations.find_by_data_input_name('quantity')&.value
+
+      if quantity_value.present?
+        quantity_css_selector = 
           if @scenario.is_use_only_regular_order || conversations.find_by_data_input_name('is_regular_order')&.value
-            Log.info "\t\tFor regular_order: driver.find_element(css: \"#{REGULAR_ORDER_SELECT_QUANTITY_SELECTOR}\")"
-            @driver.find_element css: REGULAR_ORDER_SELECT_QUANTITY_SELECTOR
+            REGULAR_ORDER_SELECT_QUANTITY_SELECTOR
           else
-            Log.info "\t\tFor normal_order: driver.find_element(css: \"#{NORMAL_ORDER_SELECT_QUANTITY_SELECTOR}\")"
-            @driver.find_element css: NORMAL_ORDER_SELECT_QUANTITY_SELECTOR
+            NORMAL_ORDER_SELECT_QUANTITY_SELECTOR
           end
 
-        Log.info "\t\tchoose_select_quantity = Selenium::WebDriver::Support::Select.new(select_quantity)"
-        choose_select_quantity = Selenium::WebDriver::Support::Select.new(select_quantity)
-        Log.info "\t\tchoose_select_quantity.select(:value, \"#{quantity}\"))"
-        choose_select_quantity.select_by(:value, quantity.to_s)
-        capture
+        select quantity_css_selector, quantity_value, :quantity
       end
 
-      Log.info "\t\tinput = @driver.find_element(css: input#hide_display)"
-      input = @driver.find_element(css: "input#hide_display")
-      Log.info "\t\tinput.click"
-      input.click()
-      capture
-      Log.info "\t\tsleep 20"
-      sleep(20)
+      click "input#hide_display", "Cart page submit button"
+      # Log.info "\t\tsleep 20"
+      # sleep(20)
     end
 
     def entry_login_page
       Log.info "\tentry_login_page"
       Log.info "\t\tCurrent URL: #{@driver.current_url}"
-      # Log.info "\t\tdriver.switch_to.default_content()"
-      # @driver.switch_to.default_content()
-
 
       user_name = JSON.parse(conversations.find_by_data_input_name('user_name').value)
       user_name_kana = JSON.parse(conversations.find_by_data_input_name('user_name_kana').value)
-
-      Log.info "\t\tfamily_name = driver.find_element(id: shipping_address_family_name)"
-      wait = Selenium::WebDriver::Wait.new(:timeout => 300)
-      wait.until{@driver.find_element(id: "shipping_address_family_name").displayed?}
-      capture
-
-      family_name = @driver.find_element(id: "shipping_address_family_name")
-      Log.info "\t\tfamily_name.send_keys(#{user_name['valueLeft']})"
-      family_name.send_keys(user_name['valueLeft'])
-      capture
-
-      Log.info "\t\tfirst_name = driver.find_element(id: shipping_address_first_name"
-      first_name = @driver.find_element(id: "shipping_address_first_name")
-      Log.info "\t\tfirst_name.send_keys(#{user_name['valueRight']})"
-      first_name.send_keys(user_name['valueRight'])
-      capture
-
-      Log.info "\t\tfamily_name_kana = @driver.find_element(id: shipping_address_family_name_kana)"
-      family_name_kana = @driver.find_element(id: "shipping_address_family_name_kana")
-      Log.info "\t\tfamily_name_kana.send_keys(#{user_name_kana['valueLeft']})"
-      family_name_kana.send_keys(user_name_kana['valueLeft'])
-      capture
-
-      Log.info "\t\tfirst_name_kana = @driver.find_element(id: shipping_address_first_name_kana)"
-      first_name_kana = @driver.find_element(id: "shipping_address_first_name_kana")
-      Log.info "\t\tfirst_name_kana.send_keys(#{user_name_kana['valueRight']})"
-      first_name_kana.send_keys(user_name_kana['valueRight'])
-      capture
-
       data_address = JSON.parse(conversations.find_by_data_input_name('zip_code_address').value)
-      Log.info "\t\tshipping_address_zip = @driver.find_element(css: input#shipping_address_zip)"
-      shipping_address_zip = @driver.find_element(css: "input#shipping_address_zip")
       post_code = if data_address['post_code'].present?
         data_address['post_code'].gsub('-', '')
       elsif data_address["value_post_code"].present?
@@ -141,115 +97,60 @@ module TamagoScenario
       else
         "#{data_address['value_post_code_left']}#{data_address['value_post_code_right']}"
       end
-
-      Log.info "\t\tshipping_address_zip.send_keys(#{post_code})"
-      shipping_address_zip.send_keys(post_code)
-      capture
-      recaptcha_page
-      Log.info "\t\t@driver.find_element(id: \"hide_display_shipping_address a\").click()"
-      @driver.find_element(id: "hide_display_shipping_address a").click()
-      Log.info "\t\tsleep(5)"
-      sleep(5)
-      Log.info "\t\tshipping_address_address = @driver.find_element(name: \"shipping_address[address]\")"
-      shipping_address_address = @driver.find_element(name: "shipping_address[address]")
-      Log.info "\t\tshipping_address_address.send_keys(#{data_address['value_address']})"
-      shipping_address_address.send_keys(data_address['value_address'])
-      Log.info "\t\tsleep(2)"
-      sleep(2)
-      capture
-
-      Log.info "\t\t@driver.find_element(name: \"shipping_address[building]\")"
-      shipping_address_building = @driver.find_element(name: "shipping_address[building]")
-      Log.info "\t\tshipping_address_building.send_keys(#{data_address['value_building_name']})"
-      shipping_address_building.send_keys(data_address['value_building_name'])
-      capture
-
-      Log.info "\t\tdriver.find_element(id: \"shipping_address_tel\")"
-      shipping_address_tel = @driver.find_element(id: "shipping_address_tel")
-      Log.info "\t\tshipping_address_tel.send_keys(#{conversations.find_by_data_input_name('phone_number').value})"
-      shipping_address_tel.send_keys(conversations.find_by_data_input_name('phone_number').value)
-      capture
-
-      sex_value = conversations.find_by_data_input_name('sex').value  
-      if sex_value == 1
-        Log.info "\t\t@driver.find_element(id: \"sex_1\").click()"
-        @driver.find_element(id: "sex_1").click()
-      elsif sex_value == 2
-        Log.info "\t\t@driver.find_element(id: \"sex_2\").click()"
-        @driver.find_element(id: "sex_2").click()
-      end
-      capture
+      phone_number = conversations.find_by_data_input_name('phone_number').value
+      sex_value = conversations.find_by_data_input_name('sex').value
       birth_date = JSON.parse(conversations.find_by_data_input_name('birth_date').value)
-
-      Log.info "\t\tselect_year = @driver.find_element(id: \"user_birthday_1i\")"
-      select_year = @driver.find_element(id: "user_birthday_1i")
-      choose_select_year = Selenium::WebDriver::Support::Select.new(select_year)
-      Log.info "\t\tchoose_select_year.select_by(:value, #{birth_date['valueYear']})"
-      choose_select_year.select_by(:value, birth_date['valueYear'])
-      capture
-
-      Log.info "\t\tselect_month = @driver.find_element(id: \"user_birthday_2i\")"
-      select_month = @driver.find_element(id: "user_birthday_2i")
-      choose_select_month = Selenium::WebDriver::Support::Select.new(select_month)
-      Log.info "\t\tchoose_select_year.select_by(:value, #{birth_date['valueMonth']})"
-      choose_select_month.select_by(:value, birth_date['valueMonth'].to_i.to_s)
-      capture
-
-      Log.info "\t\tselect_day = @driver.find_element(id: \"user_birthday_3i\")"
-      select_day = @driver.find_element(id: "user_birthday_3i")
-      choose_select_day = Selenium::WebDriver::Support::Select.new(select_day)
-      Log.info "\t\tchoose_select_year.select_by(:value, #{birth_date['valueDay']})"
-      choose_select_day.select_by(:value, birth_date['valueDay'].to_i.to_s)
-      capture
-
-      Log.info "\t\tuser_email = @driver.find_element(id: \"user_email\")"
-      user_email = @driver.find_element(id: "user_email")
-      Log.info "\t\tuser_email.send_keys(conversations.find_by_data_input_name('user_email').value)"
-      user_email.send_keys(conversations.find_by_data_input_name('user_email').value)
-      capture
-
-      if tamago_repeat_config.email_confirm_required?
-        Log.info "\t\tuser_email_confirmation = @driver.find_element(id: \"user_email_confirmation\")"
-        user_email_confirmation = @driver.find_element(id: "user_email_confirmation")
-        Log.info "\t\tuser_email_confirmation.send_keys(#{conversations.find_by_data_input_name('user_email').value})"
-        user_email_confirmation.send_keys(conversations.find_by_data_input_name('user_email').value)
-        capture
-      end
-
+      user_email = conversations.find_by_data_input_name('user_email').value
       encrypted_password_value = conversations.find_by_data_input_name('user_password').value
       password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"]
 
-      Log.info "\t\tuser_password = @driver.find_element(id: \"user_password\")"
-      user_password = @driver.find_element(id: "user_password")
-      Log.info "\t\tuser_password.send_keys(#{password_value})"
-      user_password.send_keys(password_value)
-      capture
+      wait_element_load "#shipping_address_family_name"
 
-      Log.info "\t\tuser_password_confirmation = @driver.find_element(id: \"user_password_confirmation\")"
-      user_password_confirmation = @driver.find_element(id: "user_password_confirmation")
-      Log.info "\t\tuser_password_confirmation.send_keys(#{password_value})"
-      user_password_confirmation.send_keys(password_value)
-      capture
-      
+      fill_to_text_input "input#shipping_address_family_name", user_name['valueLeft'], "Shipping address Family name"
+      fill_to_text_input "input#shipping_address_first_name", user_name['valueRight'], "Shipping address First name" 
+      fill_to_text_input "input#shipping_address_family_name_kana", user_name_kana['valueLeft'], "Shipping address First name Kana" 
+      fill_to_text_input "input#shipping_address_first_name_kana", user_name_kana['valueRight'], "Shipping address Family name Kana" 
 
-      Log.info "\t\tcreate_user_and_next_btn = @driver.find_element(css: input#hide_display2)"
-      create_user_and_next_btn = @driver.find_element(css: "input#hide_display2")
+      fill_to_text_input "input#shipping_address_zip", post_code, "Post code" 
 
-      Log.info "\t\tcreate_user_and_next_btn.click()"
-      create_user_and_next_btn.click()
+      recaptcha_page
 
-      max_sleep = 60
-      sleep_count = 1
-      while sleep_count <= max_sleep && !@driver.current_url.include?("order/select_order_method")
-        Log.info "\t\tsleep 1"
-        sleep 1
-        sleep_count += 1
+      click "#hide_display_shipping_address", "Search by post_code"
+
+      sleep_by_seconds 5
+      fill_to_text_input "[name='shipping_address[address]']", data_address['value_address'], "Shipping Address address"
+      fill_to_text_input "[name='shipping_address[building]']", data_address['value_building_name'], "Shipping Address building"
+
+      fill_to_text_input "input#shipping_address_tel", phone_number, "Shipping Address Tel"
+
+      if sex_value.present?
+        select_radio_btn "sex_#{sex_value}", sex_value, "Sex"
       end
       
+      recaptcha_page
+
+      select "#user_birthday_1i", birth_date['valueYear'], :birthday_year
+      select "#user_birthday_2i", birth_date['valueMonth'], :birthday_month
+      select "#user_birthday_3i", birth_date['valueDay'], :birthday_day
+
+      fill_to_text_input "#user_email", user_email, "User email"
+
+      if tamago_repeat_config.email_confirm_required?
+        fill_to_text_input "#user_email_confirmation", user_email, "User email"
+      end
+
+      fill_to_text_input "#user_password", password_value, "Password"
+      fill_to_text_input "#user_password_confirmation", password_value, "Password confirmation"
+
+      click "input#hide_display2"
+
+      wait_page_load "order/select_order_method"
       capture
     end
 
     def recaptcha_page
+      return unless is_display_recaptcha?
+
       Log.info "\trecaptcha_page"
       begin
         verify_recaptcha
@@ -261,47 +162,35 @@ module TamagoScenario
     def verify_recaptcha
       Log.info "\t\tframe = @driver.find_element(css: iframe[title^='recaptcha'])"
       frame = @driver.find_element(css: "iframe[title^='recaptcha']")
-      sleep(1)
       Log.info "\t\t@driver.switch_to.frame(frame)"
       @driver.switch_to.frame(frame)
-      sleep(1)
-      Log.info "\t\t@driver.find_element(id: recaptcha-audio-button).click()"
-      @driver.find_element(id: "recaptcha-audio-button").click()
-      sleep(1)
+      sleep_by_seconds
+
+      click "#recaptcha-audio-button", "Swith to Recaptcha Audio tab"
       Log.info "\t\tsrc = @driver.find_element(id: audio-source).attribute(src)"
       src = @driver.find_element(id: "audio-source").attribute("src")
-      uri = URI(src)
-      file_data = Net::HTTP.get_response(uri).body
-      file_name = SecureRandom.hex(32)
+
+      download_file src
 
       tmp_folder = File.join(Rails.root, 'tmp')
-
-      file = File.join(Rails.root, 'public', "#{file_name}.mp3")
-      File.open(file, 'w:UTF-8') {|file| file.write(file_data.force_encoding("UTF-8"))}
-      tmp_folder = File.join(Rails.root, 'config')
       key = GoogleApi.speech_to_text(file_name, tmp_folder)
 
       Log.info "\t\tkey: #{key}"
-      Log.info "\t\t@driver.find_element(id: audio-response).send_keys(#{key})"
-      @driver.find_element(id: "audio-response").send_keys(key)
+      fill_to_text_input "#audio-response", key, "Recaptcha key"
+
+      click "#recaptcha-verify-button"
+
+      sleep_by_seconds 2
       capture
-      Log.info "\t\t@driver.find_element(id: recaptcha-verify-button).click()"
-      @driver.find_element(id: "recaptcha-verify-button").click()
-      Log.info "\t\tsleep 2"
-      sleep 2
-      capture
-      Log.info "\t\t@driver.switch_to.default_content()"
-      @driver.switch_to.default_content()
+
+      switch_to :default_content
     end
 
     def shipping_method_and_payment_method_select_page
       Log.info "\tshipping_method_and_payment_method_select_page"
-      Log.info "\t\tdriver.switch_to.default_content()"
-      @driver.switch_to.default_content()
+      switch_to :default_content
       capture
       Log.info "\t\tCurrent URL: #{@driver.current_url}"
-      Log.info "\t\tsleep 20"
-      sleep 20
       # 定期・頒布会配送頻度
       if @scenario.is_use_only_regular_order || conversations.find_by_data_input_name('is_regular_order')&.value
         Log.info "\t\tfrequency_select = @driver.find_elements(id: order1_periodically_term_id)"
@@ -433,6 +322,104 @@ module TamagoScenario
         @driver.save_screenshot("#{@screenshot_path}/#{@scenario.id}_#{@user_input_id}_#{@step}.png")
       end
       @step += 1
+    end
+
+    def click css_selector, description = ""
+      Log.info "\t\tClick #{css_selector}: #{description}"
+      js_script = "document.querySelector('#{css_selector}').click()"
+
+      Log.info "\t\t\t@driver.execute_script(#{js_script})"
+      @driver.execute_script js_script
+      capture
+    end
+
+    def navigate url
+      Log.info "\t\tdriver.navigate.to #{url}"
+      @driver.navigate.to url
+    end
+
+    def select css_selector, value, attr_name = "undefined attributes", description = ""
+      Log.info "\t\tSelect for #{attr_name}: #{description}"
+      Log.info "\t\t\tselect_element = @driver.find_element(css: \"#{css_selector}\")"
+      select_element = @driver.find_element css: css_selector
+      
+      Log.info "\t\t\tsupport_select = Selenium::WebDriver::Support::Select.new(select_element)"
+      support_select = Selenium::WebDriver::Support::Select.new(select_element)
+      Log.info "\t\t\tsupport_select.select_by(:value, #{value})"
+      support_select.select_by(:value, value)
+
+      capture
+    end
+
+    def select_radio_btn css_selector, value, description = ""
+      Log.info "\t\tSelect radio button #{attr_name}: #{description}"
+      js_script = "document.getElementById('#{css_selector}').checked = true"
+      Log.info "\t\t\t@driver.execute_script(#{js_script})"
+      @driver.execute_script(js_script)
+
+      capture
+    end
+
+    def fill_to_text_input css_selector, value, description = ""
+      Log.info "\t\tFill to text input #{css_selector}: #{description}"
+      Log.info "\t\t\tinput_element = @driver.find_element(css: #{css_selector})"
+      input_element = @driver.find_element(css: css_selector)
+      Log.info "\t\t\tinput_element.send_keys(#{value})"
+      input_element.send_keys(value)
+      capture
+    end
+
+    def wait_page_load sub_url
+      wait = Selenium::WebDriver::Wait.new(:timeout => TIMEOUT)
+      wait.until{@driver.current_url.include?(sub_url)}
+    end
+
+    def wait_element_load css_selector
+      wait = Selenium::WebDriver::Wait.new(:timeout => TIMEOUT)
+      wait.until{@driver.find_element(css: css_selector).displayed?}
+      capture
+    end
+
+    def is_display_recaptcha?
+      frames = @driver.find_elements(css: "iframe[title^='recaptcha']")
+      return false if frames.empty?
+
+      Log.info "\t\t@driver.switch_to.frame(frame)"
+      @driver.switch_to.frame(frames.first)
+
+      audio_btn = @driver.find_elements(id: "recaptcha-audio-button")
+      return false if audio_btn.empty?
+
+      @driver.switch_to.default_content()
+      return true
+    end
+
+    def sleep_by_seconds seconds = 1
+      Log.info "\t\tsleep(#{seconds})"
+      sleep(seconds)
+    end
+
+    def download_file src
+      uri = URI(src)
+      file_data = Net::HTTP.get_response(uri).body
+      file_name = SecureRandom.hex(32)
+
+      tmp_folder = File.join(Rails.root, 'tmp')
+
+      file = File.join(tmp_folder, "#{file_name}.mp3")
+      File.open(file, 'w:UTF-8') {|file| file.write(file_data.force_encoding("UTF-8"))}
+    end
+
+    def switch_to css_selector = :default_content
+      if css_selector == :default_content
+        Log.info "\t\t@driver.switch_to.default_content()"
+        @driver.switch_to.default_content()
+        return
+      end
+
+      Log.info "\t\tframe = @driver.find_element(css: #{css_selector})"
+      frame = @driver.find_element(css: css_selector)
+      @driver.switch_to.frame(frame)
     end
   end
 end

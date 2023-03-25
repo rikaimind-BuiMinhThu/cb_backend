@@ -37,6 +37,7 @@ RUN apt install -y ffmpeg
 RUN ffmpeg -version
 RUN apt install -y software-properties-common
 RUN apt install -y python3.9
+RUN apt install -y tor
 
 RUN mkdir /myapp
 
