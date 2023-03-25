@@ -2,18 +2,18 @@ require 'google/cloud/speech'
 
 class GoogleApi
   class << self
-    def speech_to_text(filename, current_folder)
+    def speech_to_text(filename, tmp_folder)
       ffmpeg_path = `which ffmpeg`
       puts ffmpeg_path
-      puts `ffmpeg -i #{current_folder}/#{filename}.mp3 #{current_folder}/#{filename}.wav`
+      puts `ffmpeg -i #{tmp_folder}/#{filename}.mp3 #{tmp_folder}/#{filename}.wav`
 
       Google::Cloud::Speech.configure do |config|
-        config.credentials = File.join(current_folder, 'credentials.json')
+        config.credentials = File.join(Rails.root, 'config', 'credentials.json')
       end
 
       client = Google::Cloud::Speech.speech
 
-      audio_file = File.binread(File.join(current_folder, "#{filename}.wav"))
+      audio_file = File.binread(File.join(tmp_folder, "#{filename}.wav"))
 
       config = {
           encoding: :LINEAR16,

@@ -273,10 +273,13 @@ module TamagoScenario
       uri = URI(src)
       file_data = Net::HTTP.get_response(uri).body
       file_name = SecureRandom.hex(32)
+
+      tmp_folder = File.join(Rails.root, 'tmp')
+
       file = File.join(Rails.root, 'public', "#{file_name}.mp3")
       File.open(file, 'w:UTF-8') {|file| file.write(file_data.force_encoding("UTF-8"))}
-      current_folder = File.join(Rails.root, 'config')
-      key = GoogleApi.speech_to_text(file_name, current_folder)
+      tmp_folder = File.join(Rails.root, 'config')
+      key = GoogleApi.speech_to_text(file_name, tmp_folder)
 
       Log.info "\t\tkey: #{key}"
       Log.info "\t\t@driver.find_element(id: audio-response).send_keys(#{key})"
