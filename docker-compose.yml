@@ -31,6 +31,8 @@ services:
       RAILS_DATABASE: instagram_chatbot
     volumes:
       - ./:/myapp
+    extra_hosts:
+    - "host.docker.internal:host-gateway"
 
 networks:
   db:
