@@ -36,7 +36,7 @@ RUN apt install -y libgconf-2-4 libatk1.0-0 libatk-bridge2.0-0 libgdk-pixbuf2.0-
 RUN apt install -y ffmpeg
 RUN ffmpeg -version
 RUN apt install -y software-properties-common
-RUN apt-get install python3.7
+RUN apt install -y python3.9
 
 RUN mkdir /myapp
 
