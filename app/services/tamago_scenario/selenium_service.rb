@@ -15,29 +15,12 @@ module TamagoScenario
       @scenario = scenario
       @conversations = conversations
       @user_input_id = conversations.first.user_input_id || "sample"
-      proxy = Selenium::WebDriver::Proxy.new( socks: '127.0.0.1:9050',socks_version: 5)
-      capabilities = Selenium::WebDriver::Remote::Capabilities.chrome(proxy: proxy)
-      # @driver = Selenium::WebDriver.for :chrome, capabilities: caps
-      Selenium::WebDriver.logger.output = File.join("#{Rails.root}/log", "selenium.log")
-      Selenium::WebDriver.logger.level = :debug
-
-      Log.info "Init selenium driver"
-      options = Selenium::WebDriver::Chrome::Options.new
-      options.add_argument('--headless')
-      options.add_argument('--no-sandbox')
-      options.add_argument('--disable-gpu')
-      options.add_argument('--disable-dev-shm-usage')
-      options.add_argument('--remote-debugging-port=9222')
-      caps = [options, capabilities]
-      @driver = Selenium::WebDriver.for :chrome, capabilities: caps
-      # @driver = Selenium::WebDriver.for :chrome, options: options
-      @driver.manage.timeouts.implicit_wait = 120
-      @driver.manage.delete_all_cookies
-      Log.info "Init OK selenium driver"
       @tamago_repeat_config = @scenario.tamago_repeat_config
       @status = false
       @screenshot_path = "#{Rails.root}/tmp/selenium"
       @step = 1
+
+      init_selenium_driver
     end
 
     def process
@@ -57,6 +40,32 @@ module TamagoScenario
 
         quit
       end
+    end
+
+    def init_selenium_driver
+      Selenium::WebDriver.logger.output = File.join("#{Rails.root}/log", "selenium.log")
+      Selenium::WebDriver.logger.level = :debug
+
+      Log.info "\tInit selenium driver"
+      tor_proxy = "127.0.0.1:9050"
+      options = Selenium::WebDriver::Chrome::Options.new(
+        args: [
+          '--test-type',
+          '--ignore-certificate-errors',
+          "--disable-extensions",
+          "disable-infobars",
+          "--incognito",
+          "--headless",
+          "--no-sandbox",
+          "--disable-gpu",
+          "--disable-dev-shm-usage",
+          "--remote-debugging-port=9222",
+          "--proxy-server=socks5://#{tor_proxy}"
+      ])
+      @driver = Selenium::WebDriver.for :chrome, options: options
+      @driver.manage.timeouts.implicit_wait = 300
+      @driver.manage.delete_all_cookies
+      Log.info "\tInit OK selenium driver"
     end
 
     def cart_page
