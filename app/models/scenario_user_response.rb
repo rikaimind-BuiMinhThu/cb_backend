@@ -89,10 +89,13 @@ class ScenarioUserResponse < ApplicationRecord
     scenario_id = params[:scenario_id]
     user_id = params[:user_id]
     built_result = []
+
     puts "-----------------------------------------------------"
     params[:message][:message_content].each do |conversation|
       puts "-----------------------------conversion: #{conversation[:type]}"
-      
+      data_input_name = nil
+      value = nil
+
       case conversation[:type]
       when 'text_input'
         puts "-----------------------------conversion: #{conversation[:text_input][:save_input_content]}"
@@ -172,7 +175,9 @@ class ScenarioUserResponse < ApplicationRecord
           data_input_name = 'delivery_method'
         end
       end
-  
+      
+      puts "=============================="
+      puts "data_input_name: #{data_input_name}"
       next unless data_input_name.present?
       new_record = self.new(
         scenario_id: scenario_id,

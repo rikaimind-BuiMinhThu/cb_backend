@@ -13,7 +13,7 @@ module TamagoScenario
       Log.info "Start selenium service for: \n\tscenario: #{scenario.inspect}\n\tconversations: #{conversations.inspect}"
       @scenario = scenario
       @conversations = conversations
-      @user_input_id = conversations.first.user_input_id
+      @user_input_id = conversations.first.user_input_id || "sample"
       proxy = Selenium::WebDriver::Proxy.new( socks: '127.0.0.1:9050',socks_version: 5)
       capabilities = Selenium::WebDriver::Remote::Capabilities.chrome(proxy: proxy)
       # @driver = Selenium::WebDriver.for :chrome, capabilities: caps
@@ -24,10 +24,13 @@ module TamagoScenario
       options = Selenium::WebDriver::Chrome::Options.new
       options.add_argument('--headless')
       options.add_argument('--no-sandbox')
-      caps = [options, capabilities]
-      @driver = Selenium::WebDriver.for :chrome, capabilities: caps
-      @driver.manage.timeouts.implicit_wait = 30
-      # @driver = Selenium::WebDriver.for :chrome
+      options.add_argument('--disable-gpu')
+      options.add_argument('--disable-dev-shm-usage')
+      options.add_argument('--remote-debugging-port=9222')
+      # caps = [options, capabilities]
+      # @driver = Selenium::WebDriver.for :chrome, capabilities: caps
+      @driver = Selenium::WebDriver.for :chrome, options: options
+      @driver.manage.timeouts.implicit_wait = 120
       Log.info "Init OK selenium driver"
       @tamago_repeat_config = @scenario.tamago_repeat_config
       @status = false
@@ -59,6 +62,8 @@ module TamagoScenario
       Log.info "\t\tdriver.navigate.to #{tamago_repeat_config.tamago_landing_page_url}"
       @driver.navigate.to tamago_repeat_config.tamago_landing_page_url
       sleep(5)
+
+      capture
       
       quantity = conversations.find_by_data_input_name('quantity')&.value
 
@@ -91,15 +96,18 @@ module TamagoScenario
     def entry_login_page
       Log.info "\tentry_login_page"
       Log.info "\t\tCurrent URL: #{@driver.current_url}"
-      Log.info "\t\tdriver.switch_to.default_content()"
-      @driver.switch_to.default_content()
-      sleep(10)
-      recaptcha_page
-      sleep(10)
+      # Log.info "\t\tdriver.switch_to.default_content()"
+      # @driver.switch_to.default_content()
+
+
       user_name = JSON.parse(conversations.find_by_data_input_name('user_name').value)
       user_name_kana = JSON.parse(conversations.find_by_data_input_name('user_name_kana').value)
 
       Log.info "\t\tfamily_name = driver.find_element(id: shipping_address_family_name)"
+      wait = Selenium::WebDriver::Wait.new(:timeout => 300)
+      wait.until{@driver.find_element(id: "shipping_address_family_name").displayed?}
+      capture
+
       family_name = @driver.find_element(id: "shipping_address_family_name")
       Log.info "\t\tfamily_name.send_keys(#{user_name['valueLeft']})"
       family_name.send_keys(user_name['valueLeft'])
@@ -126,11 +134,18 @@ module TamagoScenario
       data_address = JSON.parse(conversations.find_by_data_input_name('zip_code_address').value)
       Log.info "\t\tshipping_address_zip = @driver.find_element(css: input#shipping_address_zip)"
       shipping_address_zip = @driver.find_element(css: "input#shipping_address_zip")
-      post_code = data_address['post_code'].present? ? data_address['post_code'] : data_address['value_post_code']
-      Log.info "\t\tshipping_address_zip.send_keys(#{post_code.gsub('-', '')})"
-      shipping_address_zip.send_keys(post_code.gsub('-', ''))
-      capture
+      post_code = if data_address['post_code'].present?
+        data_address['post_code'].gsub('-', '')
+      elsif data_address["value_post_code"].present?
+        data_address["value_post_code"].gsub('-', '')
+      else
+        "#{data_address['value_post_code_left']}#{data_address['value_post_code_right']}"
+      end
 
+      Log.info "\t\tshipping_address_zip.send_keys(#{post_code})"
+      shipping_address_zip.send_keys(post_code)
+      capture
+      recaptcha_page
       Log.info "\t\t@driver.find_element(id: \"hide_display_shipping_address a\").click()"
       @driver.find_element(id: "hide_display_shipping_address a").click()
       Log.info "\t\tsleep(5)"
@@ -215,6 +230,7 @@ module TamagoScenario
       Log.info "\t\tuser_password_confirmation.send_keys(#{password_value})"
       user_password_confirmation.send_keys(password_value)
       capture
+      
 
       Log.info "\t\tcreate_user_and_next_btn = @driver.find_element(css: input#hide_display2)"
       create_user_and_next_btn = @driver.find_element(css: "input#hide_display2")
@@ -234,6 +250,7 @@ module TamagoScenario
     end
 
     def recaptcha_page
+      Log.info "\trecaptcha_page"
       begin
         verify_recaptcha
       rescue StandardError => e
@@ -258,14 +275,20 @@ module TamagoScenario
       file_name = SecureRandom.hex(32)
       file = File.join(Rails.root, 'public', "#{file_name}.mp3")
       File.open(file, 'w:UTF-8') {|file| file.write(file_data.force_encoding("UTF-8"))}
-      current_folder = File.join(Rails.root, 'public')
+      current_folder = File.join(Rails.root, 'config')
       key = GoogleApi.speech_to_text(file_name, current_folder)
 
       Log.info "\t\tkey: #{key}"
       Log.info "\t\t@driver.find_element(id: audio-response).send_keys(#{key})"
       @driver.find_element(id: "audio-response").send_keys(key)
+      capture
       Log.info "\t\t@driver.find_element(id: recaptcha-verify-button).click()"
       @driver.find_element(id: "recaptcha-verify-button").click()
+      Log.info "\t\tsleep 2"
+      sleep 2
+      capture
+      Log.info "\t\t@driver.switch_to.default_content()"
+      @driver.switch_to.default_content()
     end
 
     def shipping_method_and_payment_method_select_page
