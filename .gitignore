@@ -21,8 +21,8 @@
 # Ignore uploaded files in development.
 /storage/*
 !/storage/.keep
-# /tmp/selenium/*
-# !/tmp/selenium/.keep
+/tmp/selenium/*.png
+!/tmp/selenium/.keep
 !/tmp/storage/
 !/tmp/storage/.keep
 
