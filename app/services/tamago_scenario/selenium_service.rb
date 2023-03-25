@@ -19,6 +19,7 @@ module TamagoScenario
       @status = false
       @screenshot_path = "#{Rails.root}/tmp/selenium"
       @step = 1
+      @current_frame = nil
 
       init_selenium_driver
     end
@@ -46,8 +47,7 @@ module TamagoScenario
       Selenium::WebDriver.logger.output = File.join("#{Rails.root}/log", "selenium.log")
       Selenium::WebDriver.logger.level = :debug
 
-      Log.info "\tInit selenium driver"
-      tor_proxy = "127.0.0.1:9050"
+      Log.info "\tInit selenium driver for chrome"
       options = Selenium::WebDriver::Chrome::Options.new(
         args: [
           '--test-type',
@@ -59,12 +59,23 @@ module TamagoScenario
           "--no-sandbox",
           "--disable-gpu",
           "--disable-dev-shm-usage",
-          "--remote-debugging-port=9222",
-          "--proxy-server=socks5://#{tor_proxy}"
+          "--remote-debugging-port=9222"
       ])
       @driver = Selenium::WebDriver.for :chrome, options: options
       @driver.manage.timeouts.implicit_wait = 300
       @driver.manage.delete_all_cookies
+      # options = Selenium::WebDriver::Firefox::Options.new(args: [
+      #   '--test-type',
+      #   '--ignore-certificate-errors',
+      #   "--disable-extensions",
+      #   "disable-infobars",
+      #   "--incognito",
+      #   "--headless",
+      #   "--no-sandbox",
+      #   "--disable-gpu",
+      #   "--disable-dev-shm-usage",
+      # ])
+      # @driver = Selenium::WebDriver.for(:firefox, options: options)
       Log.info "\tInit OK selenium driver"
     end
 
@@ -159,20 +170,21 @@ module TamagoScenario
 
     def recaptcha_page
       return unless is_display_recaptcha?
+      sleep_by_seconds 2
 
       Log.info "\trecaptcha_page"
       begin
         verify_recaptcha
       rescue StandardError => e
+        sleep_by_seconds 5
+        switch_to :default_content
+        sleep_by_seconds
         verify_recaptcha
       end
     end
 
     def verify_recaptcha
-      Log.info "\t\tframe = @driver.find_element(css: iframe[title^='recaptcha'])"
-      frame = @driver.find_element(css: "iframe[title^='recaptcha']")
-      Log.info "\t\t@driver.switch_to.frame(frame)"
-      @driver.switch_to.frame(frame)
+      switch_to "iframe[title^='recaptcha']"
       sleep_by_seconds
 
       click "#recaptcha-audio-button", "Swith to Recaptcha Audio tab"
@@ -326,9 +338,13 @@ module TamagoScenario
 
     def capture is_capture = true
       sleep 2
+
       if is_capture
+        prev_frame = @current_frame
+        switch_to :default_content
         Log.info "\t\t\t#{@step} capture"
         @driver.save_screenshot("#{@screenshot_path}/#{@scenario.id}_#{@user_input_id}_#{@step}.png")
+        switch_to_frame prev_frame
       end
       @step += 1
     end
@@ -397,10 +413,9 @@ module TamagoScenario
       @driver.switch_to.frame(frames.first)
 
       audio_btn = @driver.find_elements(id: "recaptcha-audio-button")
-      return false if audio_btn.empty?
+      switch_to :default_content
 
-      @driver.switch_to.default_content()
-      return true
+      return audio_btn.present?
     end
 
     def sleep_by_seconds seconds = 1
@@ -423,12 +438,22 @@ module TamagoScenario
       if css_selector == :default_content
         Log.info "\t\t@driver.switch_to.default_content()"
         @driver.switch_to.default_content()
+        @current_frame = nil
         return
       end
 
       Log.info "\t\tframe = @driver.find_element(css: #{css_selector})"
       frame = @driver.find_element(css: css_selector)
       @driver.switch_to.frame(frame)
+      @current_frame = frame
+    end
+
+    def switch_to_frame frame
+      return unless frame.present?
+      Log.info "\t\tswitch_to_frame #{frame.inspect}"
+      @driver.switch_to.frame(frame)
+      @current_frame = frame
+      sleep_by_seconds 2
     end
   end
 end
