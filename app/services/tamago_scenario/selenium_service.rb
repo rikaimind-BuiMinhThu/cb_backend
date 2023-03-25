@@ -20,12 +20,14 @@ module TamagoScenario
       @screenshot_path = "#{Rails.root}/tmp/selenium"
       @step = 1
       @current_frame = nil
+      @log_tab_level = 0
 
       init_selenium_driver
     end
 
     def process
-      Log.info "Start process"
+      @log_tab_level += 1
+      Log.info "Start process", @log_tab_level
 
       begin
         cart_page
@@ -47,7 +49,8 @@ module TamagoScenario
       Selenium::WebDriver.logger.output = File.join("#{Rails.root}/log", "selenium.log")
       Selenium::WebDriver.logger.level = :debug
 
-      Log.info "\tInit selenium driver for chrome"
+      @log_tab_level += 1
+      Log.info "Init selenium driver for chrome", @log_tab_level
       options = Selenium::WebDriver::Chrome::Options.new(
         args: [
           '--test-type',
@@ -76,11 +79,13 @@ module TamagoScenario
       #   "--disable-dev-shm-usage",
       # ])
       # @driver = Selenium::WebDriver.for(:firefox, options: options)
-      Log.info "\tInit OK selenium driver"
+      Log.info "Init OK selenium driver", @log_tab_level
+      @log_tab_level -= 1
     end
 
     def cart_page
-      Log.info "\tcart_page"
+      @log_tab_level += 1
+      Log.info "cart_page", @log_tab_level
       navigate tamago_repeat_config.tamago_landing_page_url
       wait_element_load "input#hide_display"
       capture
@@ -99,13 +104,13 @@ module TamagoScenario
       end
 
       click "input#hide_display", "Cart page submit button"
-      # Log.info "\t\tsleep 20"
-      # sleep(20)
     end
 
     def entry_login_page
-      Log.info "\tentry_login_page"
-      Log.info "\t\tCurrent URL: #{@driver.current_url}"
+      @log_tab_level = 1
+      Log.info "entry_login_page", @log_tab_level = 1
+      @log_tab_level = 1
+      Log.info "Current URL: #{@driver.current_url}"
 
       user_name = JSON.parse(conversations.find_by_data_input_name('user_name').value)
       user_name_kana = JSON.parse(conversations.find_by_data_input_name('user_name_kana').value)
@@ -170,25 +175,29 @@ module TamagoScenario
 
     def recaptcha_page
       return unless is_display_recaptcha?
+      @log_tab_level += 1
       sleep_by_seconds 2
 
-      Log.info "\trecaptcha_page"
+      Log.info "recaptcha_page", @log_tab_level
       begin
         verify_recaptcha
       rescue StandardError => e
+        Log.error "Error: #{e.message}", @log_tab_level
         sleep_by_seconds 5
         switch_to :default_content
         sleep_by_seconds
         verify_recaptcha
       end
+      @log_tab_level -= 1
     end
 
     def verify_recaptcha
+      @log_tab_level += 1
       switch_to "iframe[title^='recaptcha']"
       sleep_by_seconds
 
       click "#recaptcha-audio-button", "Swith to Recaptcha Audio tab"
-      Log.info "\t\tsrc = @driver.find_element(id: audio-source).attribute(src)"
+      Log.info "src = @driver.find_element(id: audio-source).attribute(src)", @log_tab_level
       src = @driver.find_element(id: "audio-source").attribute("src")
 
       download_file src
@@ -196,7 +205,7 @@ module TamagoScenario
       tmp_folder = File.join(Rails.root, 'tmp')
       key = GoogleApi.speech_to_text(file_name, tmp_folder)
 
-      Log.info "\t\tkey: #{key}"
+      Log.info "key: #{key}", @log_tab_level
       fill_to_text_input "#audio-response", key, "Recaptcha key"
 
       click "#recaptcha-verify-button"
@@ -339,88 +348,111 @@ module TamagoScenario
     def capture is_capture = true
       sleep 2
 
+      @log_tab_level += 1
       if is_capture
         prev_frame = @current_frame
         switch_to :default_content
-        Log.info "\t\t\t#{@step} capture"
+        Log.info "#{@step}: capture", @log_tab_level
         @driver.save_screenshot("#{@screenshot_path}/#{@scenario.id}_#{@user_input_id}_#{@step}.png")
         switch_to_frame prev_frame
       end
       @step += 1
+      @log_tab_level -= 1
     end
 
     def click css_selector, description = ""
-      Log.info "\t\tClick #{css_selector}: #{description}"
+      @log_tab_level += 1
+      Log.info "Click #{css_selector}: #{description}", @log_tab_level
       js_script = "document.querySelector('#{css_selector}').click()"
 
-      Log.info "\t\t\t@driver.execute_script(#{js_script})"
+      Log.info "@driver.execute_script(#{js_script})", @log_tab_level + 1
       @driver.execute_script js_script
       capture
+      @log_tab_level -= 1
     end
 
     def navigate url
-      Log.info "\t\tdriver.navigate.to #{url}"
+      @log_tab_level += 1
+      Log.info "driver.navigate.to #{url}", @log_tab_level
       @driver.navigate.to url
+      @log_tab_level -= 1
     end
 
     def select css_selector, value, attr_name = "undefined attributes", description = ""
-      Log.info "\t\tSelect for #{attr_name}: #{description}"
-      Log.info "\t\t\tselect_element = @driver.find_element(css: \"#{css_selector}\")"
+      @log_tab_level += 1
+      Log.info "Select for #{attr_name}: #{description}", @log_tab_level
+      Log.info "select_element = @driver.find_element(css: \"#{css_selector}\")", @log_tab_level + 1
       select_element = @driver.find_element css: css_selector
       
-      Log.info "\t\t\tsupport_select = Selenium::WebDriver::Support::Select.new(select_element)"
+      Log.info "support_select = Selenium::WebDriver::Support::Select.new(select_element)", @log_tab_level + 1
       support_select = Selenium::WebDriver::Support::Select.new(select_element)
-      Log.info "\t\t\tsupport_select.select_by(:value, #{value})"
+      Log.info "support_select.select_by(:value, #{value})", @log_tab_level + 1
       support_select.select_by(:value, value)
 
       capture
+      @log_tab_level -= 1
     end
 
     def select_radio_btn css_selector, value, description = ""
-      Log.info "\t\tSelect radio button #{attr_name}: #{description}"
+      @log_tab_level += 1
+      Log.info "Select radio button #{attr_name}: #{description}", @log_tab_level
       js_script = "document.getElementById('#{css_selector}').checked = true"
-      Log.info "\t\t\t@driver.execute_script(#{js_script})"
+      Log.info "@driver.execute_script(#{js_script})", @log_tab_level + 1
       @driver.execute_script(js_script)
 
       capture
+      @log_tab_level -= 1
     end
 
     def fill_to_text_input css_selector, value, description = ""
-      Log.info "\t\tFill to text input #{css_selector}: #{description}"
-      Log.info "\t\t\tinput_element = @driver.find_element(css: #{css_selector})"
+      @log_tab_level += 1
+      Log.info "Fill to text input #{css_selector}: #{description}", @log_tab_level
+      Log.info "input_element = @driver.find_element(css: #{css_selector})", @log_tab_level + 1
       input_element = @driver.find_element(css: css_selector)
-      Log.info "\t\t\tinput_element.send_keys(#{value})"
+      Log.info "input_element.send_keys(#{value})", @log_tab_level + 1
       input_element.send_keys(value)
       capture
+      @log_tab_level -= 1
     end
 
     def wait_page_load sub_url
+      @log_tab_level += 1
       wait = Selenium::WebDriver::Wait.new(:timeout => TIMEOUT)
       wait.until{@driver.current_url.include?(sub_url)}
+      @log_tab_level -= 1
     end
 
     def wait_element_load css_selector
+      @log_tab_level += 1
       wait = Selenium::WebDriver::Wait.new(:timeout => TIMEOUT)
       wait.until{@driver.find_element(css: css_selector).displayed?}
       capture
+      @log_tab_level -= 1
     end
 
     def is_display_recaptcha?
+      @log_tab_level += 1
       frames = @driver.find_elements(css: "iframe[title^='recaptcha']")
-      return false if frames.empty?
+      if frames.empty?
+        @log_tab_level -= 1
+        return false 
+      end
 
-      Log.info "\t\t@driver.switch_to.frame(frame)"
+      Log.info "@driver.switch_to.frame(frame)", @log_tab_level
       @driver.switch_to.frame(frames.first)
 
       audio_btn = @driver.find_elements(id: "recaptcha-audio-button")
       switch_to :default_content
 
+      @log_tab_level -= 1
       return audio_btn.present?
     end
 
     def sleep_by_seconds seconds = 1
-      Log.info "\t\tsleep(#{seconds})"
+      @log_tab_level += 1
+      Log.info "sleep(#{seconds})", @log_tab_level
       sleep(seconds)
+      @log_tab_level -= 1
     end
 
     def download_file src
@@ -435,25 +467,31 @@ module TamagoScenario
     end
 
     def switch_to css_selector = :default_content
+      @log_tab_level += 1
       if css_selector == :default_content
-        Log.info "\t\t@driver.switch_to.default_content()"
+        Log.info "@driver.switch_to.default_content()", @log_tab_level
         @driver.switch_to.default_content()
         @current_frame = nil
+        @log_tab_level -= 1
         return
       end
 
-      Log.info "\t\tframe = @driver.find_element(css: #{css_selector})"
+      Log.info "frame = @driver.find_element(css: #{css_selector})", @log_tab_level
       frame = @driver.find_element(css: css_selector)
       @driver.switch_to.frame(frame)
       @current_frame = frame
+      @log_tab_level -= 1
     end
 
     def switch_to_frame frame
       return unless frame.present?
-      Log.info "\t\tswitch_to_frame #{frame.inspect}"
+
+      @log_tab_level += 1
+      Log.info "\t\tswitch_to_frame #{frame.inspect}", @log_tab_level
       @driver.switch_to.frame(frame)
       @current_frame = frame
       sleep_by_seconds 2
+      @log_tab_level -= 1
     end
   end
 end
