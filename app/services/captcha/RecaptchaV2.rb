@@ -24,7 +24,7 @@ module Captcha
 
       begin
         try_count = 1
-        while try_count <= 10
+        while try_count <= 30
           response = get_captcha_response(request_id)
           if response == :retry_again
             Log.info "#{try_count}: Sleep more 5 seconds for retry", @log_tab_level

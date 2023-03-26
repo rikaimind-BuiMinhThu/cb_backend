@@ -111,64 +111,64 @@ module TamagoScenario
       wait_element_load "#new_signup #shipping_address_family_name"
 
       execute_script "window.reset = function() {}; window.execute = function() {};"
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
 
       fill_to_text_input "#new_signup input#shipping_address_family_name", user_name["valueLeft"], "Shipping address Family name"
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
       fill_to_text_input "#new_signup input#shipping_address_first_name", user_name["valueRight"], "Shipping address First name"
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
       fill_to_text_input "#new_signup input#shipping_address_family_name_kana", user_name_kana["valueLeft"], "Shipping address First name Kana"
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
       fill_to_text_input "#new_signup input#shipping_address_first_name_kana", user_name_kana["valueRight"], "Shipping address Family name Kana"
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
 
       fill_to_text_input "#new_signup input#shipping_address_zip", post_code, "Post code"
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
 
       click "#new_signup #hide_display_shipping_address", "Search by post_code"
 
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
       fill_to_text_input "#new_signup [name='shipping_address[address]']", data_address["value_address"], "Shipping Address address"
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
 
       fill_to_text_input "#new_signup [name='shipping_address[building]']", data_address["value_building_name"], "Shipping Address building"
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
 
       fill_to_text_input "#new_signup input#shipping_address_tel", phone_number, "Shipping Address Tel"
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
 
       if sex_value.present?
         select_radio_btn "#new_signup #sex_#{sex_value}", sex_value, "Sex"
-        sleep_by_seconds 1
+        # sleep_by_seconds 1
       end
 
       select "#new_signup #user_birthday_1i", birth_date["valueYear"], :birthday_year
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
       select "#new_signup #user_birthday_2i", birth_date["valueMonth"].to_i.to_s, :birthday_month
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
       select "#new_signup #user_birthday_3i", birth_date["valueDay"].to_i.to_s, :birthday_day
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
 
       fill_to_text_input "#new_signup #user_email", user_email, "User email"
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
 
       if tamago_repeat_config.email_confirm_required?
         fill_to_text_input "#new_signup #user_email_confirmation", user_email, "User email"
-        sleep_by_seconds 1
+        # sleep_by_seconds 1
       end
 
       fill_to_text_input "#new_signup #user_password", password_value, "Password"
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
       fill_to_text_input "#new_signup #user_password_confirmation", password_value, "Password confirmation"
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
 
       click "#new_signup input#hide_display2", pointer_action: false
 
       verify_recaptcha
       fill_to_text_input "#new_signup #user_password", password_value, "Password"
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
       fill_to_text_input "#new_signup #user_password_confirmation", password_value, "Password confirmation"
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
 
       click "input#hide_display2", pointer_action: false
 
@@ -227,30 +227,30 @@ module TamagoScenario
       # 定期・頒布会配送頻度
       if is_regular_order
         select "#order1_periodically_term_id", delivery_frequency, :delivery_frequency
-        sleep_by_seconds 1
+        # sleep_by_seconds 1
       end
 
       # 配送方法
       select "#order_delivery_classification_id", delivery_method, :delivery_method
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
 
       # お届け希望日
       # TODO
 
       # 時間帯指定
       select "#order_expected_arrival_time_zone", delivery_date, :delivery_date
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
 
       if credit_card_payment.present?
         click "#order_payment_method_id_2"
-        sleep_by_seconds 1
+        # sleep_by_seconds 1
         click "input#hide_display"
-        sleep_by_seconds 1
+        # sleep_by_seconds 1
 
         credit_card_page
       else
         click "#order_payment_method_id_3"
-        sleep_by_seconds 1
+        # sleep_by_seconds 1
         click "input#hide_display"
       end
     end
@@ -262,22 +262,22 @@ module TamagoScenario
       switch_to :default_content
       verify_captcha
 
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
 
       fill_to_text_input "#new_credit_card_number", data_card["card_number"], :card_number
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
 
       fill_to_text_input "#new_credit_card_name", data_card["card_name"], :card_name
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
 
       select "#new_credit_effective_date_2i", data_card["month"].to_i.to_s, :expire_month
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
 
       select "#new_credit_effective_date_1i", data_card["year"], :expire_year
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
 
       fill_to_text_input "#new_credit_security_code", data_card["cvc"], :cvc
-      sleep_by_seconds 1
+      # sleep_by_seconds 1
 
       installment_payment_value = data_card["payment_method"][0]
 
@@ -294,7 +294,7 @@ module TamagoScenario
           end
 
         click "##{installment_payment_radio_btn_id}", :card_type
-        sleep_by_seconds 1
+        # sleep_by_seconds 1
       end
 
       click "input#hide_display", :submit
