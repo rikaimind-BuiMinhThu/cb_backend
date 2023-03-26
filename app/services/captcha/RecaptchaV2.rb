@@ -26,13 +26,13 @@ module Captcha
         try_count = 1
         while try_count <= 10
           response = get_captcha_response(request_id)
-          if response != :retry_again
+          if response == :retry_again
             Log.info "#{try_count}: Sleep more 5 seconds for retry", @log_tab_level
             sleep 5
             try_count += 1
+          else
+            return response
           end
-
-          return response
         end
       rescue e
         Log.error e.message, @log_tab_level
@@ -56,7 +56,7 @@ module Captcha
         @log_tab_level -= 1
         res = JSON.parse(res.body)
 
-        if res["error_code"] == "CAPCHA_NOT_READY"
+        if res["request"] == "CAPCHA_NOT_READY"
           return :retry_again
         end
 

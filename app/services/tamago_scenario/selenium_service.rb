@@ -104,74 +104,80 @@ module TamagoScenario
     end
 
     def entry_login_page
-      @log_tab_level += 1
       Log.info "entry_login_page", @log_tab_level
-      Log.info "Current URL: #{@driver.current_url}", @log_tab_level + 1
+      @log_tab_level += 1
+      Log.info "Current URL: #{@driver.current_url}", @log_tab_level
 
-      wait_element_load "#shipping_address_family_name"
+      wait_element_load "#new_signup #shipping_address_family_name"
 
-      fill_to_text_input "input#shipping_address_family_name", user_name["valueLeft"], "Shipping address Family name"
-      sleep_by_seconds 1
-      fill_to_text_input "input#shipping_address_first_name", user_name["valueRight"], "Shipping address First name"
-      sleep_by_seconds 1
-      fill_to_text_input "input#shipping_address_family_name_kana", user_name_kana["valueLeft"], "Shipping address First name Kana"
-      sleep_by_seconds 1
-      fill_to_text_input "input#shipping_address_first_name_kana", user_name_kana["valueRight"], "Shipping address Family name Kana"
+      execute_script "window.reset = function() {}; window.execute = function() {};"
       sleep_by_seconds 1
 
-      fill_to_text_input "input#shipping_address_zip", post_code, "Post code"
+      fill_to_text_input "#new_signup input#shipping_address_family_name", user_name["valueLeft"], "Shipping address Family name"
+      sleep_by_seconds 1
+      fill_to_text_input "#new_signup input#shipping_address_first_name", user_name["valueRight"], "Shipping address First name"
+      sleep_by_seconds 1
+      fill_to_text_input "#new_signup input#shipping_address_family_name_kana", user_name_kana["valueLeft"], "Shipping address First name Kana"
+      sleep_by_seconds 1
+      fill_to_text_input "#new_signup input#shipping_address_first_name_kana", user_name_kana["valueRight"], "Shipping address Family name Kana"
       sleep_by_seconds 1
 
-      click "#hide_display_shipping_address", "Search by post_code"
-
-      sleep_by_seconds 5
-      fill_to_text_input "[name='shipping_address[address]']", data_address["value_address"], "Shipping Address address"
+      fill_to_text_input "#new_signup input#shipping_address_zip", post_code, "Post code"
       sleep_by_seconds 1
 
-      fill_to_text_input "[name='shipping_address[building]']", data_address["value_building_name"], "Shipping Address building"
+      click "#new_signup #hide_display_shipping_address", "Search by post_code"
+
+      sleep_by_seconds 1
+      fill_to_text_input "#new_signup [name='shipping_address[address]']", data_address["value_address"], "Shipping Address address"
       sleep_by_seconds 1
 
-      fill_to_text_input "input#shipping_address_tel", phone_number, "Shipping Address Tel"
+      fill_to_text_input "#new_signup [name='shipping_address[building]']", data_address["value_building_name"], "Shipping Address building"
+      sleep_by_seconds 1
+
+      fill_to_text_input "#new_signup input#shipping_address_tel", phone_number, "Shipping Address Tel"
       sleep_by_seconds 1
 
       if sex_value.present?
-        select_radio_btn "sex_#{sex_value}", sex_value, "Sex"
+        select_radio_btn "#new_signup #sex_#{sex_value}", sex_value, "Sex"
         sleep_by_seconds 1
       end
 
-      select "#user_birthday_1i", birth_date["valueYear"], :birthday_year
+      select "#new_signup #user_birthday_1i", birth_date["valueYear"], :birthday_year
       sleep_by_seconds 1
-      select "#user_birthday_2i", birth_date["valueMonth"].to_i.to_s, :birthday_month
+      select "#new_signup #user_birthday_2i", birth_date["valueMonth"].to_i.to_s, :birthday_month
       sleep_by_seconds 1
-      select "#user_birthday_3i", birth_date["valueDay"].to_i.to_s, :birthday_day
+      select "#new_signup #user_birthday_3i", birth_date["valueDay"].to_i.to_s, :birthday_day
       sleep_by_seconds 1
 
-      fill_to_text_input "#user_email", user_email, "User email"
+      fill_to_text_input "#new_signup #user_email", user_email, "User email"
       sleep_by_seconds 1
 
       if tamago_repeat_config.email_confirm_required?
-        fill_to_text_input "#user_email_confirmation", user_email, "User email"
+        fill_to_text_input "#new_signup #user_email_confirmation", user_email, "User email"
         sleep_by_seconds 1
       end
 
-      fill_to_text_input "#user_password", password_value, "Password"
+      fill_to_text_input "#new_signup #user_password", password_value, "Password"
       sleep_by_seconds 1
-      fill_to_text_input "#user_password_confirmation", password_value, "Password confirmation"
+      fill_to_text_input "#new_signup #user_password_confirmation", password_value, "Password confirmation"
       sleep_by_seconds 1
 
-      click "input#hide_display2", pointer_action: false
+      click "#new_signup input#hide_display2", pointer_action: false
 
       verify_recaptcha
-
       fill_to_text_input "#user_password", password_value, "Password"
       sleep_by_seconds 1
       fill_to_text_input "#user_password_confirmation", password_value, "Password confirmation"
       sleep_by_seconds 1
 
       click "input#hide_display2", pointer_action: false
+
+      # logs = @driver.manage.logs.get(:browser)
+      # Log.info logs.inspect
 
       wait_page_load "order/select_order_method"
       capture
+      @log_tab_level -= 1
     end
 
     # def recaptcha_page
@@ -196,13 +202,15 @@ module TamagoScenario
     def verify_recaptcha
       Log.info "verify_captcha", @log_tab_level
       @log_tab_level += 1
-      frame = document.find_element("iframe[src*='https://www.google.com/recaptcha/api2/anchor']")
+      switch_to :default_content
+      frame = @driver.find_element(css: "iframe[src*='https://www.google.com/recaptcha/api2/anchor']")
       src = frame.attribute("src")
 
       google_key = CGI::parse(src)["k"]&.first
       page_url = @driver.current_url
 
       token = Captcha::RecaptchaV2.new(google_key, page_url, @log_tab_level).process
+      Log.info "token: #{token}", @log_tab_level
 
       js_script = "document.getElementById('g-recaptcha-response').innerHTML = '#{token}'"
       execute_script js_script
@@ -320,16 +328,8 @@ module TamagoScenario
       @log_tab_level += 1
       begin
         if is_capture
-          if is_error
-            Log.info "#{@step}: capture", @log_tab_level
-            @driver.save_screenshot("#{@screenshot_path}/#{@scenario.id}_#{@user_input_id}_#{@step}.png")
-          else
-            prev_frame = @current_frame
-            switch_to :default_content
-            Log.info "#{@step}: capture", @log_tab_level
-            @driver.save_screenshot("#{@screenshot_path}/#{@scenario.id}_#{@user_input_id}_#{@step}.png")
-            switch_to_frame prev_frame
-          end
+          Log.info "#{@step}: capture", @log_tab_level
+          @driver.save_screenshot("#{@screenshot_path}/#{@scenario.id}_#{@user_input_id}_#{@step}.png")
         end
       rescue e
         Log.error "#{@step}: capture failue", @log_tab_level
@@ -383,7 +383,7 @@ module TamagoScenario
     def select_radio_btn(css_selector, value, attr_name = "", description = "", pointer_action: true)
       @log_tab_level += 1
       Log.info "Select radio button #{attr_name}: #{description}", @log_tab_level
-      js_script = "document.getElementById('#{css_selector}').checked = true"
+      js_script = "document.querySelector('#{css_selector}').checked = true"
       Log.info "@driver.execute_script(#{js_script})", @log_tab_level + 1
       @driver.execute_script(js_script)
 
@@ -509,12 +509,12 @@ module TamagoScenario
       @user_email = find_response_by_data_input_name("user_email")
       encrypted_password_value = find_response_by_data_input_name("user_password")
       @password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"]
-      @delivery_frequency = find_response_by_data_input_name("delivery_frequency")&.value
-      @is_regular_order = @scenario.is_use_only_regular_order || find_response_by_data_input_name("is_regular_order")&.value
-      @delivery_method = find_response_by_data_input_name("delivery_method")&.value
-      @delivery_date = find_response_by_data_input_name("delivery_date")&.value
-      @credit_card_payment = find_response_by_data_input_name("credit_card_payment")&.value
-      @card_data = JSON.parse(JWT.decode(@credit_card_payment, SECRET_KEY)[0]["data"])
+      @delivery_frequency = find_response_by_data_input_name("delivery_frequency")
+      @is_regular_order = @scenario.is_use_only_regular_order || find_response_by_data_input_name("is_regular_order")
+      @delivery_method = find_response_by_data_input_name("delivery_method")
+      @delivery_date = find_response_by_data_input_name("delivery_date")
+      # @credit_card_payment = find_response_by_data_input_name("credit_card_payment")
+      # @card_data = JSON.parse(JWT.decode(@credit_card_payment, SECRET_KEY)[0]["data"])
     end
 
     def user_agents
