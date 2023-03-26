@@ -165,9 +165,9 @@ module TamagoScenario
       click "#new_signup input#hide_display2", pointer_action: false
 
       verify_recaptcha
-      fill_to_text_input "#user_password", password_value, "Password"
+      fill_to_text_input "#new_signup #user_password", password_value, "Password"
       sleep_by_seconds 1
-      fill_to_text_input "#user_password_confirmation", password_value, "Password confirmation"
+      fill_to_text_input "#new_signup #user_password_confirmation", password_value, "Password confirmation"
       sleep_by_seconds 1
 
       click "input#hide_display2", pointer_action: false
