@@ -1,15 +1,16 @@
 require "colorize"
 
 class Log
-  TMP_FOLDER = Rails.root + "/tmp"
-  LOG_TXT = "#{TMP_FOLDER}/log.txt"
-
   @@debug_mode = :both
   # :stdout
   # :file
   # :both
 
   class << self
+    def log_txt_file
+      Rails.root + "/tmp/log.txt"
+    end
+
     def debug_mode(debug_mode = :both)
       @@debug_mode = debug_mode
     end
@@ -51,14 +52,14 @@ class Log
     end
 
     def delete_log_file
-      return unless File.exist? LOG_TXT
+      return unless File.exist? log_txt_file
 
-      File.delete LOG_TXT
-      info "Deleted #{LOG_TXT}"
+      File.delete log_txt_file
+      info "Deleted #{log_txt_file}"
     end
 
     def write_log_to_file(message)
-      File.open(LOG_TXT, "a") { |f| f.puts message }
+      File.open(log_txt_file, "a") { |f| f.puts message }
     end
 
     def tab(tab_level = 0)
