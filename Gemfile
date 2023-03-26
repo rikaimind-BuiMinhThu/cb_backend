@@ -31,6 +31,8 @@ gem "colorize"
 gem "google-cloud-speech", "~> 1.5"
 gem "webdrivers", "5.2.0"
 gem "webdriver-user-agent", "~> 7.3"
+gem "redis"
+gem "sidekiq"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
