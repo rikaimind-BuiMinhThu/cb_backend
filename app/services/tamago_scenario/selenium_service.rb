@@ -70,6 +70,7 @@ module TamagoScenario
           "--no-sandbox",
           "--disable-gpu",
           "--disable-dev-shm-usage",
+          "--window-size=2560,1440",
           "--user-agent=#{user_agents.sample}",
         ],
       )
