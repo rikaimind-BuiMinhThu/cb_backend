@@ -114,9 +114,6 @@ class ScenarioUserResponse < ApplicationRecord
           value = conversation.dig(:text_input, :phone_number, :value)
         when "password"
           data_input_name = "user_password"
-          value = conversation.dig(:text_input, :password, :value)
-        when "password_confirmation"
-          data_input_name = "user_password_confirmation"
           value = conversation.dig(:text_input, :password_confirmation, :value)
         end
       when "zip_code_address"
@@ -170,7 +167,7 @@ class ScenarioUserResponse < ApplicationRecord
           value = selected.to_i
           data_input_name = "quantity"
         when "delivery_method"
-          value = get_selected_value_for_pull_down(conversation)
+          selected = get_selected_value_for_pull_down(conversation)
           value = selected.to_i
           data_input_name = "delivery_method"
         end

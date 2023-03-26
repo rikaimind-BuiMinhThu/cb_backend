@@ -255,7 +255,9 @@ module TamagoScenario
       # TODO
 
       # 時間帯指定
-      select "#order_expected_arrival_time_zone", delivery_date, :delivery_date
+      if delivery_time.present?
+        select "#order_expected_arrival_time_zone", delivery_time, :delivery_time
+      end
       # sleep_by_seconds 1
 
       if credit_card_payment.present?
@@ -530,8 +532,9 @@ module TamagoScenario
       @is_regular_order = @scenario.is_use_only_regular_order || find_response_by_data_input_name("is_regular_order")
       @delivery_method = find_response_by_data_input_name("delivery_method")
       @delivery_date = find_response_by_data_input_name("delivery_date")
-      # @credit_card_payment = find_response_by_data_input_name("credit_card_payment")
-      # @card_data = JSON.parse(JWT.decode(@credit_card_payment, SECRET_KEY)[0]["data"])
+      @delivery_time = find_response_by_data_input_name("delivery_time")
+      @credit_card_payment = find_response_by_data_input_name("credit_card_payment")
+      @card_data = JSON.parse(JWT.decode(@credit_card_payment, SECRET_KEY)[0]["data"])
     end
 
     def user_agents
