@@ -56,34 +56,12 @@ module TamagoScenario
       end
     end
 
-    def start_tor
-      Log.info "Start tor process", @log_tab_level
-      @log_tab_level += 1
-      system("service tor start")
-      Log.info "Started tor", @log_tab_level
-      sleep_by_seconds 10
-      @log_tab_level -= 1
-    end
-
-    def quit_tor
-      @log_tab_level += 1
-      process_ids = `pgrep tor`.split("\n")
-
-      if process_ids.present?
-        system("kill -9 #{process_ids.join(" ")}")
-        Log.info "Killed tor process #{process_ids.join(" ")}", @log_tab_level
-      end
-
-      @log_tab_level -= 1
-    end
-
     def init_selenium_driver
       @log_tab_level += 1
 
       Selenium::WebDriver.logger.output = File.join("#{Rails.root}/log", "selenium.log")
       Selenium::WebDriver.logger.level = :debug
       Log.info "Init selenium driver for chrome", @log_tab_level
-      tor_proxy = "127.0.0.1:9050"
       options = Selenium::WebDriver::Chrome::Options.new(
         args: [
           "--lang=ja",
@@ -92,7 +70,6 @@ module TamagoScenario
           "--no-sandbox",
           "--disable-gpu",
           "--disable-dev-shm-usage",
-          "--proxy-server=socks5://#{tor_proxy}",
           "--user-agent=#{user_agents.sample}",
         ],
       )
@@ -101,18 +78,7 @@ module TamagoScenario
       Log.info @driver.execute_script("return navigator.userAgent"), @log_tab_level
       @driver.manage.timeouts.implicit_wait = 300
       @driver.manage.delete_all_cookies
-      # options = Selenium::WebDriver::Firefox::Options.new(args: [
-      #   '--test-type',
-      #   '--ignore-certificate-errors',
-      #   "--disable-extensions",
-      #   "disable-infobars",
-      #   "--incognito",
-      #   "--headless",
-      #   "--no-sandbox",
-      #   "--disable-gpu",
-      #   "--disable-dev-shm-usage",
-      # ])
-      # @driver = Selenium::WebDriver.for(:firefox, options: options)
+
       Log.info "Init OK selenium driver", @log_tab_level
       @log_tab_level -= 1
     end
