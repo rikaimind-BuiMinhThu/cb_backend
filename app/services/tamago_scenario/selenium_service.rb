@@ -11,7 +11,9 @@ module TamagoScenario
     attr_accessor :scenario, :conversations, :driver, :tamago_repeat_config, :status
 
     attr_accessor :quantity_value, :user_name, :user_name_kana, :data_address,
-      :post_code, :phone_number, :sex_value, :birth_date, :user_email, :password_value
+      :post_code, :phone_number, :sex_value, :birth_date, :user_email, :password_value,
+      :delivery_frequency, :is_regular_order, :delivery_method, :delivery_date,
+      :credit_card_payment, :card_data
 
     attr_accessor :is_error
 
@@ -77,8 +79,6 @@ module TamagoScenario
 
     def init_selenium_driver
       @log_tab_level += 1
-
-      start_tor
 
       Selenium::WebDriver.logger.output = File.join("#{Rails.root}/log", "selenium.log")
       Selenium::WebDriver.logger.level = :debug
@@ -245,95 +245,65 @@ module TamagoScenario
     end
 
     def shipping_method_and_payment_method_select_page
-      Log.info "\tshipping_method_and_payment_method_select_page"
+      Log.info "shipping_method_and_payment_method_select_page", @log_tab_level
+      @log_tab_level += 1
       switch_to :default_content
       capture
-      Log.info "\t\tCurrent URL: #{@driver.current_url}"
+      Log.info "Current URL: #{@driver.current_url}", @log_tab_level
       # 定期・頒布会配送頻度
-      if @scenario.is_use_only_regular_order || conversations.find_by_data_input_name("is_regular_order")&.value
-        Log.info "\t\tfrequency_select = @driver.find_elements(id: order1_periodically_term_id)"
-        frequency_selectors = @driver.find_elements(id: "order1_periodically_term_id")
-        if frequency_selectors.present?
-          frequency_selector = frequency_selectors.first
-          frequency_value = conversations.find_by_data_input_name("delivery_frequency")&.value
-
-          Log.info "\t\tchoose_frequence = Selenium::WebDriver::Support::Select.new(frequency_selector)"
-          choose_frequence = Selenium::WebDriver::Support::Select.new(frequency_selector)
-          capture
-
-          Log.info "\t\tchoose_frequence.select_by(:value, frequency_value.to_s)"
-          choose_frequence.select_by(:value, frequency_value.to_s)
-          capture
-        end
+      if is_regular_order
+        select "#order1_periodically_term_id", delivery_frequency, :delivery_frequency
+        sleep_by_seconds 1
       end
 
       # 配送方法
-      Log.info "\t\tselect_delivery_method = @driver.find_element(id: order_delivery_classification_id)"
-      select_delivery_method = @driver.find_element(id: "order_delivery_classification_id")
-      Log.info "\t\tchoose_select_delivery_method = Selenium::WebDriver::Support::Select.new(select_delivery_method)"
-      choose_select_delivery_method = Selenium::WebDriver::Support::Select.new(select_delivery_method)
-      capture
-
-      select_delivery_method_value = conversations.find_by_data_input_name("delivery_method").value
-      Log.info "\t\tchoose_select_delivery_method.select_by(:value, #{select_delivery_method_value.to_s})"
-      choose_select_delivery_method.select_by(:value, select_delivery_method_value.to_s)
+      select "#order_delivery_classification_id", delivery_method, :delivery_method
+      sleep_by_seconds 1
 
       # お届け希望日
       # TODO
 
       # 時間帯指定
-      delivery_time_value = conversations.find_by_data_input_name("delivery_time").value
-      Log.info "\t\tdelivery_time_select = @driver.find_element(id: order_expected_arrival_time_zone)"
-      delivery_time_select = @driver.find_element(id: "order_expected_arrival_time_zone")
-      Log.info "\t\tchoose_delivery_time = Selenium::WebDriver::Support::Select.new(delivery_time_select)"
-      choose_delivery_time = Selenium::WebDriver::Support::Select.new(delivery_time_select)
-      choose_delivery_time.select_by(:value, delivery_time_value.to_s)
+      select "#order_expected_arrival_time_zone", delivery_date, :delivery_date
+      sleep_by_seconds 1
 
-      if conversations.find_by_data_input_name("credit_card_payment").present?
-        Log.info "\t\t@driver.find_element(id: \"order_payment_method_id_2\").click()"
-        @driver.find_element(id: "order_payment_method_id_2").click()
-        Log.info "\t\t@driver.find_element(css: \"input#hide_display\").click()"
-        @driver.find_element(css: "input#hide_display").click()
+      if credit_card_payment.present?
+        click "#order_payment_method_id_2"
+        sleep_by_seconds 1
+        click "input#hide_display"
+        sleep_by_seconds 1
+
         credit_card_page
       else
-        Log.info "\t\t@driver.find_element(id: \"order_payment_method_id_3\").click()"
-        @driver.find_element(id: "order_payment_method_id_3").click()
-        Log.info "\t\t@driver.find_element(css: \"input#hide_display\").click()"
-        @driver.find_element(css: "input#hide_display").click()
+        click "#order_payment_method_id_3"
+        sleep_by_seconds 1
+        click "input#hide_display"
       end
     end
 
     def credit_card_page
-      Log.info "\tcredit_card_page"
-      Log.info "\t\tdriver.switch_to.default_content()"
-      @driver.switch_to.default_content()
-      recaptcha_page
-      data_card = conversations.find_by_data_input_name("credit_card_payment").value
-      data_card = JSON.parse(JWT.decode(data_card, SECRET_KEY)[0]["data"])
-      Log.info "\t\tcard_number = @driver.find_element(id: \"new_credit_card_number\")"
-      card_number = @driver.find_element(id: "new_credit_card_number")
-      Log.info "\t\tcard_number.send_keys(data_card['card_number'])"
-      card_number.send_keys(data_card["card_number"])
-      Log.info "\t\tcard_name = @driver.find_element(id: \"new_credit_card_name\")"
-      card_name = @driver.find_element(id: "new_credit_card_name")
-      Log.info "\t\tcard_name.send_keys(data_card['card_name'])"
-      card_name.send_keys(data_card["card_name"])
-      Log.info "\t\tselect_month = @driver.find_element(id: \"new_credit_effective_date_2i\")"
-      select_month = @driver.find_element(id: "new_credit_effective_date_2i")
-      choose_select_month = Selenium::WebDriver::Support::Select.new(select_month)
-      Log.info "\t\tchoose_select_month.select_by(:value, #{data_card["month"]})"
-      choose_select_month.select_by(:value, data_card["month"].to_i.to_s)
+      Log.info "credit_card_page", @log_tab_level
+      @log_tab_level += 1
 
-      Log.info "\t\tselect_year = @driver.find_element(id: \"new_credit_effective_date_1i\")"
-      select_year = @driver.find_element(id: "new_credit_effective_date_1i")
-      choose_select_year = Selenium::WebDriver::Support::Select.new(select_year)
-      Log.info "\t\tchoose_select_month.select_by(:value, #{data_card["year"]})"
-      choose_select_year.select_by(:value, data_card["year"])
+      switch_to :default_content
+      verify_captcha
 
-      Log.info "\t\tsecurity_code = @driver.find_element(id: \"new_credit_security_code\")"
-      security_code = @driver.find_element(id: "new_credit_security_code")
-      Log.info "\t\tsecurity_code.send_keys(#{data_card["cvc"]})"
-      security_code.send_keys(data_card["cvc"])
+      sleep_by_seconds 1
+
+      fill_to_text_input "#new_credit_card_number", data_card["card_number"], :card_number
+      sleep_by_seconds 1
+
+      fill_to_text_input "#new_credit_card_name", data_card["card_name"], :card_name
+      sleep_by_seconds 1
+
+      select "#new_credit_effective_date_2i", data_card["month"].to_i.to_s, :expire_month
+      sleep_by_seconds 1
+
+      select "#new_credit_effective_date_1i", data_card["year"], :expire_year
+      sleep_by_seconds 1
+
+      fill_to_text_input "#new_credit_security_code", data_card["cvc"], :cvc
+      sleep_by_seconds 1
 
       installment_payment_value = data_card["payment_method"][0]
 
@@ -349,30 +319,32 @@ module TamagoScenario
             "new_credit_card_brand_other"
           end
 
-        Log.info "\t\t@driver.find_element(id: #{installment_payment_radio_btn_id}).click()"
-        @driver.find_element(id: installment_payment_radio_btn_id).click()
+        click "##{installment_payment_radio_btn_id}", :card_type
+        sleep_by_seconds 1
       end
 
-      Log.info "\t\t@driver.find_element(css: \"input#hide_display\").click()"
-      @driver.find_element(css: "input#hide_display").click()
+      click "input#hide_display", :submit
+
+      @log_tab_level -= 1
     end
 
     def confirm_page
-      Log.info "\tconfirm_page"
-      Log.info "\t\tdriver.switch_to.default_content()"
-      @driver.switch_to.default_content()
-      Log.info "\t\tsleep 5"
-      sleep(5)
-      Log.info "\t\t@driver.find_element(css: \"input#hide_display1\").click()"
-      @driver.find_element(css: "input#hide_display1").click()
+      Log.info "confirm_page", @log_tab_level
+      @log_tab_level += 1
+      switch_to :default_content
+      sleep_by_seconds 5
+
+      click "input#hide_display1", :submit_on_confirm
+
+      @log_tab_level -= 1
     end
 
     def quit
+      Log.info "quit", @log_tab_level
       @log_tab_level += 1
-      Log.info "driver.quit"
+      Log.info "driver.quit", @log_tab_level
       @status = true
       @driver.quit
-      quit_tor
       @log_tab_level -= 1
     end
 
@@ -571,6 +543,12 @@ module TamagoScenario
       @user_email = find_response_by_data_input_name("user_email")
       encrypted_password_value = find_response_by_data_input_name("user_password")
       @password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"]
+      @delivery_frequency = find_response_by_data_input_name("delivery_frequency")&.value
+      @is_regular_order = @scenario.is_use_only_regular_order || find_response_by_data_input_name("is_regular_order")&.value
+      @delivery_method = find_response_by_data_input_name("delivery_method")&.value
+      @delivery_date = find_response_by_data_input_name("delivery_date")&.value
+      @credit_card_payment = find_response_by_data_input_name("credit_card_payment")&.value
+      @card_data = JSON.parse(JWT.decode(@credit_card_payment, SECRET_KEY)[0]["data"])
     end
 
     def user_agents
