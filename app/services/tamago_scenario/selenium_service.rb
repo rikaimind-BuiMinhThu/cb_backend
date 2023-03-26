@@ -111,7 +111,6 @@ module TamagoScenario
 
       wait_element_load "#new_signup #shipping_address_family_name"
 
-      execute_script "window.reset = function() {}; window.execute = function() {};"
       # sleep_by_seconds 1
 
       fill_to_text_input "#new_signup input#shipping_address_family_name", user_name["valueLeft"], "Shipping address Family name"
@@ -126,9 +125,9 @@ module TamagoScenario
       fill_to_text_input "#new_signup input#shipping_address_zip", post_code, "Post code"
       # sleep_by_seconds 1
 
-      click "#new_signup #hide_display_shipping_address", "Search by post_code"
+      click "#new_signup #hide_display_shipping_address a", "Search by post_code"
 
-      # sleep_by_seconds 1
+      sleep_by_seconds 1
       fill_to_text_input "#new_signup [name='shipping_address[address]']", data_address["value_address"], "Shipping Address address"
       # sleep_by_seconds 1
 
@@ -153,25 +152,30 @@ module TamagoScenario
       fill_to_text_input "#new_signup #user_email", user_email, "User email"
       # sleep_by_seconds 1
 
-      if tamago_repeat_config.email_confirm_required?
+      unless tamago_repeat_config.email_confirm_none?
         fill_to_text_input "#new_signup #user_email_confirmation", user_email, "User email"
         # sleep_by_seconds 1
       end
 
-      fill_to_text_input "#new_signup #user_password", password_value, "Password"
-      # sleep_by_seconds 1
-      fill_to_text_input "#new_signup #user_password_confirmation", password_value, "Password confirmation"
-      # sleep_by_seconds 1
+      try_count = 1
+      while try_count < 10
+        Log.info "Try #{try_count} times", @log_tab_level
+        sleep_by_seconds 5
+        break unless @driver.current_url.include?("order/entry_login")
 
-      click "#new_signup input#hide_display2", pointer_action: false
+        verify_recaptcha
+        fill_to_text_input "#new_signup #user_password", password_value, "Password"
+        # sleep_by_seconds 1
+        fill_to_text_input "#new_signup #user_password_confirmation", password_value, "Password confirmation"
+        # sleep_by_seconds 1
 
-      verify_recaptcha
-      fill_to_text_input "#new_signup #user_password", password_value, "Password"
-      # sleep_by_seconds 1
-      fill_to_text_input "#new_signup #user_password_confirmation", password_value, "Password confirmation"
-      # sleep_by_seconds 1
+        click "input#hide_display2", pointer_action: false
+        try_count += 1
+      end
 
-      click "input#hide_display2", pointer_action: false
+      if try_count == 10
+        raise "Can not pass captcha"
+      end
 
       # logs = @driver.manage.logs.get(:browser)
       # Log.info logs.inspect
@@ -207,13 +211,25 @@ module TamagoScenario
       frame = @driver.find_element(css: "iframe[src*='https://www.google.com/recaptcha/api2/anchor']")
       src = frame.attribute("src")
 
+      execute_script "window.reset = function() {}; window.execute = function() {};grecaptcha = {ready: function() {}, reset: function(){}, execute: function(){}};"
+      execute_script "document.querySelector('#recaptcha').remove();document.querySelector(\"iframe[title*='recaptcha']\").parentElement.remove();"
+
+      capture
+
+      sleep_by_seconds 5
+
+      @driver.action.pointer_down(:left).pointer_up(:left).perform
+
       google_key = CGI::parse(src)["k"]&.first
       page_url = @driver.current_url
 
       token = Captcha::RecaptchaV2.new(google_key, page_url, @log_tab_level).process
       Log.info "token: #{token}", @log_tab_level
 
-      js_script = "document.getElementById('g-recaptcha-response').innerHTML = '#{token}'"
+      js_script = "textarea = document.createElement('textarea');"
+      js_script += "textarea.name = 'g-recaptcha-response';"
+      js_script += "textarea.innerHTML = '#{token}';"
+      js_script += "document.querySelector('#new_signup').append(textarea);"
       execute_script js_script
 
       @log_tab_level -= 1
