@@ -243,12 +243,12 @@ module TamagoScenario
       Log.info "Current URL: #{@driver.current_url}", @log_tab_level
       # 定期・頒布会配送頻度
       if is_regular_order
-        select "#order1_periodically_term_id", delivery_frequency, :delivery_frequency
+        select "#order1_periodically_term_id", delivery_frequency.to_s, :delivery_frequency
         # sleep_by_seconds 1
       end
 
       # 配送方法
-      select "#order_delivery_classification_id", delivery_method, :delivery_method
+      select "#order_delivery_classification_id", delivery_method.to_s, :delivery_method
       # sleep_by_seconds 1
 
       # お届け希望日
