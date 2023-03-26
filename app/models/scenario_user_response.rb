@@ -2,31 +2,31 @@ class ScenarioUserResponse < ApplicationRecord
   SECRET_KEY = Rails.application.secrets.secret_refresh_token
   belongs_to :scenario
 
-  def self.boolean data_input_name, options={}
+  def self.boolean(data_input_name, options = {})
     @list ||= {}
     @list[data_input_name] = options.merge(
-      value_type: :boolean
+      value_type: :boolean,
     )
   end
 
-  def self.string data_input_name, options={}
+  def self.string(data_input_name, options = {})
     @list ||= {}
     @list[data_input_name] = options.merge(
-      value_type: :string
+      value_type: :string,
     )
   end
 
-  def self.text data_input_name, options={}
+  def self.text(data_input_name, options = {})
     @list ||= {}
     @list[data_input_name] = options.merge(
-      value_type: :text
+      value_type: :text,
     )
   end
 
-  def self.integer data_input_name, options={}
+  def self.integer(data_input_name, options = {})
     @list ||= {}
     @list[data_input_name] = options.merge(
-      value_type: :integer
+      value_type: :integer,
     )
   end
 
@@ -36,7 +36,7 @@ class ScenarioUserResponse < ApplicationRecord
 
   def value=(value)
     payload = {
-      exp: (Time.current + 72.hours).to_i
+      exp: (Time.current + 72.hours).to_i,
     }
     if self.class.list[self.data_input_name&.to_sym]
       case self.class.list[self.data_input_name.to_sym][:value_type]
@@ -97,64 +97,64 @@ class ScenarioUserResponse < ApplicationRecord
       value = nil
 
       case conversation[:type]
-      when 'text_input'
+      when "text_input"
         puts "-----------------------------conversion: #{conversation[:text_input][:save_input_content]}"
         case conversation[:text_input][:save_input_content]
-        when 'user_email'
-          data_input_name = 'user_email'
+        when "user_email"
+          data_input_name = "user_email"
           value = conversation.dig(:text_input, :email_address, :value)
-        when 'user_name'
-          data_input_name = 'user_name'
+        when "user_name"
+          data_input_name = "user_name"
           value = conversation[:text_input][:text].to_json
-        when 'user_name_kana'
-          data_input_name = 'user_name_kana'
+        when "user_name_kana"
+          data_input_name = "user_name_kana"
           value = conversation[:text_input][:text].to_json
-        when 'phone_number'
-          data_input_name = 'phone_number'
+        when "phone_number"
+          data_input_name = "phone_number"
           value = conversation.dig(:text_input, :phone_number, :value)
-        when 'password'
-          data_input_name = 'user_password'
+        when "password"
+          data_input_name = "user_password"
           value = conversation.dig(:text_input, :password, :value)
-        when 'password_confirmation'
-          data_input_name = 'user_password_confirmation'
+        when "password_confirmation"
+          data_input_name = "user_password_confirmation"
           value = conversation.dig(:text_input, :password_confirmation, :value)
         end
-      when 'zip_code_address'
-        data_input_name = 'zip_code_address'
+      when "zip_code_address"
+        data_input_name = "zip_code_address"
         value = conversation[:zip_code_address].to_json
-      when 'radio_button'
+      when "radio_button"
         case conversation[:radio_button][:save_input_content]
-        when 'is_regular_order'
+        when "is_regular_order"
           value = conversation[:radio_button][:initial_selection] == 1
-          data_input_name = 'is_regular_order'
+          data_input_name = "is_regular_order"
         when "delivery_frequency"
           selected = get_selected_obj_for_radio_button(conversation)
           value = selected[:value]
-          data_input_name = 'delivery_frequency'
+          data_input_name = "delivery_frequency"
         when "delivery_method"
           selected = get_selected_obj_for_radio_button(conversation)
           value = selected[:value]
-          data_input_name = 'delivery_method'
+          data_input_name = "delivery_method"
         when "payment_method"
           selected = get_selected_obj_for_radio_button(conversation)
           value = selected[:value]
-          data_input_name = 'payment_method'
+          data_input_name = "payment_method"
         when "sex"
           selected = get_selected_obj_for_radio_button(conversation)
           value = selected[:value]
-          data_input_name = 'sex'
+          data_input_name = "sex"
         end
-      when 'card_payment_radio_button'
+      when "card_payment_radio_button"
         selected = get_selected_obj_for_card_payment_radio_button(conversation)
-  
+
         if conversation[:card_payment_radio_button][:initial_selection] == conversation[:card_payment_radio_button][:card_linked_setting]
-          data_input_name = 'credit_card_payment'
+          data_input_name = "credit_card_payment"
           value = conversation[:card_payment_radio_button].to_json
         else
-          data_input_name = 'np_delivery_payment'
+          data_input_name = "np_delivery_payment"
           value = selected[:value]
         end
-      when 'pull_down'
+      when "pull_down"
         case conversation[:pull_down][:save_input_content]
         when "birthday" # 誕生日
           value = conversation[:pull_down][:dob_ymd].to_json
@@ -172,10 +172,10 @@ class ScenarioUserResponse < ApplicationRecord
         when "delivery_method"
           value = get_selected_value_for_pull_down(conversation)
           value = selected.to_i
-          data_input_name = 'delivery_method'
+          data_input_name = "delivery_method"
         end
       end
-      
+
       puts "=============================="
       puts "data_input_name: #{data_input_name}"
       next unless data_input_name.present?
@@ -183,7 +183,7 @@ class ScenarioUserResponse < ApplicationRecord
         scenario_id: scenario_id,
         user_input_id: user_id,
         data_input_name: data_input_name,
-        value: value
+        value: value,
       )
 
       built_result.push(new_record)
@@ -192,19 +192,19 @@ class ScenarioUserResponse < ApplicationRecord
     built_result
   end
 
-  def self.get_selected_obj_for_radio_button conversation
+  def self.get_selected_obj_for_radio_button(conversation)
     selected_id = conversation[:radio_button][:initial_selection]
-    conversation[:radio_button][:default].detect{|obj| obj[:id] == selected_id}
+    conversation[:radio_button][:default].detect { |obj| obj[:id] == selected_id }
   end
 
-  def self.get_selected_obj_for_card_payment_radio_button conversation
+  def self.get_selected_obj_for_card_payment_radio_button(conversation)
     selected_id = conversation[:card_payment_radio_button][:initial_selection]
-    conversation[:card_payment_radio_button][:radio_contents].detect{|obj| obj[:id] == selected_id}
+    conversation[:card_payment_radio_button][:radio_contents].detect { |obj| obj[:id] == selected_id }
   end
 
-  def self.get_selected_value_for_pull_down conversation
+  def self.get_selected_value_for_pull_down(conversation)
     selected_text = conversation[:pull_down][:customization][:value]
-    selected = conversation[:pull_down][:customization][:options_without_comment].detect{ |o| o[:text] == selected_text }
+    selected = conversation[:pull_down][:customization][:options_without_comment].detect { |o| o[:text] == selected_text }
     return selected[:value] if selected.present?
   end
 
