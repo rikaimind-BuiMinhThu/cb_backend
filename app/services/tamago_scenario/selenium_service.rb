@@ -195,54 +195,53 @@ module TamagoScenario
 
       click "input#hide_display2", pointer_action: false
 
-      recaptcha_page
+      verify_recaptcha
+
+      fill_to_text_input "#user_password", password_value, "Password"
+      sleep_by_seconds 1
+      fill_to_text_input "#user_password_confirmation", password_value, "Password confirmation"
+      sleep_by_seconds 1
+
+      click "input#hide_display2", pointer_action: false
 
       wait_page_load "order/select_order_method"
       capture
     end
 
-    def recaptcha_page
-      # return true
-      # return unless is_displaying_recaptcha?
-      @log_tab_level += 1
-      sleep_by_seconds 2
+    # def recaptcha_page
+    #   # return true
+    #   # return unless is_displaying_recaptcha?
+    #   @log_tab_level += 1
+    #   sleep_by_seconds 2
 
-      Log.info "recaptcha_page", @log_tab_level
-      begin
-        verify_recaptcha
-      rescue StandardError => e
-        Log.error "Error: #{e.message}", @log_tab_level
-        sleep_by_seconds 5
-        switch_to :default_content
-        sleep_by_seconds
-        verify_recaptcha
-      end
-      @log_tab_level -= 1
-    end
+    #   Log.info "recaptcha_page", @log_tab_level
+    #   begin
+    #     verify_recaptcha
+    #   rescue StandardError => e
+    #     Log.error "Error: #{e.message}", @log_tab_level
+    #     sleep_by_seconds 5
+    #     switch_to :default_content
+    #     sleep_by_seconds
+    #     verify_recaptcha
+    #   end
+    #   @log_tab_level -= 1
+    # end
 
     def verify_recaptcha
+      Log.info "verify_captcha", @log_tab_level
       @log_tab_level += 1
-      switch_to "iframe[title^='recaptcha']"
-      sleep_by_seconds
+      frame = document.find_element("iframe[src*='https://www.google.com/recaptcha/api2/anchor']")
+      src = frame.attribute("src")
 
-      click "#recaptcha-audio-button", "Swith to Recaptcha Audio tab"
-      Log.info "src = @driver.find_element(id: audio-source).attribute(src)", @log_tab_level
-      src = @driver.find_element(id: "audio-source").attribute("src")
+      google_key = CGI::parse(src)["k"]&.first
+      page_url = @driver.current_url
 
-      download_file src
+      token = Captcha::RecaptchaV2.new(google_key, page_url, @log_tab_level).process
 
-      tmp_folder = File.join(Rails.root, "tmp")
-      key = GoogleApi.speech_to_text(file_name, tmp_folder)
+      js_script = "document.getElementById('g-recaptcha-response').innerHTML = '#{token}'"
+      execute_script js_script
 
-      Log.info "key: #{key}", @log_tab_level
-      fill_to_text_input "#audio-response", key, "Recaptcha key"
-
-      click "#recaptcha-verify-button"
-
-      sleep_by_seconds 2
-      capture
-
-      switch_to :default_content
+      @log_tab_level -= 1
     end
 
     def shipping_method_and_payment_method_select_page
@@ -398,6 +397,13 @@ module TamagoScenario
         Log.error "#{@step}: capture failue", @log_tab_level
       end
       @step += 1
+      @log_tab_level -= 1
+    end
+
+    def execute_script(js_script)
+      Log.info "execute_script: #{js_script}", @log_tab_level
+      @log_tab_level += 1
+      @driver.execute_script(js_script)
       @log_tab_level -= 1
     end
 

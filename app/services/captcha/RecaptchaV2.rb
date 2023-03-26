@@ -23,12 +23,16 @@ module Captcha
       sleep 15
 
       begin
-        while true
+        try_count = 1
+        while try_count <= 10
           response = get_captcha_response(request_id)
-          raise "Recaptcha V2 failure #{@google_key}, request_id: #{request_id}" if response != :retry_again
+          if response != :retry_again
+            Log.info "#{try_count}: Sleep more 5 seconds for retry", @log_tab_level
+            sleep 5
+            try_count += 1
+          end
 
-          Log.info "Sleep more 5 seconds for retry", @log_tab_level
-          sleep 5
+          return response
         end
       rescue e
         Log.error e.message, @log_tab_level
@@ -41,8 +45,8 @@ module Captcha
       Log.info "get_captcha_response for request_id: #{request_id}", @log_tab_level
       @log_tab_level += 1
 
-      uri = TWO_CAPTCHA_RES_URL.gsub(":api_key", api_key)
-        .gsub(":request_id", request_id)
+      uri = URI(TWO_CAPTCHA_RES_URL.gsub(":api_key", api_key)
+        .gsub(":request_id", request_id))
 
       res = Net::HTTP.get_response(uri)
       Log.info res.inspect, @log_tab_level
