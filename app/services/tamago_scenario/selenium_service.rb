@@ -1,5 +1,5 @@
 require "selenium-webdriver"
-require File.dirname(__FILE__) + "/log"
+require File.dirname(__FILE__) + "/../log"
 
 module TamagoScenario
   class SeleniumService
@@ -138,10 +138,9 @@ module TamagoScenario
     end
 
     def entry_login_page
-      @log_tab_level = 1
-      Log.info "entry_login_page", @log_tab_level = 1
-      @log_tab_level = 1
-      Log.info "Current URL: #{@driver.current_url}"
+      @log_tab_level += 1
+      Log.info "entry_login_page", @log_tab_level
+      Log.info "Current URL: #{@driver.current_url}", @log_tab_level + 1
 
       wait_element_load "#shipping_address_family_name"
 
@@ -382,17 +381,21 @@ module TamagoScenario
       sleep 2
 
       @log_tab_level += 1
-      if is_capture
-        if is_error
-          Log.info "#{@step}: capture", @log_tab_level
-          @driver.save_screenshot("#{@screenshot_path}/#{@scenario.id}_#{@user_input_id}_#{@step}.png")
-        else
-          prev_frame = @current_frame
-          switch_to :default_content
-          Log.info "#{@step}: capture", @log_tab_level
-          @driver.save_screenshot("#{@screenshot_path}/#{@scenario.id}_#{@user_input_id}_#{@step}.png")
-          switch_to_frame prev_frame
+      begin
+        if is_capture
+          if is_error
+            Log.info "#{@step}: capture", @log_tab_level
+            @driver.save_screenshot("#{@screenshot_path}/#{@scenario.id}_#{@user_input_id}_#{@step}.png")
+          else
+            prev_frame = @current_frame
+            switch_to :default_content
+            Log.info "#{@step}: capture", @log_tab_level
+            @driver.save_screenshot("#{@screenshot_path}/#{@scenario.id}_#{@user_input_id}_#{@step}.png")
+            switch_to_frame prev_frame
+          end
         end
+      rescue e
+        Log.error "#{@step}: capture failue", @log_tab_level
       end
       @step += 1
       @log_tab_level -= 1
