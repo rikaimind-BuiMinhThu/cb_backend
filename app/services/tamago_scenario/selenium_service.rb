@@ -203,7 +203,7 @@ module TamagoScenario
     #   @log_tab_level -= 1
     # end
 
-    def verify_recaptcha
+    def verify_recaptcha(parent_css_selector = "#new_signup")
       Log.info "verify_captcha", @log_tab_level
       @log_tab_level += 1
       switch_to :default_content
@@ -228,7 +228,7 @@ module TamagoScenario
       js_script = "textarea = document.createElement('textarea');"
       js_script += "textarea.name = 'g-recaptcha-response';"
       js_script += "textarea.innerHTML = '#{token}';"
-      js_script += "document.querySelector('#new_signup').append(textarea);"
+      js_script += "document.querySelector('#{parent_css_selector}').append(textarea);"
       execute_script js_script
 
       @log_tab_level -= 1
@@ -278,44 +278,57 @@ module TamagoScenario
       @log_tab_level += 1
 
       switch_to :default_content
-      verify_captcha
+      verify_recaptcha "#check_new_credit"
 
       # sleep_by_seconds 1
 
-      fill_to_text_input "#new_credit_card_number", data_card["card_number"], :card_number
+      fill_to_text_input "#new_credit_card_number", card_data["card_number"], :card_number
       # sleep_by_seconds 1
 
-      fill_to_text_input "#new_credit_card_name", data_card["card_name"], :card_name
+      fill_to_text_input "#new_credit_card_name", card_data["card_name"], :card_name
       # sleep_by_seconds 1
 
-      select "#new_credit_effective_date_2i", data_card["month"].to_i.to_s, :expire_month
+      select "#new_credit_effective_date_2i", card_data["month"].to_i.to_s, :expire_month
       # sleep_by_seconds 1
 
-      select "#new_credit_effective_date_1i", data_card["year"], :expire_year
+      select "#new_credit_effective_date_1i", card_data["year"], :expire_year
       # sleep_by_seconds 1
 
-      fill_to_text_input "#new_credit_security_code", data_card["cvc"], :cvc
+      fill_to_text_input "#new_credit_security_code", card_data["cvc"], :cvc
       # sleep_by_seconds 1
 
-      installment_payment_value = data_card["payment_method"][0]
+      # installment_payment_value = card_data["payment_method"][0]
 
-      if installment_payment_value.present?
-        installment_payment_radio_btn_id = case installment_payment_value
-          when "jcb"
-            "new_credit_card_brand_jcb"
-          when "diners"
-            "new_credit_card_brand_diners"
-          when "amex"
-            "new_credit_card_brand_amex"
-          when "other"
-            "new_credit_card_brand_other"
-          end
+      # if installment_payment_value.present?
+      #   installment_payment_radio_btn_id = case installment_payment_value
+      #     when "jcb"
+      #       "new_credit_card_brand_jcb"
+      #     when "diners"
+      #       "new_credit_card_brand_diners"
+      #     when "amex"
+      #       "new_credit_card_brand_amex"
+      #     when "other"
+      #       "new_credit_card_brand_other"
+      #     end
 
-        click "##{installment_payment_radio_btn_id}", :card_type
-        # sleep_by_seconds 1
-      end
+      #   click "##{installment_payment_radio_btn_id}", :card_type
+      #   # sleep_by_seconds 1
+      # end
+
+      confirm_credit_page
 
       click "input#hide_display", :submit
+
+      @log_tab_level -= 1
+    end
+
+    def confirm_credit_page
+      Log.info "confirm_credit_page", @log_tab_level
+      @log_tab_level += 1
+
+      verify_recaptcha "#credit_exist"
+
+      click "input#hide_display1", :credit_confirm_submit
 
       @log_tab_level -= 1
     end
