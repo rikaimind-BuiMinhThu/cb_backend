@@ -13,7 +13,7 @@ module TamagoScenario
     attr_accessor :quantity_value, :user_name, :user_name_kana, :data_address,
       :post_code, :phone_number, :sex_value, :birth_date, :user_email, :password_value,
       :delivery_frequency, :is_regular_order, :delivery_method, :delivery_date,
-      :credit_card_payment, :card_data, :np_delivery_payment
+      :credit_card_payment, :card_data, :np_delivery_payment, :delivery_time
 
     attr_accessor :is_error
 
@@ -325,6 +325,7 @@ module TamagoScenario
       @log_tab_level += 1
       switch_to :default_content
       sleep_by_seconds 5
+      click "#agreement", :agreement
 
       click "input#hide_display1", :submit_on_confirm
 
