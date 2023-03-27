@@ -13,7 +13,7 @@ module TamagoScenario
     attr_accessor :quantity_value, :user_name, :user_name_kana, :data_address,
       :post_code, :phone_number, :sex_value, :birth_date, :user_email, :password_value,
       :delivery_frequency, :is_regular_order, :delivery_method, :delivery_date,
-      :credit_card_payment, :card_data
+      :credit_card_payment, :card_data, :np_delivery_payment
 
     attr_accessor :is_error
 
@@ -267,7 +267,7 @@ module TamagoScenario
         # sleep_by_seconds 1
 
         credit_card_page
-      else
+      elsif np_delivery_payment.present?
         click "#order_payment_method_id_3"
         # sleep_by_seconds 1
         click "input#hide_display"
@@ -534,7 +534,8 @@ module TamagoScenario
       @delivery_date = find_response_by_data_input_name("delivery_date")
       @delivery_time = find_response_by_data_input_name("delivery_time")
       @credit_card_payment = find_response_by_data_input_name("credit_card_payment")
-      @card_data = JSON.parse(JWT.decode(@credit_card_payment, SECRET_KEY)[0]["data"])
+      @card_data = JSON.parse(JWT.decode(@credit_card_payment, SECRET_KEY)[0]["data"]) if @credit_card_payment.present?
+      @np_delivery_payment = find_response_by_data_input_name("np_delivery_payment")
     end
 
     def user_agents
