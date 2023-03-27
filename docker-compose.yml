@@ -40,7 +40,7 @@ services:
     hostname: redis
     command: redis-server
     ports:
-      - '63791:6379'
+      - '6379:6379'
     volumes:
       - /var/lib/redis/data
   sidekiq:
