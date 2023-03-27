@@ -61,4 +61,4 @@ COPY Gemfile Gemfile
 
 COPY Gemfile.lock Gemfile.lock
 
-RUN bundle instal
+RUN bundle install
