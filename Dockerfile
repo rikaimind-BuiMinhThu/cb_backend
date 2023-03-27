@@ -35,8 +35,23 @@ RUN apt install -y libgconf-2-4 libatk1.0-0 libatk-bridge2.0-0 libgdk-pixbuf2.0-
 
 RUN apt install -y ffmpeg
 RUN ffmpeg -version
-RUN apt install -y software-properties-common
-RUN apt-get install python3.7
+# RUN apt install -y software-properties-common
+# RUN apt install -y python3.9
+RUN apt install -y tor
+# RUN apt-install firefox-geckodriver -y
+# RUN apt-get install -y firefox
+# RUN wget https://github.com/mozilla/geckodriver/releases/download/v0.28.0/geckodriver-v0.32.2-linux64.tar.gz
+# RUN tar zxvf geckodriver-v0.32.2-linux64.tar.gz
+# RUN chmod +x geckodriver
+# RUN mv -f geckodriver /usr/local/share/geckodriver
+# RUN ln -s /usr/local/share/geckodriver /usr/local/bin/geckodriver
+# RUN ln -s /usr/local/share/geckodriver /usr/bin/geckodriver
+
+# RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys A6DCF7707EBC211F
+# RUN apt-add-repository "deb http://ppa.launchpad.net/ubuntu-mozilla-security/ppa/ubuntu focal main"
+# RUN apt update
+# RUN apt install firefox -y
+
 
 RUN mkdir /myapp
 
@@ -47,7 +62,3 @@ COPY Gemfile Gemfile
 COPY Gemfile.lock Gemfile.lock
 
 RUN bundle install
-
-CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]
-
-EXPOSE 3000

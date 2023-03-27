@@ -1,0 +1,8 @@
+test:
+  :concurrency: 4
+development:
+  :concurrency: 4
+production:
+  :concurrency: 2
+:queues:
+  - default

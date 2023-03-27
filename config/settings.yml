@@ -23,3 +23,5 @@ aws:
     AWS_SECRET_ACCESS_KEY: sEcReTkEyInSpoNGeBoBCaSe
     S3_BUCKET: your-app-dev
     AWS_REGION: your-region-1
+two_captcha:
+  api_key: 25c8e5e5abe97802902ea166bb80a0df
