@@ -15,21 +15,7 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
 
   def create_order
     if @client.tamago_repeat?
-      begin
-        conversations = @scenario.scenario_user_responses.where(user_input_id: params[:user_id])
-        user_email = conversations.find_by(data_input_name: 'user_email').value
-        data = {
-          shop_name: @client.name,
-          user_email: user_email
-        }
-        service = TamagoScenario::SeleniumService.new(@scenario, conversations)
-        service.process
-        if !service.status
-          OrderFailedMailer.send_email(user_email, @client.email, data).deliver_later
-        end
-      rescue Selenium::WebDriver::Error::UnexpectedAlertOpenError => e
-        OrderFailedMailer.send_email(user_email, @client.email, data).deliver_later
-      end
+      TamagoScenarioJob.perform_async(params[:scenario_id], params[:user_id])
     else
       render json: {code: 1, message: 'not create order'}
     end

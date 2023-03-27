@@ -14,6 +14,7 @@ module InstagramChatbot
     config.time_zone = 'Tokyo'
 
     config.active_record.time_zone_aware_attributes = [:datetime]
+    config.active_job.queue_adapter = :sidekiq
 
     # Configuration for the application, engines, and railties goes here.
     #

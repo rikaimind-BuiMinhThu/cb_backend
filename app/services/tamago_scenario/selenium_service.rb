@@ -8,7 +8,7 @@ module TamagoScenario
     TIMEOUT = 300
 
     SECRET_KEY = Rails.application.secrets.secret_refresh_token
-    attr_accessor :scenario, :conversations, :driver, :tamago_repeat_config, :status
+    attr_accessor :scenario, :conversations, :driver, :tamago_repeat_config
 
     attr_accessor :quantity_value, :user_name, :user_name_kana, :data_address,
       :post_code, :phone_number, :sex_value, :birth_date, :user_email, :password_value,
@@ -23,7 +23,6 @@ module TamagoScenario
       @conversations = conversations.to_a
       @user_input_id = conversations.first.user_input_id || "sample"
       @tamago_repeat_config = @scenario.tamago_repeat_config
-      @status = false
       @screenshot_path = "#{Rails.root}/tmp/selenium"
       @step = 1
       @current_frame = nil
@@ -336,7 +335,6 @@ module TamagoScenario
       Log.info "quit", @log_tab_level
       @log_tab_level += 1
       Log.info "driver.quit", @log_tab_level
-      @status = true
       @driver.quit
       @log_tab_level -= 1
     end
