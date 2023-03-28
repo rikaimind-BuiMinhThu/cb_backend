@@ -28,6 +28,16 @@ module TamagoScenario
       @current_frame = nil
       @log_tab_level = 0
       @is_error = nil
+      @selenium_result = ScenarioUserResponseSeleniumResult.create(
+        scenario_id: scenario.id,
+        chatbot_id: scenario.chatbot_id,
+        client_id: scenario.chatbot&.user&.client_id,
+        user_input_id: @user_input_id,
+        last_step_no: 0,
+        last_step_description: "",
+        start_time: DateTime.now,
+        result: :running,
+      )
 
       extract_conversions_data
 
@@ -44,6 +54,8 @@ module TamagoScenario
         shipping_method_and_payment_method_select_page
         confirm_page
         quit
+
+        @selenium_result.update! result: :done, end_time: DateTime.now, last_step_no: @step
       rescue => e
         Log.error e.message
         Log.error e.backtrace.join("\n\t")
@@ -52,6 +64,7 @@ module TamagoScenario
         capture true
 
         quit
+        @selenium_result.update! result: :error, end_time: DateTime.now, last_step_no: @step
       end
     end
 
