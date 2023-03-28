@@ -326,7 +326,7 @@ module TamagoScenario
       Log.info "confirm_credit_page", @log_tab_level
       @log_tab_level += 1
 
-      verify_recaptcha "#credit_exist"
+      verify_recaptcha "#check_new_credit"
 
       click "input#hide_display1", :credit_confirm_submit
 
