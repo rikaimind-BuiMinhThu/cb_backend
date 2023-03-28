@@ -315,9 +315,9 @@ module TamagoScenario
       #   # sleep_by_seconds 1
       # end
 
-      confirm_credit_page
-
       click "input#hide_display", :submit
+
+      confirm_credit_page
 
       @log_tab_level -= 1
     end
