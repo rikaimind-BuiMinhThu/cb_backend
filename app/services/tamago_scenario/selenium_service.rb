@@ -359,6 +359,7 @@ module TamagoScenario
       @log_tab_level += 1
       begin
         if is_capture
+          delete_last_screenshot_file
           Log.info "#{@step}: capture", @log_tab_level
           @driver.save_screenshot("#{@screenshot_path}/#{@scenario.id}_#{@user_input_id}_#{@step}.png")
         end
@@ -366,6 +367,19 @@ module TamagoScenario
         Log.error "#{@step}: capture failue", @log_tab_level
       end
       @step += 1
+      @log_tab_level -= 1
+    end
+
+    def delete_last_screenshot_file
+      @log_tab_level += 1
+
+      begin
+        last_file_path = "#{@screenshot_path}/#{@scenario.id}_#{@user_input_id}_#{@step - 1}.png"
+        Log.info "Delele #{last_file_path}", @log_tab_level
+      rescue
+        Log.error "Can not delete #{last_file_path}", @log_tab_level + 1
+      end
+
       @log_tab_level -= 1
     end
 
