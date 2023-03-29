@@ -9,7 +9,7 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
       scenario_user_responses.each(&:save!) if scenario_user_responses.present?
       render json: { code: 1, data: scenario_user_responses }
     else
-      render json: { code: 1, data: [] }
+      render json: { code: 0, data: [] }
     end
   end
 
