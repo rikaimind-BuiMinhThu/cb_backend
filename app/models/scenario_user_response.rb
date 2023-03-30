@@ -195,8 +195,8 @@ class ScenarioUserResponse < ApplicationRecord
   end
 
   def self.get_selected_obj_for_card_payment_radio_button(conversation)
-    selected_id = conversation[:card_payment_radio_button][:initial_selection]
-    conversation[:card_payment_radio_button][:radio_contents].detect { |obj| obj[:id] == selected_id }
+    selected_value = conversation[:card_payment_radio_button][:initial_selection]
+    conversation[:card_payment_radio_button][:radio_contents].detect { |obj| obj[:value] == selected_value }
   end
 
   def self.get_selected_value_for_pull_down(conversation)
