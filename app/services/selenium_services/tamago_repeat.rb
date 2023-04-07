@@ -1,8 +1,8 @@
 require "selenium-webdriver"
 require File.dirname(__FILE__) + "/../log"
 
-module TamagoScenario
-  class SeleniumService
+module SeleniumServices
+  class TamagoRepeat
     REGULAR_ORDER_SELECT_QUANTITY_SELECTOR = "#periodically_order_order_qty_0"
     NORMAL_ORDER_SELECT_QUANTITY_SELECTOR = "#order_order_qty_0"
     TIMEOUT = 300
