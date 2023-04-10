@@ -11,7 +11,6 @@ class InstagramAccount < ApplicationRecord
   has_many :chatbot_usages, dependent: :destroy
   has_many :keyword_settings, dependent: :destroy
 
-  validates :user_id, presence: true, uniqueness: true
   validates :ig_id, presence: true, uniqueness: true
 
   enum post_comment_bag_status: {off: 0, direct_message: 1, keyword: 2}, _prefix: :post_comment_bag_status
