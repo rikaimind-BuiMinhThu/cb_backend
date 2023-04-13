@@ -24,11 +24,14 @@ module FacebookManager
       return result_json["error"]["message"] if result_json["error"].present?
       page_access_token = result_json["access_token"]
       # create connect to instagram account
-      ig_account = InstagramAccount.new(user_id: @user_id,
-                                        page_id: @page_id,
-                                        ig_id: @ig_id,
-                                        page_access_token: page_access_token,
-                                        fb_user_id: @fb_AuthResponse["userID"])
+      ig_account = InstagramAccount.find_or_create_by(ig_id: @ig_id)
+      ig_account.assign_attributes({
+        user_id: @user_id,
+        page_id: @page_id,
+        page_access_token: page_access_token,
+        fb_user_id: @fb_AuthResponse["userID"],
+      })
+
       if ig_account.save
         return 1
       else

@@ -15,7 +15,8 @@ class Client < ApplicationRecord
   enum cart_system: {
     cart_system_none: 0,
     tamago_repeat: 1,
-    shopify: 2
+    subsc_store: 2,
+    shopify: 3
   }
 
   def subscription_start_at_cannot_be_greater_than_subscription_end_at

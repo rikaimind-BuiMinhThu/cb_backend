@@ -12,7 +12,7 @@ class TamagoScenarioJob
         user_email: user_email
       }
 
-      service = TamagoScenario::SeleniumService.new(scenario, conversations)
+      service = SeleniumServices::TamagoRepeat.new(scenario, conversations)
       service.process
       if service.is_error
         OrderFailedMailer.send_email(user_email, client.email, data).deliver_later
