@@ -109,7 +109,9 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     client = @chatbot.user.client
     ActiveRecord::Base.transaction do
       build_tamago_repeat_config if params[:landing_page_product_url].present? && client.tamago_repeat?
-      build_shopify_config if params[:landing_page_product_url].present? && client.shopify?
+      if params[:landing_page_product_url].present?
+        @scenario.landing_page_product_url = params[:landing_page_product_url]
+      end
       @scenario.conversation = JSON.generate(params[:conversation].as_json) if params[:conversation].present?
       @scenario.name = params[:scenario_name]
       @scenario.is_use_only_regular_order = params[:is_use_only_regular_order]
@@ -187,15 +189,6 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     @scenario.tamago_repeat_config.email_confirm_field = params[:email_confirm_field] if params[:email_confirm_field].present?
     @scenario.tamago_repeat_config.name_kana_field = params[:name_kana_field] if params[:name_kana_field].present?
     @scenario.tamago_repeat_config.save!
-  end
-
-  def build_shopify_config
-    if @scenario.shopify_config.nil?
-      @scenario.build_shopify_config
-    end
-
-    @scenario.shopify_config.landing_page_product_url = params[:landing_page_product_url] if params[:landing_page_product_url].present?
-    @scenario.shopify_config.save!
   end
 
   def check_chatbot_present

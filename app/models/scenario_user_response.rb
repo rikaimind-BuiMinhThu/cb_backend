@@ -115,6 +115,15 @@ class ScenarioUserResponse < ApplicationRecord
         when "password"
           data_input_name = "user_password"
           value = conversation.dig(:text_input, :password_confirmation, :value)
+        when "quantity"
+          data_input_name = "quantity"
+          value = conversation.dig(:text_input, :text, :value)
+        when "last_name"
+          data_input_name = "last_name"
+          value = conversation.dig(:text_input, :text, :value)
+        when "first_name"
+          data_input_name = "first_name"
+          value = conversation.dig(:text_input, :text, :value)
         end
       when "zip_code_address"
         data_input_name = "zip_code_address"
@@ -170,71 +179,14 @@ class ScenarioUserResponse < ApplicationRecord
           selected = get_selected_value_for_pull_down(conversation)
           value = selected.to_i
           data_input_name = "delivery_method"
+        when "country"
+          data_input_name = "country"
+          value = conversation[:pull_down][:customization][:options_without_comment][0][:value]
         end
       end
 
       puts "=============================="
       puts "data_input_name: #{data_input_name}"
-      next unless data_input_name.present?
-      new_record = self.new(
-        scenario_id: scenario_id,
-        user_input_id: user_id,
-        data_input_name: data_input_name,
-        value: value,
-      )
-
-      built_result.push(new_record)
-    end
-
-    built_result
-  end
-
-  def self.build_shopify_response_record(params)
-    scenario_id = params[:scenario_id]
-    user_id = params[:user_id]
-    built_result = []
-
-    params[:message][:message_content].each do |conversation|
-      data_input_name = nil
-      value = nil
-      case conversation[:type]
-      when "text_input"
-        case conversation[:text_input][:save_input_content]
-        when "quantity"
-          data_input_name = "quantity"
-          value = conversation.dig(:text_input, :text, :value)
-        when "last_name"
-          data_input_name = "last_name"
-          value = conversation.dig(:text_input, :text, :value)
-        when "first_name"
-          data_input_name = "first_name"
-          value = conversation.dig(:text_input, :text, :value)
-        when "email"
-          data_input_name = "email"
-          value = conversation.dig(:text_input, :email_address, :value)
-        when "phone"
-          data_input_name = "phone"
-          value = conversation.dig(:text_input, :phone_number, :value)
-        when "password"
-          data_input_name = "password"
-          value = conversation.dig(:text_input, :password_confirmation, :value)
-        end
-      when "pull_down"
-        case conversation[:pull_down][:save_input_content]
-        when "country"
-          data_input_name = "country"
-          value = conversation[:pull_down][:customization][:options_without_comment][0][:value]
-        end
-      when "zip_code_address"
-        data_input_name = "zip_code_address"
-        value = conversation[:zip_code_address].to_json
-      when "card_payment_radio_button"
-        selected = get_selected_obj_for_card_payment_radio_button(conversation)
-        if conversation[:card_payment_radio_button][:initial_selection] == conversation[:card_payment_radio_button][:card_linked_setting]
-          data_input_name = "credit_card_payment"
-          value = conversation[:card_payment_radio_button].to_json
-        end
-      end
       next unless data_input_name.present?
       new_record = self.new(
         scenario_id: scenario_id,
