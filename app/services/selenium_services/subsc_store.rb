@@ -1,49 +1,8 @@
 require "selenium-webdriver"
 require File.dirname(__FILE__) + "/../log"
 
-module TamagoScenario
-  class SeleniumService
-    REGULAR_ORDER_SELECT_QUANTITY_SELECTOR = "#periodically_order_order_qty_0"
-    NORMAL_ORDER_SELECT_QUANTITY_SELECTOR = "#order_order_qty_0"
-    TIMEOUT = 300
-
-    SECRET_KEY = Rails.application.secrets.secret_refresh_token
-    attr_accessor :scenario, :conversations, :driver, :tamago_repeat_config
-
-    attr_accessor :quantity_value, :user_name, :user_name_kana, :data_address,
-      :post_code, :phone_number, :sex_value, :birth_date, :user_email, :password_value,
-      :delivery_frequency, :is_regular_order, :delivery_method, :delivery_date,
-      :credit_card_payment, :card_data, :np_delivery_payment, :delivery_time
-
-    attr_accessor :is_error
-
-    def initialize(scenario, conversations)
-      Log.info "Start selenium service for: \n\tscenario: #{scenario.id}\n\tconversations: #{conversations.map(&:id).inspect}"
-      @scenario = scenario
-      @conversations = conversations.to_a
-      @user_input_id = conversations.first.user_input_id || "sample"
-      @tamago_repeat_config = @scenario.tamago_repeat_config
-      @screenshot_path = "#{Rails.root}/tmp/selenium"
-      @step = 1
-      @current_frame = nil
-      @log_tab_level = 0
-      @is_error = nil
-      @selenium_result = ScenarioUserResponseSeleniumResult.create(
-        scenario_id: scenario.id,
-        chatbot_id: scenario.chatbot_id,
-        client_id: scenario.chatbot&.user&.client_id,
-        user_input_id: @user_input_id,
-        last_step_no: 0,
-        last_step_description: "",
-        start_time: DateTime.now,
-        result: :running,
-      )
-
-      extract_conversions_data
-
-      init_selenium_driver
-    end
-
+module SeleniumServices
+  class TamagoRepeat < Base
     def process
       @log_tab_level += 1
       Log.info "Start process", @log_tab_level
@@ -68,32 +27,34 @@ module TamagoScenario
       end
     end
 
-    def init_selenium_driver
-      @log_tab_level += 1
+    def extract_conversions_data
+      @quantity_value = find_response_by_data_input_name("quantity")
+      @user_name = JSON.parse find_response_by_data_input_name("user_name")
+      @user_name_kana = JSON.parse find_response_by_data_input_name("user_name_kana")
+      @data_address = JSON.parse find_response_by_data_input_name("zip_code_address")
 
-      Selenium::WebDriver.logger.output = File.join("#{Rails.root}/log", "selenium.log")
-      Selenium::WebDriver.logger.level = :debug
-      Log.info "Init selenium driver for chrome", @log_tab_level
-      options = Selenium::WebDriver::Chrome::Options.new(
-        args: [
-          "--lang=ja",
-          "--incognito",
-          "--headless",
-          "--no-sandbox",
-          "--disable-gpu",
-          "--disable-dev-shm-usage",
-          "--window-size=2560,1440",
-          "--user-agent=#{user_agents.sample}",
-        ],
-      )
+      @post_code = if @data_address["post_code"].present?
+          @data_address["post_code"].gsub("-", "")
+        elsif data_address["value_post_code"].present?
+          @data_address["value_post_code"].gsub("-", "")
+        else
+          "#{@data_address["value_post_code_left"]}#{@data_address["value_post_code_right"]}"
+        end
 
-      @driver = Selenium::WebDriver.for(:chrome, options: options)
-      Log.info @driver.execute_script("return navigator.userAgent"), @log_tab_level
-      @driver.manage.timeouts.implicit_wait = 300
-      @driver.manage.delete_all_cookies
-
-      Log.info "Init OK selenium driver", @log_tab_level
-      @log_tab_level -= 1
+      @phone_number = find_response_by_data_input_name("phone_number")
+      @sex_value = find_response_by_data_input_name("sex")
+      @birth_date = JSON.parse find_response_by_data_input_name("birth_date")
+      @user_email = find_response_by_data_input_name("user_email")
+      encrypted_password_value = find_response_by_data_input_name("user_password")
+      @password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"]
+      @delivery_frequency = find_response_by_data_input_name("delivery_frequency")
+      @is_regular_order = @scenario.is_use_only_regular_order || find_response_by_data_input_name("is_regular_order")
+      @delivery_method = find_response_by_data_input_name("delivery_method")
+      @delivery_date = find_response_by_data_input_name("delivery_date")
+      @delivery_time = find_response_by_data_input_name("delivery_time")
+      @credit_card_payment = find_response_by_data_input_name("credit_card_payment")
+      @card_data = JSON.parse(JWT.decode(@credit_card_payment, SECRET_KEY)[0]["data"]) if @credit_card_payment.present?
+      @np_delivery_payment = find_response_by_data_input_name("np_delivery_payment")
     end
 
     def cart_page
@@ -545,36 +506,6 @@ module TamagoScenario
 
     def find_response_by_data_input_name(data_input_name)
       conversations.detect { |c| c.data_input_name == data_input_name }&.value
-    end
-
-    def extract_conversions_data
-      @quantity_value = find_response_by_data_input_name("quantity")
-      @user_name = JSON.parse find_response_by_data_input_name("user_name")
-      @user_name_kana = JSON.parse find_response_by_data_input_name("user_name_kana")
-      @data_address = JSON.parse find_response_by_data_input_name("zip_code_address")
-
-      @post_code = if @data_address["post_code"].present?
-          @data_address["post_code"].gsub("-", "")
-        elsif data_address["value_post_code"].present?
-          @data_address["value_post_code"].gsub("-", "")
-        else
-          "#{@data_address["value_post_code_left"]}#{@data_address["value_post_code_right"]}"
-        end
-
-      @phone_number = find_response_by_data_input_name("phone_number")
-      @sex_value = find_response_by_data_input_name("sex")
-      @birth_date = JSON.parse find_response_by_data_input_name("birth_date")
-      @user_email = find_response_by_data_input_name("user_email")
-      encrypted_password_value = find_response_by_data_input_name("user_password")
-      @password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"]
-      @delivery_frequency = find_response_by_data_input_name("delivery_frequency")
-      @is_regular_order = @scenario.is_use_only_regular_order || find_response_by_data_input_name("is_regular_order")
-      @delivery_method = find_response_by_data_input_name("delivery_method")
-      @delivery_date = find_response_by_data_input_name("delivery_date")
-      @delivery_time = find_response_by_data_input_name("delivery_time")
-      @credit_card_payment = find_response_by_data_input_name("credit_card_payment")
-      @card_data = JSON.parse(JWT.decode(@credit_card_payment, SECRET_KEY)[0]["data"]) if @credit_card_payment.present?
-      @np_delivery_payment = find_response_by_data_input_name("np_delivery_payment")
     end
 
     def user_agents
