@@ -25,3 +25,8 @@ aws:
     AWS_REGION: your-region-1
 two_captcha:
   api_key: 25c8e5e5abe97802902ea166bb80a0df
+sms:
+  MT_API_ENDPOINT: https://sms-api.aossms.com/p5/api/mt.json
+  SMS_CODE: 80374
+  CLIENT_ID: 101
+  TOKEN: 5c0cc0e4b7d96474f34541003e6c36c0
