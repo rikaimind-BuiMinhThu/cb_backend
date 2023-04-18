@@ -12,7 +12,8 @@ module SeleniumServices
     attr_accessor :quantity_value, :user_name, :user_name_kana, :data_address,
       :post_code, :phone_number, :sex_value, :birth_date, :user_email, :password_value,
       :delivery_frequency, :is_regular_order, :delivery_method, :delivery_date,
-      :credit_card_payment, :card_data, :np_delivery_payment, :delivery_time
+      :credit_card_payment, :card_data, :np_delivery_payment, :delivery_time,
+      :last_name, :first_name
 
     attr_accessor :is_error
 

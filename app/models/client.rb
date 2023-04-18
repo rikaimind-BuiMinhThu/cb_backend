@@ -15,7 +15,8 @@ class Client < ApplicationRecord
   enum cart_system: {
     cart_system_none: 0,
     tamago_repeat: 1,
-    subsc_store: 2
+    subsc_store: 2,
+    shopify: 3
   }
 
   def subscription_start_at_cannot_be_greater_than_subscription_end_at
@@ -24,4 +25,12 @@ class Client < ApplicationRecord
     end
   end
 
+  def self.ransackable_associations(auth_object = nil)
+    ["client_email", "users"]
+  end
+    
+  def self.ransackable_attributes(auth_object = nil)
+    ["address", "building_name", "cart_system", "created_at", "deleted_at", "department_name", "email", "enterprise_type", "enterprise_type_2", "id", "is_instagram", "is_line", "is_tiktok", "is_web", "logo_url", "municipality", "name", "name_katakana", "note", "phone_number", "plan", "prefecture", "price", "responsible_person", "responsible_person_katakana", "status", "subscription_end_at", "subscription_start_at", "title", "unit_price_instagram", "unit_price_line", "unit_price_tiktok", "unit_price_web", "updated_at", "url", "zip_code"]
+    end
+    
 end
