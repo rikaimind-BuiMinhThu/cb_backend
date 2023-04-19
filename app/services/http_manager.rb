@@ -17,9 +17,10 @@ class HttpManager
     JSON.parse(response)
   end
 
-  def post_request
+  def post_request(header_options = {})
     uri = URI(@url)
     header = {'Content-Type' => 'application/json', 'Accept' => 'application/json'}
+    header.merge header_options
     request = Net::HTTP::Post.new(uri.request_uri, header)
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
