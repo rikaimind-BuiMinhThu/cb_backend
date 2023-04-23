@@ -15,10 +15,10 @@ class TamagoScenarioJob
       service = SeleniumServices::TamagoRepeat.new(scenario, conversations)
       service.process
       if service.is_error
-        OrderFailedMailer.send_email(user_email, client.email, data).deliver_later
+        # OrderFailedMailer.send_email(user_email, client.email, data).deliver_later
       end
     rescue Selenium::WebDriver::Error::UnexpectedAlertOpenError => e
-      OrderFailedMailer.send_email(user_email, client.email, data).deliver_later
+      # OrderFailedMailer.send_email(user_email, client.email, data).deliver_later
     end
   end
 end
