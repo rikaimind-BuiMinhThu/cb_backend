@@ -80,6 +80,7 @@ Rails.application.routes.draw do
       get "webhook", :to => 'chatbots#webhook'
       post "webhook", :to => 'chatbots#webhook_callback'
       post "instagram_connect", :to => 'instagram_settings#connect'
+      post "logout_fb", :to => 'instagram_settings#logout_fb'
       patch "instagram_setting_change_status/:id", :to => 'instagram_settings#change_status'
       namespace :analytics do
         resources :users, only: :index
