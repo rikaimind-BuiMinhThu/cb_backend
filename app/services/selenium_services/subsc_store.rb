@@ -2,7 +2,7 @@ require "selenium-webdriver"
 require File.dirname(__FILE__) + "/../log"
 
 module SeleniumServices
-  class TamagoRepeat < Base
+  class SubscStore < Base
     QUANLITY_INPUT = "select"
     ADD_TO_CART_BUTTON = "a[class='btn btn-lg btn-primary']"
 
