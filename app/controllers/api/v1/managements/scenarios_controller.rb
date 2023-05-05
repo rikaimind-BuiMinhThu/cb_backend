@@ -101,6 +101,8 @@ class Api::V1::Managements::ScenariosController < ApplicationController
   def detail_conversation
     @scenario = Scenario.find_by(id: params[:id])
     return render json: {code: 2, message: "Scenario not found"}, status: 404 if @scenario.blank?
+    @client = @scenario.chatbot.user.client
+    @landing_page_product_url = @client.tamago_repeat? ? @scenario.tamago_repeat_config&.tamago_landing_page_url : @scenario.landing_page_product_url
   end
 
   def conversation
@@ -108,9 +110,11 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     return render json: {code: 2, message: "Scenario not found"}, status: 404 if @scenario.blank?
     client = @chatbot.user.client
     ActiveRecord::Base.transaction do
-      build_tamago_repeat_config if params[:landing_page_product_url].present? && client.tamago_repeat?
-      if params[:landing_page_product_url].present?
-        @scenario.landing_page_product_url = params[:landing_page_product_url]
+      build_tamago_repeat_config if client.tamago_repeat?
+      if params["landing_page_product_url"].present?
+        @scenario.landing_page_product_url = params["landing_page_product_url"]
+      else
+        @scenario.landing_page_product_url = params["landing_page_product_url"]
       end
       @scenario.conversation = JSON.generate(params[:conversation].as_json) if params[:conversation].present?
       @scenario.name = params[:scenario_name]
