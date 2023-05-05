@@ -1,6 +1,6 @@
 class Api::V1::Managements::ChatbotsController < ApplicationController
-  skip_before_action :permision, only: [:webchat_sdk]
-  skip_before_action :verify_authenticity_token, only: [:webchat_sdk]
+  skip_before_action :permision, only: [:webchat_sdk, :show]
+  skip_before_action :verify_authenticity_token, only: [:webchat_sdk, :show]
 
   def index
     chatbots = Chatbot.joins(:user).select("chatbots.*, users.full_name as owner_name") if current_user.admin_deel?
