@@ -17,7 +17,7 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
     if @client.tamago_repeat? && params[:user_id].present?
       TamagoScenarioJob.perform_async(params[:scenario_id], params[:user_id])
     elsif @client.subsc_store? && params[:user_id].present?
-      ShopifyJob.perform_async(params[:scenario_id], params[:user_id])
+      SubscStoreJob.perform_async(params[:scenario_id], params[:user_id])
     elsif @client.shopify? && params[:user_id].present?
       scenario_id = params[:scenario_id]
       user_id = params[:user_id]
