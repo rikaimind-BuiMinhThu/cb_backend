@@ -1,6 +1,6 @@
 class Api::V1::Managements::ChatbotsController < ApplicationController
-  skip_before_action :permision, only: [:webchat_sdk]
-  skip_before_action :verify_authenticity_token, only: [:webchat_sdk]
+  skip_before_action :permision, only: [:webchat_sdk, :show]
+  skip_before_action :verify_authenticity_token, only: [:webchat_sdk, :show]
 
   def index
     chatbots = Chatbot.joins(:user).select("chatbots.*, users.full_name as owner_name") if current_user.admin_deel?
@@ -26,7 +26,7 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
   end
 
   def show
-    return render json: {code: 2, message: "No permission"} unless UserChatbot.find_by(user_id: current_user.id, chatbot_id: params[:id]).present? || current_user.admin_deel?
+    return render json: {code: 2, message: "No permission"} unless UserChatbot.find_by(chatbot_id: params[:id]).present? || current_user.admin_deel?
     @chatbot = Chatbot.joins({user_chatbots: :user}).select("chatbots.*, users.full_name as owner_name")
                      .find_by(id: params[:id])
     return render json: {code: 2, message: "Cannot find chatbot"} if @chatbot.blank?
