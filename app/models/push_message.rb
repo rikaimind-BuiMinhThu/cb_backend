@@ -7,7 +7,7 @@ class PushMessage < ApplicationRecord
 
   enum sending_method: { email: 0, sms: 1 }, _prefix: :sending_method
   enum has_timezone_exclusion: { no: false, yes: true }, _prefix: :has_timezone_exclusion
-  enum subscribe_status: { unsubscribe: false, subscribe: true }, _prefix: :has_timezone_exclusion
+  enum subscribe_status: { unsubscribe: false, subscribe: true }, _prefix: :subscribe_status
 
   validates :title, presence: true
   validates :started_at, presence: true
