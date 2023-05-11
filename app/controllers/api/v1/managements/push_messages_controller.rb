@@ -6,7 +6,7 @@ class Api::V1::Managements::PushMessagesController < ApplicationController
     @push_messages = chatbot.push_messages.includes(:push_message_variables)
     @total = @push_messages.length
     @push_messages = @push_messages.page(params[:page]) if params[:page] != 'all'
-    render json: { code: 1, data: @push_messages, total: @total }
+    render json: { code: 1, data: @push_messages, total: @total }, include: [:push_message_variables]
   end
 
   def create
@@ -57,7 +57,7 @@ class Api::V1::Managements::PushMessagesController < ApplicationController
         end
       end
       run_schedule_job(push_message)
-      render json: { code: 1, message: push_message }
+      render json: { code: 1, data: push_message }
     rescue StandardError => e
       Rails.logger.error(e)
       e.backtrace.each do |line|
