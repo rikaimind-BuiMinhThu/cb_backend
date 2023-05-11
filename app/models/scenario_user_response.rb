@@ -237,7 +237,6 @@ class ScenarioUserResponse < ApplicationRecord
           data_input_name = "user_email"
           value = conversation.dig(:text_input, :email_address, :value)
         when "user_password"
-          byebug
           data_input_name = "user_password"
           value = conversation.dig(:text_input, :password_confirmation, :value)
         when "quantity"

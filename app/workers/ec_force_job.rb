@@ -3,7 +3,6 @@ class EcForceJob
 
   def perform(scenario_id, user_id)
     begin
-      byebug
       scenario = Scenario.find(scenario_id)
       client = scenario.chatbot&.user&.client
       conversations = scenario.scenario_user_responses.where(user_input_id: user_id)

@@ -122,7 +122,6 @@ if @has_account == 1
       @log_tab_level += 1
       Log.info "entry_checkout_information", @log_tab_level
       wait_element_load FIRST_NAME_INPUT
-      byebug
       fill_to_text_input FIRST_NAME_INPUT, @first_name, "Fill-in first name"
       fill_to_text_input LAST_NAME_INPUT, @last_name, "Fill-in last name"
       fill_to_text_input FIRST_NAME_KANA_INPUT, @first_name_kana, "Fill-in first name"
@@ -169,7 +168,6 @@ if @has_account == 1
       Log.info "checkout_page", @log_tab_level
       wait_element_load LOGIN_EMAIL
       fill_to_text_input LOGIN_EMAIL, @user_email, "fill email_address"
-      byebug
       fill_to_text_input LOGIN_PASSWORD, password_value, "fill pass"
 
       click LOGIN_BUTTON, "click login button"
