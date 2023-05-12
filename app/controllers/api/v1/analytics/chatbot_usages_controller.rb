@@ -9,7 +9,7 @@ class Api::V1::Analytics::ChatbotUsagesController < ApplicationController
     end_date = params[:end_date].to_date
 
     @q = {created_at_lteq: end_date.end_of_day, created_at_gteq: begin_date.beginning_of_day}
-    @q[:instagram_account_eq] = current_user.instagram_account
+    @q[:instagram_account_id_eq] = current_user.instagram_account&.id
     return get_stats_live if params[:id] == "live"
     if params[:id] == "user"
       counts = InstagramUser.ransack(@q).result
