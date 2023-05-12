@@ -156,6 +156,9 @@ class ScenarioUserResponse < ApplicationRecord
         if conversation[:card_payment_radio_button][:initial_selection] == conversation[:card_payment_radio_button][:card_linked_setting]
           data_input_name = "credit_card_payment"
           value = conversation[:card_payment_radio_button].to_json
+        elsif selected[:value] == 'paypal'
+          data_input_name = "credit_card_payment"
+          value = selected[:value]
         else
           data_input_name = "np_delivery_payment"
           value = selected[:value]
