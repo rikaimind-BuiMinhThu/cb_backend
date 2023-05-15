@@ -66,7 +66,6 @@ module SeleniumServices
       @log_tab_level += 1
       Log.info "product_page", @log_tab_level
       navigate @scenario.landing_page_product_url
-      wait_element_load CHECK_PAGE
 
       if quantity_value.present?
         select QUANLITY_INPUT, quantity_value, :quantity
