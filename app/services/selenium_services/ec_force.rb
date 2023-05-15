@@ -17,8 +17,12 @@ module SeleniumServices
     ADDRESS_INPUT = "input#order_billing_address_attributes_addr02"
     EMAIL_INPUT = "input#email"
     LOGIN_EMAIL="input#customer_email"
-    LOGIN_PASSWORD="input#customer_password"
+    LOGIN_EMAIL2="input[name='customer[email]']"
+    LOGIN_PASSWORD="input[name='customer[email]']"
+    LOGIN_PASSWORD2="input[name='customer[password]']"
     LOGIN_BUTTON="button.c-cart_submit__block__submit"
+    LOGIN_BUTTON2="input.btn.btn-sm.btn-default[type=submit][value=ログイン]"
+    
     # EMAIL_CONFIRM_INPUT = "input#form-validation-field-4"
     EMAIL_CONFIRM_INPUT = "input[name='order[email_confirmation]']"
     # PHONE_NUMBER_INPUT = "input#form-validation-field-0"
@@ -42,6 +46,7 @@ module SeleniumServices
 
     PAYMENT_SUBMIT_BUTTON = "button.pull-right"
     PAYMENT_SUBMIT_BUTTON2 = "button.p-checkout_confirm__inner__list__block__submit"
+    PAYMENT_SUBMIT_BUTTON3 = "button.pull-right"
 
     EC_FORCE_PAYMENT_CARD_NUMBER_INPUT = "input[name='order[payment_attributes][source_attributes][number]']"
     EC_FORCE_PAYMENT_NAME_ON_CARD_INPUT = "input#input-cc-name"
@@ -53,14 +58,20 @@ module SeleniumServices
     PAY_NOW_BUTTON = "button[type=submit]"
 
 
+
     def process
       @log_tab_level += 1
       Log.info "Start process", @log_tab_level
 
       begin
         product_page
+        if @has_account == "0"
         checkout_page
         entry_checkout_information
+        else
+          checkout_page_regist
+        entry_checkout_information_regist
+        end
         confirm_page
         @selenium_result.update! result: :done, end_time: DateTime.now, last_step_no: @step
       rescue => e
@@ -80,20 +91,20 @@ module SeleniumServices
     def product_page
       @log_tab_level += 1
       Log.info "product_page", @log_tab_level
-      navigate 'https://demo.ec-force.com/shop/products/SStestteiki02'
-      wait_element_load QUANLITY_INPUT 
-      if quantity_value.present?
-          fill_to_text_input QUANLITY_INPUT, quantity_value, "Fill-in quantity", true
-      end
-      capture false
-      click ADD_TO_CART_BUTTON, "Add product to cart"
-      # wait_element_load QUANLITY_SELECT
-      # if @quantity_value.present?
-      #   select QUANLITY_SELECT, @quantity_value.to_s, :quantity
-
-      #   capture false
-      #   click ADD_TO_CART_BUTTON, "Add product to cart"
+      navigate @scenario.landing_page_product_url
+      # wait_element_load QUANLITY_INPUT 
+      # if quantity_value.present?
+      #     fill_to_text_input QUANLITY_INPUT, quantity_value, "Fill-in quantity", true
       # end
+      # capture false
+      # click ADD_TO_CART_BUTTON, "Add product to cart"
+      wait_element_load QUANLITY_SELECT
+      if @quantity_value.present?
+        select QUANLITY_SELECT, @quantity_value.to_s, :quantity
+
+        capture false
+        click ADD_TO_CART_BUTTON, "Add product to cart"
+      end
    
     end
 
@@ -105,9 +116,8 @@ module SeleniumServices
     #   capture
     #   click CHECKOUT_BUTTON, "Click checkout button"
     # end
-if @has_account == 1
-  
-    
+
+
     def checkout_page
       @log_tab_level += 1
       Log.info "checkout_page", @log_tab_level
@@ -162,15 +172,16 @@ if @has_account == 1
       # fill_to_text_input APARTMENT_INPUT, @data_address["value_building_name"], "Fill-in building name"
       # click CHECKOUT_SUBMIT_BUTTON, "Click checkout submit button"
     end
-  elsif
-    def checkout_page
+
+   
+    def checkout_page_regist
       @log_tab_level += 1
       Log.info "checkout_page", @log_tab_level
-      wait_element_load LOGIN_EMAIL
-      fill_to_text_input LOGIN_EMAIL, @user_email, "fill email_address"
-      fill_to_text_input LOGIN_PASSWORD, password_value, "fill pass"
+      wait_element_load LOGIN_EMAIL2
+      fill_to_text_input LOGIN_EMAIL2, @user_email, "fill email_address"
+      fill_to_text_input LOGIN_PASSWORD2, password_value, "fill pass"
 
-      click LOGIN_BUTTON, "click login button"
+      click LOGIN_BUTTON2, "click login button"
       # capture
       # click CHECKOUT_BUTTON, "Click checkout button"
       # wait_element_load driver.find_element(:css, "a[href*='shop/order/new?register_as_member=0']")
@@ -178,7 +189,7 @@ if @has_account == 1
     end
 
 
-    def entry_checkout_information
+    def entry_checkout_information_regist
       @log_tab_level += 1
       Log.info "entry_checkout_information", @log_tab_level
       wait_element_load FIRST_NAME_INPUT
@@ -209,13 +220,14 @@ if @has_account == 1
       # fill_to_text_input APARTMENT_INPUT, @data_address["value_building_name"], "Fill-in building name"
       # click CHECKOUT_SUBMIT_BUTTON, "Click checkout submit button"
     end
-  end
+
+  
     def confirm_page
       @log_tab_level += 1
       Log.info "confirm_page", @log_tab_level
-      wait_element_load PAYMENT_SUBMIT_BUTTON2
+      wait_element_load PAYMENT_SUBMIT_BUTTON3
       capture
-      click PAYMENT_SUBMIT_BUTTON2, "Click payment submit button"
+      click PAYMENT_SUBMIT_BUTTON3, "Click payment submit button"
     end
     def fill_to_text_input(css_selector, value, description = "", clear_input = false, pointer_action: true)
       @log_tab_level += 1
@@ -250,6 +262,7 @@ if @has_account == 1
       @sent_message = find_response_by_data_input_name("sent_message")
       encrypted_password_value = find_response_by_data_input_name("user_password")
       @password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"]
+
     end
   end
 end

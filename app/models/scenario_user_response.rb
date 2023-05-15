@@ -117,7 +117,7 @@ class ScenarioUserResponse < ApplicationRecord
           value = conversation.dig(:text_input, :text, :value)
         when "phone_number"
           data_input_name = "phone_number"
-          value = conversation.dig(:text_input, :phone_number, :value)
+          value = conversation.dig(:text_input, :text, :value)
         when "password"
           data_input_name = "user_password"
           value = conversation.dig(:text_input, :password_confirmation, :value)
@@ -203,11 +203,7 @@ class ScenarioUserResponse < ApplicationRecord
         data_input_name = "sent_message"
         value = conversation[:textarea][:text_input][:value]
       end
-<<<<<<< HEAD
     end
-=======
-
->>>>>>> staging
       puts "=============================="
       puts "data_input_name: #{data_input_name}"
       next unless data_input_name.present?
@@ -223,11 +219,8 @@ class ScenarioUserResponse < ApplicationRecord
 
     built_result
   end
-<<<<<<< HEAD
  
   
-=======
->>>>>>> staging
 
   def self.get_selected_obj_for_radio_button(conversation)
     selected_id = conversation[:radio_button][:initial_selection]
