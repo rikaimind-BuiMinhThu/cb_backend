@@ -4,7 +4,7 @@ require File.dirname(__FILE__) + "/../log"
 module SeleniumServices
   class SubscStore < Base
     QUANLITY_INPUT = "select"
-    ADD_TO_CART_BUTTON = "a[class='btn btn-lg btn-primary']"
+    ADD_TO_CART_BUTTON = "i[class=fa-shopping-cart]"
 
     CHECKOUT_BUTTON = "a[class=checkout-register-btn]"
 
