@@ -16,8 +16,7 @@ class Client < ApplicationRecord
     cart_system_none: 0,
     tamago_repeat: 1,
     subsc_store: 2,
-    shopify: 3,
-    ec_force: 4
+    shopify: 3
   }
 
   def subscription_start_at_cannot_be_greater_than_subscription_end_at
@@ -25,7 +24,7 @@ class Client < ApplicationRecord
       errors.add(:subscription_start_at, "can't be greater than subscription end at")
     end
   end
- 
+
   def self.ransackable_associations(auth_object = nil)
     ["client_email", "users"]
   end

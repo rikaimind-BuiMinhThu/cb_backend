@@ -568,7 +568,6 @@ module SeleniumServices
           "#{@data_address["value_post_code_left"]}#{@data_address["value_post_code_right"]}"
         end
 
-        
       @phone_number = find_response_by_data_input_name("phone_number")
       @sex_value = find_response_by_data_input_name("sex")
       @birth_date = JSON.parse find_response_by_data_input_name("birth_date")

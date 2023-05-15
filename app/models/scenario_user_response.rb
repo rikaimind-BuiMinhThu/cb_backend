@@ -203,7 +203,11 @@ class ScenarioUserResponse < ApplicationRecord
         data_input_name = "sent_message"
         value = conversation[:textarea][:text_input][:value]
       end
+<<<<<<< HEAD
     end
+=======
+
+>>>>>>> staging
       puts "=============================="
       puts "data_input_name: #{data_input_name}"
       next unless data_input_name.present?
@@ -219,8 +223,11 @@ class ScenarioUserResponse < ApplicationRecord
 
     built_result
   end
+<<<<<<< HEAD
  
   
+=======
+>>>>>>> staging
 
   def self.get_selected_obj_for_radio_button(conversation)
     selected_id = conversation[:radio_button][:initial_selection]
@@ -244,8 +251,6 @@ class ScenarioUserResponse < ApplicationRecord
   string :user_email, is_encrypt: false
   string :user_password, is_encrypt: true
   integer :sex, is_encrypt: false
-  integer :has_account, is_encrypt: false
-  integer :payment_method, is_encrypt: false
   text :birth_date, is_encrypt: false
   text :credit_card_payment, is_encrypt: true
   string :cash_on_delivery_payment, is_encrypt: false

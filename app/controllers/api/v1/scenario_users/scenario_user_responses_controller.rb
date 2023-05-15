@@ -4,14 +4,17 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
   before_action :set_scenario
 
   def create
-    if (@client.tamago_repeat? || @client.shopify? ) && params[:user_id].present?
+    if (@client.tamago_repeat? || @client.shopify?) && params[:user_id].present?
       scenario_user_responses = ScenarioUserResponse.build_record(params)
       scenario_user_responses.each(&:save!) if scenario_user_responses.present?
       render json: { code: 1, data: scenario_user_responses }
+<<<<<<< HEAD
     elsif (@client.ec_force?) && params[:user_id].present?
       scenario_user_responses = ScenarioUserResponse.build_record(params)
       scenario_user_responses.each(&:save!) if scenario_user_responses.present?
       render json: { code: 1, data: scenario_user_responses}
+=======
+>>>>>>> staging
     else
       render json: { code: 0, data: [] }
     end
@@ -21,11 +24,12 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
     if @client.tamago_repeat? && params[:user_id].present?
       TamagoScenarioJob.perform_async(params[:scenario_id], params[:user_id])
     elsif @client.subsc_store? && params[:user_id].present?
-      ShopifyJob.perform_async(params[:scenario_id], params[:user_id])
+      SubscStoreJob.perform_async(params[:scenario_id], params[:user_id])
     elsif @client.shopify? && params[:user_id].present?
       scenario_id = params[:scenario_id]
       user_id = params[:user_id]
       ShopifyJob.perform_async(params[:scenario_id], params[:user_id])
+<<<<<<< HEAD
     elsif @client.ec_force? && params[:user_id].present?
       scenario_id = params[:scenario_id]
       user_id = params[:user_id]
@@ -34,6 +38,8 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
       # service = SeleniumServices::EcForce.new(scenario, conversations )
       # service.process
       EcForceJob.perform_async(params[:scenario_id], params[:user_id])
+=======
+>>>>>>> staging
     else
       render json: { code: 1, message: "not create order" }
     end
