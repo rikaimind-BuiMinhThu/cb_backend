@@ -149,8 +149,8 @@ if @has_account == 1
         # fill_to_text_input SUBSC_STORE_PAYMENT_SECURITY_CODE_INPUT, card_data["cvc"], :cvc
       end
       select SELECT_PAYMENT_SCHEDULE, "day_of_week", :select_address
-      select SELECT_PAYMENT_SCHEDULE_DATE, (Time.now + @scheduled_delivery_date.to_i.days).strftime("%Y-%-m-%-d").to_s, :scheduled_delivery_date
-      select SELECT_PAYMENT_SCHEDULE_TIME, @scheduled_delivery_time, :scheduled_delivery_time
+      select SELECT_PAYMENT_SCHEDULE_DATE, (Time.now + @delivery_date.to_i.days).strftime("%Y-%-m-%-d").to_s, :delivery_date
+      select SELECT_PAYMENT_SCHEDULE_TIME, @delivery_time, :delivery_time
       fill_to_text_input SEND_MESSAGE, @sent_message, :send_message
       select_radio_btn CHECKBOX_ODER, 1, "check oder"
 
@@ -196,8 +196,8 @@ if @has_account == 1
           # fill_to_text_input SUBSC_STORE_PAYMENT_SECURITY_CODE_INPUT, card_data["cvc"], :cvc
         end
         select SELECT_PAYMENT_SCHEDULE, "day_of_week", :select_address
-        select SELECT_PAYMENT_SCHEDULE_DATE, (Time.now + @scheduled_delivery_date.to_i.days).strftime("%Y-%-m-%-d").to_s, :scheduled_delivery_date
-        select SELECT_PAYMENT_SCHEDULE_TIME, @scheduled_delivery_time, :scheduled_delivery_time
+        select SELECT_PAYMENT_SCHEDULE_DATE, (Time.now + @delivery_date.to_i.days).strftime("%Y-%-m-%-d").to_s, :delivery_date
+        select SELECT_PAYMENT_SCHEDULE_TIME, @delivery_time, :delivery_time
       fill_to_text_input SEND_MESSAGE, @sent_message, :send_message
       select_radio_btn CHECKBOX_ODER, 1, "check oder"
 
@@ -245,8 +245,8 @@ if @has_account == 1
       @card_data = JSON.parse(JWT.decode(@credit_card_payment, SECRET_KEY)[0]["data"]) if @credit_card_payment.present?
       @np_delivery_payment = find_response_by_data_input_name("np_delivery_payment")
       @has_account = find_response_by_data_input_name("has_account")
-      @scheduled_delivery_time = find_response_by_data_input_name("scheduled_delivery_time")
-      @scheduled_delivery_date = find_response_by_data_input_name("scheduled_delivery_date")
+      @delivery_time = find_response_by_data_input_name("delivery_time")
+      @delivery_date = find_response_by_data_input_name("delivery_date")
       @sent_message = find_response_by_data_input_name("sent_message")
       encrypted_password_value = find_response_by_data_input_name("user_password")
       @password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"]
