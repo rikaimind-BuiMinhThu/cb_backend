@@ -208,7 +208,7 @@ module SeleniumServices
           select EC_FORCE_PAYMENT_EXPIRY_YEAR_INPUT, card_data["year"][-2,2], :expire_year
   
           fill_to_text_input EC_FORCE_PAYMENT_NAME_ON_CARD_INPUT, card_data["card_holder"], :card_name
-        elsif
+        else
         fill_to_text_input EC_FORCE_PAYMENT_CARD_NUMBER_INPUT, card_data["card_number"], :card_number
           select EC_FORCE_PAYMENT_EXPIRY_MONTH_INPUT, card_data["month"].to_i.to_s, :expire_month
   
