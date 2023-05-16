@@ -38,6 +38,8 @@ module SeleniumServices
 
     CHECKBOX_ODER = "input#order_free_columns_0_0_13_22"
 
+    SELECT_PAYMENT_ID = "select#card-id"
+    
     NEXT_CONFIRM_CONTENT = "input#submit"
 
     CITY_INPUT = "input[name=city]"
@@ -149,6 +151,7 @@ module SeleniumServices
       select PAYMENT_METHOD, @np_delivery_payment.to_s, :payment_method
       elsif @credit_card_payment.present?
       select PAYMENT_METHOD, "1", :payment_method
+
       fill_to_text_input EC_FORCE_PAYMENT_CARD_NUMBER_INPUT, card_data["card_number"], :card_number
         select EC_FORCE_PAYMENT_EXPIRY_MONTH_INPUT, card_data["month"].to_i.to_s, :expire_month
 
@@ -197,6 +200,15 @@ module SeleniumServices
         select PAYMENT_METHOD, @np_delivery_payment.to_s, :payment_method
         elsif @credit_card_payment.present?
         select PAYMENT_METHOD, "1", :payment_method
+        if SELECT_PAYMENT_ID
+          select SELECT_PAYMENT_ID, "0", :add_new_card
+          fill_to_text_input EC_FORCE_PAYMENT_CARD_NUMBER_INPUT, card_data["card_number"], :card_number
+          select EC_FORCE_PAYMENT_EXPIRY_MONTH_INPUT, card_data["month"].to_i.to_s, :expire_month
+  
+          select EC_FORCE_PAYMENT_EXPIRY_YEAR_INPUT, card_data["year"][-2,2], :expire_year
+  
+          fill_to_text_input EC_FORCE_PAYMENT_NAME_ON_CARD_INPUT, card_data["card_holder"], :card_name
+        elsif
         fill_to_text_input EC_FORCE_PAYMENT_CARD_NUMBER_INPUT, card_data["card_number"], :card_number
           select EC_FORCE_PAYMENT_EXPIRY_MONTH_INPUT, card_data["month"].to_i.to_s, :expire_month
   
@@ -205,6 +217,7 @@ module SeleniumServices
           fill_to_text_input EC_FORCE_PAYMENT_NAME_ON_CARD_INPUT, card_data["card_holder"], :card_name
   
           # fill_to_text_input SUBSC_STORE_PAYMENT_SECURITY_CODE_INPUT, card_data["cvc"], :cvc
+        end
         end
         select SELECT_PAYMENT_SCHEDULE, "day_of_week", :select_address
         select SELECT_PAYMENT_SCHEDULE_DATE, (Time.now + @delivery_date.to_i.days).strftime("%Y-%-m-%-d").to_s, :delivery_date
