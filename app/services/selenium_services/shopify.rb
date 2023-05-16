@@ -125,13 +125,16 @@ module SeleniumServices
       wait_element_load(PAYMENT_SUBMIT_BUTTON)
       capture()
       # TODO check payment method
-      entry_credit_payment_information()
+      if @credit_card_payment.present?
+        entry_credit_payment_information()
+      elsif @paypal_payment.present?
+        entry_paypal_payment_information()
+      end
     end
 
     def entry_paypal_payment_information
       @log_tab_level += 1
       Log.info "entry_paypal_payment_information", @log_tab_level
-
       wait_element_load PAYPAL_PAYMENT_CREDIT_CARD_LABEL
       click PAYPAL_PAYMENT_CREDIT_CARD_LABEL, "Click paypal option"
 
@@ -143,7 +146,7 @@ module SeleniumServices
 
       # input email
       wait_element_load PAYPAL_PAYMENT_EMAIL_INPUT
-      fill_to_text_input PAYPAL_PAYMENT_EMAIL_INPUT, "", "Fill-in user email"
+      fill_to_text_input PAYPAL_PAYMENT_EMAIL_INPUT, @user_email, "Fill-in user email"
 
       # click next
       wait_element_load PAYPAL_PAYMENT_NEXT_BUTTON
@@ -151,7 +154,7 @@ module SeleniumServices
 
       # input password
       wait_element_load PAYPAL_PAYMENT_PASSWORD_INPUT
-      fill_to_text_input PAYPAL_PAYMENT_PASSWORD_INPUT, "", "Fill-in user email"
+      fill_to_text_input PAYPAL_PAYMENT_PASSWORD_INPUT, @password_value, "Fill-in user email"
     
       # click login
       wait_element_load PAYPAL_PAYMENT_LOGIN_BUTTON
@@ -224,6 +227,8 @@ module SeleniumServices
     def extract_conversions_data
       @quantity_value = find_response_by_data_input_name("quantity")
       @user_email = find_response_by_data_input_name("user_email")
+      encrypted_password_value = find_response_by_data_input_name("user_password")
+      @password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"]
       @country = find_response_by_data_input_name("country")
       @last_name = find_response_by_data_input_name("last_name")
       @first_name = find_response_by_data_input_name("first_name")
@@ -231,6 +236,7 @@ module SeleniumServices
       @post_code = @data_address["value_post_code"].gsub("-", "")
       @credit_card_payment = find_response_by_data_input_name("credit_card_payment")
       @card_data = JSON.parse(JWT.decode(@credit_card_payment, SECRET_KEY)[0]["data"]) if @credit_card_payment.present?
+      @paypal_payment = find_response_by_data_input_name("paypal_payment")
     end
   end
 end
