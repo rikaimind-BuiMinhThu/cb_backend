@@ -27,6 +27,14 @@ module SeleniumServices
     SHOPIFY_PAYMENT_EXPIRY_DATE_INPUT = "input#expiry"
     SHOPIFY_PAYMENT_SECURITY_CODE_INPUT = "input#verification_value"
 
+    PAYPAL_PAYMENT_CREDIT_CARD_LABEL = "label[for=basic-PAYPAL_EXPRESS]"
+    PAYPAL_PAYMENT_BUTTON = "div[id=buttons-container][aria-label=PayPal]"
+    PAYPAL_PAYMENT_EMAIL_INPUT = "input#email"
+    PAYPAL_PAYMENT_NEXT_BUTTON = "button#btnNext"
+    PAYPAL_PAYMENT_PASSWORD_INPUT = "input#password"
+    PAYPAL_PAYMENT_LOGIN_BUTTON = "button#btnLogin"
+    PAYPAL_PAYMENT_CHECKOUT_BUTTON = "button#payment-submit-btn"
+
     PAY_NOW_BUTTON = "button[type=submit]"
 
     def process
@@ -116,12 +124,52 @@ module SeleniumServices
       Log.info "confirm_page", @log_tab_level
       wait_element_load(PAYMENT_SUBMIT_BUTTON)
       capture()
-      entry_payment_information()
+      # TODO check payment method
+      if @credit_card_payment.present?
+        entry_credit_payment_information()
+      elsif @paypal_payment.present?
+        entry_paypal_payment_information()
+      end
     end
 
-    def entry_payment_information
+    def entry_paypal_payment_information
       @log_tab_level += 1
-      Log.info "entry_checkout_information", @log_tab_level
+      Log.info "entry_paypal_payment_information", @log_tab_level
+      wait_element_load PAYPAL_PAYMENT_CREDIT_CARD_LABEL
+      click PAYPAL_PAYMENT_CREDIT_CARD_LABEL, "Click paypal option"
+
+      wait_element_load PAYPAL_PAYMENT_CREDIT_CARD_LABEL
+      click PAYPAL_PAYMENT_CREDIT_CARD_LABEL, "Click credit card option"
+
+      # switch to paypal tab
+      @driver.switch_to.window driver.window_handles.at(1)
+
+      # input email
+      wait_element_load PAYPAL_PAYMENT_EMAIL_INPUT
+      fill_to_text_input PAYPAL_PAYMENT_EMAIL_INPUT, @user_email, "Fill-in user email"
+
+      # click next
+      wait_element_load PAYPAL_PAYMENT_NEXT_BUTTON
+      click PAYPAL_PAYMENT_NEXT_BUTTON, "Click next paypal"
+
+      # input password
+      wait_element_load PAYPAL_PAYMENT_PASSWORD_INPUT
+      fill_to_text_input PAYPAL_PAYMENT_PASSWORD_INPUT, @password_value, "Fill-in user email"
+    
+      # click login
+      wait_element_load PAYPAL_PAYMENT_LOGIN_BUTTON
+      click PAYPAL_PAYMENT_LOGIN_BUTTON, "Click login paypal"
+
+      # click checkout
+      wait_element_load PAYPAL_PAYMENT_CHECKOUT_BUTTON
+      click PAYPAL_PAYMENT_CHECKOUT_BUTTON, "Click checkout paypal"
+
+      @driver.switch_to.default_content
+    end
+
+    def entry_credit_payment_information
+      @log_tab_level += 1
+      Log.info "entry_credit_payment_information", @log_tab_level
       wait_element_load SHOPIFY_PAYMENT_CREDIT_CARD_LABEL
       click SHOPIFY_PAYMENT_CREDIT_CARD_LABEL, "Click credit card option"
 
@@ -179,6 +227,8 @@ module SeleniumServices
     def extract_conversions_data
       @quantity_value = find_response_by_data_input_name("quantity")
       @user_email = find_response_by_data_input_name("user_email")
+      encrypted_password_value = find_response_by_data_input_name("user_password")
+      @password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"]
       @country = find_response_by_data_input_name("country")
       @last_name = find_response_by_data_input_name("last_name")
       @first_name = find_response_by_data_input_name("first_name")
@@ -186,6 +236,7 @@ module SeleniumServices
       @post_code = @data_address["value_post_code"].gsub("-", "")
       @credit_card_payment = find_response_by_data_input_name("credit_card_payment")
       @card_data = JSON.parse(JWT.decode(@credit_card_payment, SECRET_KEY)[0]["data"]) if @credit_card_payment.present?
+      @paypal_payment = find_response_by_data_input_name("paypal_payment")
     end
   end
 end

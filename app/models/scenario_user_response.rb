@@ -169,6 +169,9 @@ class ScenarioUserResponse < ApplicationRecord
         if conversation[:card_payment_radio_button][:initial_selection] == conversation[:card_payment_radio_button][:card_linked_setting]
           data_input_name = "credit_card_payment"
           value = conversation[:card_payment_radio_button].to_json
+        elsif selected[:value] == 'paypal'
+          data_input_name = "paypal_payment"
+          value = selected[:value]
         else
           data_input_name = "np_delivery_payment"
           value = selected[:value]
@@ -246,6 +249,7 @@ class ScenarioUserResponse < ApplicationRecord
   integer :sex, is_encrypt: false
   text :birth_date, is_encrypt: false
   text :credit_card_payment, is_encrypt: true
+  text :paypal_payment, is_encrypt: false
   string :cash_on_delivery_payment, is_encrypt: false
   string :np_delivery_payment, is_encrypt: false
   boolean :is_regular_order
