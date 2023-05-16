@@ -116,7 +116,6 @@ class ScenarioUserResponse < ApplicationRecord
           data_input_name = "last_name_kana"
           value = conversation.dig(:text_input, :text, :value)
         when "phone_number"
-          byebug
           data_input_name = "phone_number"
           value = conversation.dig(:text_input, :phone_number, :value)
         when "password"
