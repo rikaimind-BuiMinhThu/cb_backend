@@ -109,9 +109,15 @@ class ScenarioUserResponse < ApplicationRecord
         when "user_name_kana"
           data_input_name = "user_name_kana"
           value = conversation[:text_input][:text].to_json
+        when "first_name_kana"
+          data_input_name = "first_name_kana"
+          value = conversation.dig(:text_input, :text, :value)
+        when "last_name_kana"
+          data_input_name = "last_name_kana"
+          value = conversation.dig(:text_input, :text, :value)
         when "phone_number"
           data_input_name = "phone_number"
-          value = conversation.dig(:text_input, :phone_number, :value)
+          value = conversation.dig(:text_input, :text, :value)
         when "password"
           data_input_name = "user_password"
           value = conversation.dig(:text_input, :password_confirmation, :value)
@@ -124,6 +130,9 @@ class ScenarioUserResponse < ApplicationRecord
         when "first_name"
           data_input_name = "first_name"
           value = conversation.dig(:text_input, :text, :value)
+        when "coupons_code"
+          data_input_name = "coupons_code"
+          value = conversation.dig(:text_input, :text, :value)
         end
       when "zip_code_address"
         data_input_name = "zip_code_address"
@@ -133,6 +142,10 @@ class ScenarioUserResponse < ApplicationRecord
         when "is_regular_order"
           value = conversation[:radio_button][:initial_selection] == 1
           data_input_name = "is_regular_order"
+        when "has_account"
+          selected = get_selected_obj_for_radio_button(conversation)
+          value = selected[:value]
+          data_input_name = "has_account"
         when "delivery_frequency"
           selected = get_selected_obj_for_radio_button(conversation)
           value = selected[:value]
@@ -183,8 +196,14 @@ class ScenarioUserResponse < ApplicationRecord
           data_input_name = "country"
           value = conversation[:pull_down][:customization][:options_without_comment][0][:value]
         end
+    when "textarea"
+      puts "-----------------------------conversion: #{conversation[:textarea][:save_input_content]}"
+      case conversation[:textarea][:save_input_content]
+      when "sent_message"
+        data_input_name = "sent_message"
+        value = conversation[:textarea][:text_input][:value]
       end
-
+    end
       puts "=============================="
       puts "data_input_name: #{data_input_name}"
       next unless data_input_name.present?
@@ -200,6 +219,8 @@ class ScenarioUserResponse < ApplicationRecord
 
     built_result
   end
+ 
+  
 
   def self.get_selected_obj_for_radio_button(conversation)
     selected_id = conversation[:radio_button][:initial_selection]

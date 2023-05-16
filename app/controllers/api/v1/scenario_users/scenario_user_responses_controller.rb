@@ -8,6 +8,10 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
       scenario_user_responses = ScenarioUserResponse.build_record(params)
       scenario_user_responses.each(&:save!) if scenario_user_responses.present?
       render json: { code: 1, data: scenario_user_responses }
+    elsif (@client.ec_force?) && params[:user_id].present?
+      scenario_user_responses = ScenarioUserResponse.build_record(params)
+      scenario_user_responses.each(&:save!) if scenario_user_responses.present?
+      render json: { code: 1, data: scenario_user_responses}
     else
       render json: { code: 0, data: [] }
     end
@@ -22,6 +26,15 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
       scenario_id = params[:scenario_id]
       user_id = params[:user_id]
       ShopifyJob.perform_async(params[:scenario_id], params[:user_id])
+    elsif @client.ec_force? && params[:user_id].present?
+      scenario_id = params[:scenario_id]
+      user_id = params[:user_id]
+      # scenario = Scenario.find(scenario_id)
+      # conversations = scenario.scenario_user_responses.where(user_input_id: user_id)
+      # service = SeleniumServices::EcForce.new(scenario, conversations )
+      # service.process
+      EcForceJob.perform_async(params[:scenario_id], params[:user_id])
+      
     else
       render json: { code: 1, message: "not create order" }
     end
