@@ -28,6 +28,7 @@ module SeleniumServices
     EMAIL_CONFIRM_INPUT = "input[name='order[email_confirmation]']"
     # PHONE_NUMBER_INPUT = "input#form-validation-field-0"
     PHONE_NUMBER_INPUT = "input[name='order[billing_address_attributes][tel01]']"
+    PASSWORD_INPUT = "input#customer_password"
     SELECT_ADDRESS = "select[name='order[shipping_address_id]']"
     SEND_MESSAGE = "textarea[name='order[remark]']"
     COUPON_CODE = "input[name='order[coupon_code]']"
@@ -76,6 +77,7 @@ module SeleniumServices
         entry_checkout_information_regist
         end
         confirm_page
+        quit
         @selenium_result.update! result: :done, end_time: DateTime.now, last_step_no: @step
       rescue => e
         Log.error e.message
@@ -84,7 +86,7 @@ module SeleniumServices
 
         capture false
 
-        # quit
+        quit
         @selenium_result.update! result: :error, end_time: DateTime.now, last_step_no: @step
       end
     end
@@ -129,7 +131,7 @@ module SeleniumServices
       # capture
       # click CHECKOUT_BUTTON, "Click checkout button"
       # wait_element_load driver.find_element(:css, "a[href*='shop/order/new?register_as_member=0']")
-      driver.find_element(:css, "a[href*='/shop/order/new?register_as_member=0']").click()
+      driver.find_element(:css, "a[href*='/shop/order/new?register_as_member=1']").click()
     end
 
     def entry_checkout_information
@@ -140,11 +142,12 @@ module SeleniumServices
       fill_to_text_input LAST_NAME_INPUT, @last_name, "Fill-in last name"
       fill_to_text_input FIRST_NAME_KANA_INPUT, @first_name_kana, "Fill-in_first_name_kana"
       fill_to_text_input LAST_NAME_KANA_INPUT, @last_name_kana, "Fill-in_last_name_kana"
-      fill_to_text_input POSTAL_CODE_INPUT, @data_address["post_code_left"] + @data_address["post_code_right"], "Fill-in postal code"
+      fill_to_text_input POSTAL_CODE_INPUT, @data_address["value_post_code_left"] + @data_address["value_post_code_right"], "Fill-in postal code"
       fill_to_text_input ADDRESS_INPUT, @data_address["value_address"] + @data_address["value_building_name"], "Fill-in address"
       fill_to_text_input PHONE_NUMBER_INPUT, @phone_number, "Fill-in phonenumber"
       fill_to_text_input EMAIL_INPUT, @user_email, "Fill-in user email"
       fill_to_text_input EMAIL_CONFIRM_INPUT, @user_email, "Fill-in user email"
+      fill_to_text_input PASSWORD_INPUT, password_value, "Fill-in user email"
       
       select SELECT_ADDRESS, "same", :select_address
       
