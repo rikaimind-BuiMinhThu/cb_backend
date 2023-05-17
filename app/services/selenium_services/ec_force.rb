@@ -1,5 +1,6 @@
 require "selenium-webdriver"
 require File.dirname(__FILE__) + "/../log"
+include Selenium::WebDriver::Keys
 
 module SeleniumServices
   class EcForce < Base
@@ -38,6 +39,8 @@ module SeleniumServices
 
     CHECKBOX_ODER = "input#order_free_columns_0_0_13_22"
 
+    SELECT_PAYMENT_ID = "select#card-id"
+    
     NEXT_CONFIRM_CONTENT = "input#submit"
 
     CITY_INPUT = "input[name=city]"
@@ -88,6 +91,7 @@ module SeleniumServices
 
 
     private
+   
     def product_page
       @log_tab_level += 1
       Log.info "product_page", @log_tab_level
@@ -134,11 +138,11 @@ module SeleniumServices
       wait_element_load FIRST_NAME_INPUT
       fill_to_text_input FIRST_NAME_INPUT, @first_name, "Fill-in first name"
       fill_to_text_input LAST_NAME_INPUT, @last_name, "Fill-in last name"
-      fill_to_text_input FIRST_NAME_KANA_INPUT, @first_name_kana, "Fill-in first name"
-      fill_to_text_input LAST_NAME_KANA_INPUT, @last_name_kana, "Fill-in last name"
+      fill_to_text_input FIRST_NAME_KANA_INPUT, @first_name_kana, "Fill-in_first_name_kana"
+      fill_to_text_input LAST_NAME_KANA_INPUT, @last_name_kana, "Fill-in_last_name_kana"
       fill_to_text_input POSTAL_CODE_INPUT, @data_address["post_code_left"] + @data_address["post_code_right"], "Fill-in postal code"
       fill_to_text_input ADDRESS_INPUT, @data_address["value_address"] + @data_address["value_building_name"], "Fill-in address"
-      fill_to_text_input PHONE_NUMBER_INPUT, @phone_number, "Fill-in last name"
+      fill_to_text_input PHONE_NUMBER_INPUT, @phone_number, "Fill-in phonenumber"
       fill_to_text_input EMAIL_INPUT, @user_email, "Fill-in user email"
       fill_to_text_input EMAIL_CONFIRM_INPUT, @user_email, "Fill-in user email"
       
@@ -149,6 +153,7 @@ module SeleniumServices
       select PAYMENT_METHOD, @np_delivery_payment.to_s, :payment_method
       elsif @credit_card_payment.present?
       select PAYMENT_METHOD, "1", :payment_method
+
       fill_to_text_input EC_FORCE_PAYMENT_CARD_NUMBER_INPUT, card_data["card_number"], :card_number
         select EC_FORCE_PAYMENT_EXPIRY_MONTH_INPUT, card_data["month"].to_i.to_s, :expire_month
 
@@ -193,10 +198,41 @@ module SeleniumServices
       @log_tab_level += 1
       Log.info "entry_checkout_information", @log_tab_level
       wait_element_load FIRST_NAME_INPUT
+      element = driver.find_element(:id, 'order_billing_address_attributes_name01')
+      sleep(3)
+      element.clear
+      element = driver.find_element(:id, 'order_billing_address_attributes_name02')
+      sleep(3)
+      element.clear
+      element = driver.find_element(:id, 'order_billing_address_attributes_kana01')
+      sleep(3)
+      element.clear
+      element = driver.find_element(:id, 'order_billing_address_attributes_kana02')
+      sleep(3)
+      element.clear
+      fill_to_text_input FIRST_NAME_INPUT, @first_name, "Fill-in first name"
+      fill_to_text_input LAST_NAME_INPUT, @last_name, "Fill-in last name"
+      fill_to_text_input FIRST_NAME_KANA_INPUT, @first_name_kana, "Fill-in_first_name_kana"
+      fill_to_text_input LAST_NAME_KANA_INPUT, @last_name_kana, "Fill-in_last_name_kana"
+      element = driver.find_element(:id, 'order_billing_address_attributes_zip01')
+      sleep(3)
+      element.clear
+      fill_to_text_input POSTAL_CODE_INPUT, @data_address["value_post_code_left"] + @data_address["value_post_code_right"], "Fill-in postal code"
+      fill_to_text_input ADDRESS_INPUT, @data_address["value_address"] + @data_address["value_building_name"], "Fill-in address"
+      fill_to_text_input PHONE_NUMBER_INPUT, @phone_number, "Fill-in phonenumber"
       if @np_delivery_payment.present?
         select PAYMENT_METHOD, @np_delivery_payment.to_s, :payment_method
         elsif @credit_card_payment.present?
         select PAYMENT_METHOD, "1", :payment_method
+        if SELECT_PAYMENT_ID
+          select SELECT_PAYMENT_ID, "0", :add_new_card
+          fill_to_text_input EC_FORCE_PAYMENT_CARD_NUMBER_INPUT, card_data["card_number"], :card_number
+          select EC_FORCE_PAYMENT_EXPIRY_MONTH_INPUT, card_data["month"].to_i.to_s, :expire_month
+  
+          select EC_FORCE_PAYMENT_EXPIRY_YEAR_INPUT, card_data["year"][-2,2], :expire_year
+  
+          fill_to_text_input EC_FORCE_PAYMENT_NAME_ON_CARD_INPUT, card_data["card_holder"], :card_name
+        else
         fill_to_text_input EC_FORCE_PAYMENT_CARD_NUMBER_INPUT, card_data["card_number"], :card_number
           select EC_FORCE_PAYMENT_EXPIRY_MONTH_INPUT, card_data["month"].to_i.to_s, :expire_month
   
@@ -205,6 +241,7 @@ module SeleniumServices
           fill_to_text_input EC_FORCE_PAYMENT_NAME_ON_CARD_INPUT, card_data["card_holder"], :card_name
   
           # fill_to_text_input SUBSC_STORE_PAYMENT_SECURITY_CODE_INPUT, card_data["cvc"], :cvc
+        end
         end
         select SELECT_PAYMENT_SCHEDULE, "day_of_week", :select_address
         select SELECT_PAYMENT_SCHEDULE_DATE, (Time.now + @delivery_date.to_i.days).strftime("%Y-%-m-%-d").to_s, :delivery_date
@@ -262,7 +299,6 @@ module SeleniumServices
       @sent_message = find_response_by_data_input_name("sent_message")
       encrypted_password_value = find_response_by_data_input_name("user_password")
       @password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"]
-
     end
   end
 end
