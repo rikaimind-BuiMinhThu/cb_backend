@@ -10,8 +10,6 @@ class Chatbot < ApplicationRecord
   has_many :settlement_fee_variables, dependent: :destroy
   has_many :shipping_fee_variables, dependent: :destroy
   has_many :np_value_settlements, dependent: :destroy
-  has_many :sms_templates, dependent: :destroy
-  has_many :push_message_histories, dependent: :destroy
 
   belongs_to :user
   belongs_to :specify_payment_variable, class_name: Variable.name, optional: true

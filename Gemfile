@@ -33,8 +33,6 @@ gem "webdrivers", "5.2.0"
 gem "webdriver-user-agent", "~> 7.3"
 gem "redis"
 gem "sidekiq"
-gem "sidekiq-scheduler"
-gem 'rubocop', require: false
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
