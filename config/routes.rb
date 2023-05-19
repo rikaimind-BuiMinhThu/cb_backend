@@ -48,7 +48,7 @@ Rails.application.routes.draw do
         patch "push_messages/:id/unsubscribe" => "push_messages#unsubscribe"
         resources :history_click_urls, only: [:index, :create, :show, :update, :destroy]
         resources :sms_templates, only: [:index, :create, :show, :update, :destroy]
-        resources :plans, only: [:index, :show, :update]
+        resources :plans, only: [:index, :show, :update, :create, :destroy]
       end
       namespace :message_managements do
         get "message_groups/data_analyst", :to => 'message_groups#data_analyst'

@@ -4,7 +4,10 @@ class Api::V1::Managements::PlansController < ApplicationController
     return render json: {code: 2, message: "No permission"} unless current_user.admin_deel?
     begin
       Plan.transaction do 
+        max_code = Plan.maximum(:code)
+        item = Plan.find_by(code: max_code)
         @plan = Plan.new(plan_params)
+        @plan.code = item.code + 1
         if @plan.save!
           render json: {code: 1, message: "Success"}
         end
@@ -58,7 +61,7 @@ class Api::V1::Managements::PlansController < ApplicationController
   private
 
   def plan_params
-    params.require(:plan).permit(:description, :price)
+    params.require(:plan).permit(:description, :price, :name)
   end
 
   def parse_price(keyword)
