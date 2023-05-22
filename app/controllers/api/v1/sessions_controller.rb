@@ -11,8 +11,11 @@ class Api::V1::SessionsController < ApplicationController
   def create
     auth_token = JsonWebToken.encode(user_id: @user.id)
     refresh_token = JsonWebToken.encode_refresh(user_id: @user.id)
+    client = @user.client
     render json: {code: 1, message: "Success",
-      user: @user, token: auth_token, refresh_token: refresh_token}, status: 200
+      user: @user, token: auth_token, refresh_token: refresh_token,
+      client: client
+    }, status: 200
   end
 
   private

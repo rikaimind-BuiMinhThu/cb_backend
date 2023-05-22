@@ -12,4 +12,8 @@ class AnalyticScenario < ApplicationRecord
     scope = scope.where("created_at <= ?", end_date.end_of_day) if end_date.present?
     scope
   }
+
+  def self.ransackable_attributes(auth_object = nil)
+    ["created_at"]
+  end
 end
