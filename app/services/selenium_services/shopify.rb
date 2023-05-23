@@ -35,6 +35,13 @@ module SeleniumServices
     PAYPAL_PAYMENT_LOGIN_BUTTON = "button#btnLogin"
     PAYPAL_PAYMENT_CHECKOUT_BUTTON = "button#payment-submit-btn"
 
+    KOMOJU_PAYMENT_CREDIT_CARD_LABEL = "label[for=basic-Credit / Debit Card]"
+    KOMOJU_PAYMENT_CARD_NUMBER_INPUT = "input[name=number]:not(:-webkit-autofill)"
+    KOMOJU_PAYMENT_NAME_ON_CARD_INPUT = "input#name"
+    KOMOJU_PAYMENT_EXPIRY_DATE_INPUT = "input#expiration"
+    KOMOJU_PAYMENT_SECURITY_CODE_INPUT = "input#verification"
+    KOMOJU_PAY_NOW_BUTTON = "input[type=submit]"
+
     PAY_NOW_BUTTON = "button[type=submit]"
 
     def process
@@ -129,6 +136,8 @@ module SeleniumServices
         entry_credit_payment_information()
       elsif @paypal_payment.present?
         entry_paypal_payment_information()
+      elsif @komoju_payment.present?
+        entry_komoju_payment_information()
       end
     end
 
@@ -165,6 +174,46 @@ module SeleniumServices
       click PAYPAL_PAYMENT_CHECKOUT_BUTTON, "Click checkout paypal"
 
       @driver.switch_to.default_content
+    end
+
+    def entry_komoju_payment_information
+      @log_tab_level += 1
+      Log.info "entry_komoju_payment_information", @log_tab_level
+      wait_element_load KOMOJU_PAYMENT_CREDIT_CARD_LABEL
+      click KOMOJU_PAYMENT_CREDIT_CARD_LABEL, "Click komoju card option"
+
+      # enter card number
+      wait_element_load "#session"
+      wait_element_load KOMOJU_PAYMENT_CARD_NUMBER_INPUT
+      @card_data["card_number"].split(//).map do |each|
+        fill_to_text_input KOMOJU_PAYMENT_CARD_NUMBER_INPUT, each.to_i, "card_number"
+      end
+      @driver.switch_to.default_content
+
+      # enter card name
+      wait_element_load KOMOJU_PAYMENT_NAME_ON_CARD_INPUT
+      @card_data["card_holder"].split(//).map do |each|
+        fill_to_text_input KOMOJU_PAYMENT_NAME_ON_CARD_INPUT, each, "card_name"
+      end
+      @driver.switch_to.default_content
+
+      # enter card date
+      wait_element_load KOMOJU_PAYMENT_EXPIRY_DATE_INPUT
+      expiry_date = @card_data["month"].to_s + @card_data["year"].to_s
+      expiry_date.split(//).map do |each|
+        fill_to_text_input KOMOJU_PAYMENT_EXPIRY_DATE_INPUT, each.to_i, "card_name"
+      end
+      @driver.switch_to.default_content
+
+       # enter card code
+      wait_element_load KOMOJU_PAYMENT_SECURITY_CODE_INPUT
+      @card_data["cvc"].to_s.split(//).map do |each|
+        fill_to_text_input KOMOJU_PAYMENT_SECURITY_CODE_INPUT, each.to_i, "cvc"
+      end
+      @driver.switch_to.default_content
+
+      capture
+      click KOMOJU_PAY_NOW_BUTTON, "Click pay now button"
     end
 
     def entry_credit_payment_information
@@ -237,6 +286,9 @@ module SeleniumServices
       @credit_card_payment = find_response_by_data_input_name("credit_card_payment")
       @card_data = JSON.parse(JWT.decode(@credit_card_payment, SECRET_KEY)[0]["data"]) if @credit_card_payment.present?
       @paypal_payment = find_response_by_data_input_name("paypal_payment")
+      @paypal_data = JSON.parse(JWT.decode(@paypal_payment, SECRET_KEY)[0]["data"]) if @paypal_payment.present?
+      @komoju_payment = find_response_by_data_input_name("komoju_payment")
+      @komoju_data = JSON.parse(JWT.decode(@komoju_payment, SECRET_KEY)[0]["data"]) if @komoju_payment.present?
     end
   end
 end
