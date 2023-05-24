@@ -170,6 +170,7 @@ module SeleniumServices
           when "phone_number"
             phone_number = conversation.dig(:text_input, :phone_number, :value)
           end
+        end
       end
 
       @log_tab_level += 1
@@ -231,6 +232,7 @@ module SeleniumServices
           when "password"
             password = conversation.dig(:text_input, :password_confirmation, :value)
           end
+        end
       end
 
       @log_tab_level += 1

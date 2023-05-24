@@ -144,6 +144,9 @@ class ScenarioUserResponse < ApplicationRecord
           when "coupons_code"
             data_input_name = "coupons_code"
             value = conversation.dig(:text_input, :text, :value)
+          else
+            data_input_name = "pin_code"
+            value = conversation.dig(:text_input, :text, :value)
           end
         when "zip_code_address"
           data_input_name = "zip_code_address"
@@ -276,4 +279,5 @@ class ScenarioUserResponse < ApplicationRecord
   text :komoju_payment, is_encrypt: true
   text :paypal_payment, is_encrypt: true
   text :paidy_payment, is_encrypt: false
+  string :pin_code, is_encrypt: false
 end
