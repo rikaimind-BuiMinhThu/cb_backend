@@ -101,6 +101,7 @@ class ScenarioUserResponse < ApplicationRecord
         user_response = conversations.find_by(data_input_name: 'paidy_payment')
       end
       user_response.update(value: params[:message][:message_content].to_json)
+      [user_response]
     else
       params[:message][:message_content].each do |conversation|
         puts "-----------------------------conversion: #{conversation[:type]}"
@@ -179,16 +180,16 @@ class ScenarioUserResponse < ApplicationRecord
           end
         when "card_payment_radio_button"
           selected = get_selected_obj_for_card_payment_radio_button(conversation)
-
-          if conversation[:card_payment_radio_button][:initial_selection] == conversation[:card_payment_radio_button][:card_linked_setting]
+          case conversation["card_payment_radio_button"]["initial_selection"]
+          when 'credit_card'
             data_input_name = "credit_card_payment"
             value = conversation[:card_payment_radio_button].to_json
-          elsif selected[:value] == 'paypal'
+          when 'paypal'
             data_input_name = "paypal_payment"
-          elsif selected[:value] == 'komoju'
+          when 'komoju'
             data_input_name = "komoju_payment"
             value = conversation[:card_payment_radio_button].to_json
-          elsif selected[:value] == 'paidy'
+          when 'paidy'
             data_input_name = "paidy_payment"
           else
             data_input_name = "np_delivery_payment"
