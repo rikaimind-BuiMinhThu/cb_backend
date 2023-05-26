@@ -28,16 +28,7 @@ module SeleniumServices
       @current_frame = nil
       @log_tab_level = 0
       @is_error = nil
-      @selenium_result = ScenarioUserResponseSeleniumResult.create(
-        scenario_id: scenario.id,
-        chatbot_id: scenario.chatbot_id,
-        client_id: scenario.chatbot&.user&.client_id,
-        user_input_id: @user_input_id,
-        last_step_no: 0,
-        last_step_description: "",
-        start_time: DateTime.now,
-        result: :running,
-      )
+      @selenium_result = ScenarioUserResponseSeleniumResult.find_by(user_input_id: @user_input_id)
 
       extract_conversions_data
 

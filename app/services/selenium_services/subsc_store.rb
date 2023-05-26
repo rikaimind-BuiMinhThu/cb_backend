@@ -4,8 +4,8 @@ require File.dirname(__FILE__) + "/../log"
 module SeleniumServices
   class SubscStore < Base
     QUANLITY_INPUT = "select"
-    ADD_TO_CART_BUTTON = "a[class='btn btn-lg btn-primary']"
-
+    CHECK_PAGE = "div[class=container-side-contents-wrapper]"
+    ADD_TO_CART_BUTTON = "i[class=fa-shopping-cart]"
     CHECKOUT_BUTTON = "a[class=checkout-register-btn]"
 
     FAMILY_NAME_INPUT = "input[name=signUpUser.defaultAddress.familyName]"
@@ -66,7 +66,6 @@ module SeleniumServices
       @log_tab_level += 1
       Log.info "product_page", @log_tab_level
       navigate @scenario.landing_page_product_url
-      wait_element_load ADD_TO_CART_BUTTON
 
       if quantity_value.present?
         select QUANLITY_INPUT, quantity_value, :quantity
