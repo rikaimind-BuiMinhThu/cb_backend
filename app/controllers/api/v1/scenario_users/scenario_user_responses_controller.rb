@@ -4,7 +4,7 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
   before_action :set_scenario
 
   def create
-    if (@client.tamago_repeat? || @client.shopify? || @client.ec_force?) && params[:user_id].present?
+    if (@client.tamago_repeat? || @client.shopify? || @client.subsc_store? || @client.ec_force?) && params[:user_id].present?
       scenario_user_responses = ScenarioUserResponse.build_record(params)
       scenario_user_responses.each(&:save!) if scenario_user_responses.present?
       render json: { code: 1, data: scenario_user_responses }
@@ -14,7 +14,7 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
   end
 
   def update
-    if (@client.tamago_repeat? || @client.shopify? || @client.ec_force?) && params[:user_id].present?
+    if (@client.tamago_repeat? || @client.shopify? || @client.subsc_store? || @client.ec_force?) && params[:user_id].present?
       conversations = @scenario.scenario_user_responses.where(user_input_id: params[:user_id])
       scenario_user_responses = ScenarioUserResponse.build_record(params)
       conversations.each do |conversation|
