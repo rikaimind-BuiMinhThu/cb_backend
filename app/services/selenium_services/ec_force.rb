@@ -103,7 +103,6 @@ module SeleniumServices
       navigate @scenario.landing_page_product_url
       
       begin driver.find_element(:css, "select#quantity").any?
-        byebug
       rescue Selenium::WebDriver::Error::NoSuchElementError
         puts 'Phần tử không tồn tại.'
       end
