@@ -37,14 +37,14 @@ module SeleniumServices
     PAYPAL_PAYMENT_LOGIN_BUTTON = "button#btnLogin"
     PAYPAL_PAYMENT_CHECKOUT_BUTTON = "button#payment-submit-btn"
 
-    KOMOJU_PAYMENT_CREDIT_CARD_LABEL = "label[for=basic-Credit / Debit Card]"
+    KOMOJU_PAYMENT_CREDIT_CARD_LABEL = 'label[for="basic-Credit / Debit Card"]'
     KOMOJU_PAYMENT_CARD_NUMBER_INPUT = "input[name=number]:not(:-webkit-autofill)"
     KOMOJU_PAYMENT_NAME_ON_CARD_INPUT = "input#name"
     KOMOJU_PAYMENT_EXPIRY_DATE_INPUT = "input#expiration"
     KOMOJU_PAYMENT_SECURITY_CODE_INPUT = "input#verification"
     KOMOJU_PAY_NOW_BUTTON = "input[type=submit]"
 
-    PAIDY_PAYMENT_LABEL = "label[for=basic-あと払い（ペイディ）]"
+    PAIDY_PAYMENT_LABEL = 'label[for="basic-あと払い（ペイディ）"]'
     PAIDY_PAYMENT_EMAIL_INPUT = "input#ip_email"
     PAIDY_PAYMENT_PHONE_INPUT = "input#ip_phone"
     PAIDY_PAYMENT_NEXT_BUTTON = "button#btn_login"
@@ -179,9 +179,6 @@ module SeleniumServices
       click PAIDY_PAYMENT_LABEL, "Click paidy option"
       click PAY_NOW_BUTTON, "Click pay now button"
 
-      # switch to paidy tab
-      @driver.switch_to.window driver.window_handles.at(1)
-
       # input email
       wait_element_load PAIDY_PAYMENT_EMAIL_INPUT
       element = @driver.find_element(:css, PAIDY_PAYMENT_EMAIL_INPUT)
@@ -240,8 +237,6 @@ module SeleniumServices
       wait_element_load PAYPAL_PAYMENT_LABEL
       click PAYPAL_PAYMENT_LABEL, "Click paypal option"
       click PAY_NOW_BUTTON, "Click pay now button"
-      # switch to paypal tab
-      @driver.switch_to.window driver.window_handles.at(1)
 
       if @driver.find_elements(id: "otpVerification").size() > 0
         click PAYPAL_PAYMENT_WITH_ANOTHER_METHOD, 'switch to another payment method'
@@ -279,39 +274,32 @@ module SeleniumServices
       Log.info "entry_komoju_payment_information", @log_tab_level
       wait_element_load KOMOJU_PAYMENT_CREDIT_CARD_LABEL
       click KOMOJU_PAYMENT_CREDIT_CARD_LABEL, "Click komoju card option"
+      click PAY_NOW_BUTTON, "Click pay now button"
 
+      @driver.switch_to.default_content
       # enter card number
       wait_element_load "#session"
       wait_element_load KOMOJU_PAYMENT_CARD_NUMBER_INPUT
-      @card_data["card_number"].split(//).map do |each|
-        fill_to_text_input KOMOJU_PAYMENT_CARD_NUMBER_INPUT, each.to_i, "card_number"
-      end
-      @driver.switch_to.default_content
+      fill_to_text_input KOMOJU_PAYMENT_CARD_NUMBER_INPUT, @komoju_data["card_number"], "card_number"
 
       # enter card name
       wait_element_load KOMOJU_PAYMENT_NAME_ON_CARD_INPUT
-      @card_data["card_holder"].split(//).map do |each|
-        fill_to_text_input KOMOJU_PAYMENT_NAME_ON_CARD_INPUT, each, "card_name"
-      end
-      @driver.switch_to.default_content
+      fill_to_text_input KOMOJU_PAYMENT_NAME_ON_CARD_INPUT, @komoju_data["card_holder"], "card_name"
 
       # enter card date
       wait_element_load KOMOJU_PAYMENT_EXPIRY_DATE_INPUT
-      expiry_date = @card_data["month"].to_s + @card_data["year"].to_s
-      expiry_date.split(//).map do |each|
-        fill_to_text_input KOMOJU_PAYMENT_EXPIRY_DATE_INPUT, each.to_i, "card_name"
-      end
-      @driver.switch_to.default_content
+      year = @komoju_data["year"].to_s.split('')
+      year = [year[-2], year[-1]].join('')
+      expiry_date = @komoju_data["month"].to_s + '/'  + year
+      fill_to_text_input KOMOJU_PAYMENT_EXPIRY_DATE_INPUT, expiry_date, "expiry_date"
 
        # enter card code
       wait_element_load KOMOJU_PAYMENT_SECURITY_CODE_INPUT
-      @card_data["cvc"].to_s.split(//).map do |each|
-        fill_to_text_input KOMOJU_PAYMENT_SECURITY_CODE_INPUT, each.to_i, "cvc"
-      end
-      @driver.switch_to.default_content
+      fill_to_text_input KOMOJU_PAYMENT_SECURITY_CODE_INPUT, @komoju_data["cvc"], "cvc"
 
       capture
       click KOMOJU_PAY_NOW_BUTTON, "Click pay now button"
+      @driver.switch_to.default_content
     end
 
     def entry_credit_payment_information
@@ -324,17 +312,13 @@ module SeleniumServices
       wait_element_load "iframe.card-fields-iframe[id^=card-fields-number]"
       @driver.switch_to.frame driver.find_element(:css, "iframe.card-fields-iframe[id^=card-fields-number]")
       wait_element_load SHOPIFY_PAYMENT_CARD_NUMBER_INPUT
-      @card_data["card_number"].split(//).map do |each|
-        fill_to_text_input SHOPIFY_PAYMENT_CARD_NUMBER_INPUT, each.to_i, "card_number"
-      end
+      fill_to_text_input SHOPIFY_PAYMENT_CARD_NUMBER_INPUT, @card_data["card_number"], "card_number"
       @driver.switch_to.default_content
 
       # enter card name
       wait_element_load "iframe.card-fields-iframe[id^=card-fields-name]"
       @driver.switch_to.frame driver.find_element(:css, "iframe.card-fields-iframe[id^=card-fields-name]")
-      @card_data["card_holder"].split(//).map do |each|
-        fill_to_text_input SHOPIFY_PAYMENT_NAME_ON_CARD_INPUT, each, "card_name"
-      end
+      fill_to_text_input SHOPIFY_PAYMENT_NAME_ON_CARD_INPUT, @card_data["card_holder"], "card_name"
       @driver.switch_to.default_content
 
       # enter card date
@@ -375,7 +359,7 @@ module SeleniumServices
       @quantity_value = find_response_by_data_input_name("quantity")
       @user_email = find_response_by_data_input_name("user_email")
       encrypted_password_value = find_response_by_data_input_name("user_password")
-      @password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"]
+      @password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"] if encrypted_password_value.present?
       @country = find_response_by_data_input_name("country")
       @last_name = find_response_by_data_input_name("last_name")
       @pin_code = find_response_by_data_input_name("pin_code")
