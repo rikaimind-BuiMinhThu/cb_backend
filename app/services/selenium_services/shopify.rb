@@ -312,13 +312,17 @@ module SeleniumServices
       wait_element_load "iframe.card-fields-iframe[id^=card-fields-number]"
       @driver.switch_to.frame driver.find_element(:css, "iframe.card-fields-iframe[id^=card-fields-number]")
       wait_element_load SHOPIFY_PAYMENT_CARD_NUMBER_INPUT
-      fill_to_text_input SHOPIFY_PAYMENT_CARD_NUMBER_INPUT, @card_data["card_number"], "card_number"
+      @card_data["card_number"].split(//).map do |each|
+        fill_to_text_input SHOPIFY_PAYMENT_CARD_NUMBER_INPUT, each.to_i, "card_number"
+      end
       @driver.switch_to.default_content
 
       # enter card name
       wait_element_load "iframe.card-fields-iframe[id^=card-fields-name]"
       @driver.switch_to.frame driver.find_element(:css, "iframe.card-fields-iframe[id^=card-fields-name]")
-      fill_to_text_input SHOPIFY_PAYMENT_NAME_ON_CARD_INPUT, @card_data["card_holder"], "card_name"
+      @card_data["card_holder"].split(//).map do |each|
+        fill_to_text_input SHOPIFY_PAYMENT_NAME_ON_CARD_INPUT, each, "card_name"
+      end
       @driver.switch_to.default_content
 
       # enter card date
