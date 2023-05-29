@@ -45,6 +45,7 @@ module SeleniumServices
     KOMOJU_PAY_NOW_BUTTON = "input[type=submit]"
 
     PAIDY_PAYMENT_LABEL = 'label[for="basic-あと払い（ペイディ）"]'
+    PAIDY_PAYMENT_IFRAME = 'iframe'
     PAIDY_PAYMENT_EMAIL_INPUT = "input#ip_email"
     PAIDY_PAYMENT_PHONE_INPUT = "input#ip_phone"
     PAIDY_PAYMENT_NEXT_BUTTON = "button#btn_login"
@@ -161,15 +162,10 @@ module SeleniumServices
       email = ''
       phone_number = ''
       @paidy_data.each do |conversation|
-        case conversation[:type]
-        when "text_input"
-          puts "-----------------------------conversion: #{conversation[:text_input][:save_input_content]}"
-          case conversation[:text_input][:save_input_content]
-          when "user_email"
-            email = conversation.dig(:text_input, :email_address, :value)
-          when "phone_number"
-            phone_number = conversation.dig(:text_input, :phone_number, :value)
-          end
+        if conversation.dig("text_input", "email_address", "value").present?
+          email = conversation.dig("text_input", "email_address", "value")
+        elsif conversation.dig("text_input", "phone_number", "value").present?
+          phone_number = conversation.dig("text_input", "phone_number", "value")
         end
       end
 
@@ -179,11 +175,20 @@ module SeleniumServices
       click PAIDY_PAYMENT_LABEL, "Click paidy option"
       click PAY_NOW_BUTTON, "Click pay now button"
 
+      # switch to iframe
+      wait_element_load PAIDY_PAYMENT_IFRAME
+      iframe = @driver.find_elements(:tag_name, PAIDY_PAYMENT_IFRAME).first
+      @driver.switch_to.frame iframe
+
+      # check page intro
+      if @driver.find_elements(:id, 'btn_intro').size > 0
+        intro = @driver.find_elements(:id, 'btn_intro').first
+        intro.click
+      end
       # input email
       wait_element_load PAIDY_PAYMENT_EMAIL_INPUT
-      element = @driver.find_element(:css, PAIDY_PAYMENT_EMAIL_INPUT)
-      element.clear
-      fill_to_text_input PAIDY_PAYMENT_EMAIL_INPUT, email, "Fill-in user email"
+
+      fill_to_text_input PAIDY_PAYMENT_EMAIL_INPUT, email, "Fill-in user email", true
 
       # input password
       wait_element_load PAIDY_PAYMENT_PHONE_INPUT
@@ -194,8 +199,8 @@ module SeleniumServices
       click PAIDY_PAYMENT_NEXT_BUTTON, "Click login paypal"
 
       #input pincode
+      sleep 120
       pin_code = @pin_code.split('')
-      sleep 60
       wait_element_load PAIDY_PAYMENT_INPUT_PIN_0
       fill_to_text_input PAIDY_PAYMENT_INPUT_PIN_0, pin_code[0], "Fill-in pin 0"
       fill_to_text_input PAIDY_PAYMENT_INPUT_PIN_1, pin_code[1], "Fill-in pin 1"
@@ -352,7 +357,10 @@ module SeleniumServices
       Log.info "input_element = @driver.find_element(css: #{css_selector})", @log_tab_level + 1
       input_element = @driver.find_element(css: css_selector)
       Log.info "input_element.send_keys(#{value})", @log_tab_level + 1
-      input_element.clear if clear_input
+      if clear_input
+        js_script = "document.querySelector('#{css_selector}').value = ''"
+        @driver.execute_script(js_script)
+      end
       input_element.send_keys(value)
       capture
       @log_tab_level -= 1

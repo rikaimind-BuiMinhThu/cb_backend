@@ -238,7 +238,7 @@ module SeleniumServices
     end
 
     def find_response_by_data_input_name(data_input_name)
-      conversations.detect { |c| c.data_input_name == data_input_name }&.value
+      @conversations.detect { |c| c.data_input_name == data_input_name }&.value
     end
 
     def user_agents
