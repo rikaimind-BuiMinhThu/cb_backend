@@ -45,14 +45,14 @@ module SeleniumServices
     KOMOJU_PAY_NOW_BUTTON = "input[type=submit]"
 
     PAIDY_PAYMENT_LABEL = 'label[for="basic-あと払い（ペイディ）"]'
-    PAIDY_PAYMENT_IFRAME = 'iframe'
-    PAIDY_PAYMENT_EMAIL_INPUT = "ip_email"
-    PAIDY_PAYMENT_PHONE_INPUT = "ip_phone"
-    PAIDY_PAYMENT_NEXT_BUTTON = "btn_login"
-    PAIDY_PAYMENT_INPUT_PIN_0 = "input_pin_0"
-    PAIDY_PAYMENT_INPUT_PIN_1 = "input_pin_1"
-    PAIDY_PAYMENT_INPUT_PIN_2 = "input_pin_2"
-    PAIDY_PAYMENT_INPUT_PIN_3 = "input_pin_3"
+    PAIDY_PAYMENT_EMAIL_INPUT = "input#ip_email"
+    PAIDY_PAYMENT_PHONE_INPUT = "input#ip_phone"
+    PAIDY_PAYMENT_NEXT_BUTTON = "button#btn_login"
+    PAIDY_PAYMENT_INPUT_PIN_0 = "input#input_pin_0"
+    PAIDY_PAYMENT_INPUT_PIN_1 = "input#input_pin_1"
+    PAIDY_PAYMENT_INPUT_PIN_2 = "input#input_pin_2"
+    PAIDY_PAYMENT_INPUT_PIN_3 = "input#input_pin_3"
+    PAIDY_PAYMENT_SELECT_PAYMENT_OPTIONS = "#root"
     PAIDY_PAYMENT_SELECT_SINGLE_PAY = "div[testid=npay-select-option-single_pay]"
     PAIDY_PAYMENT_NEXT_CONFIRM = "button#btn_multi_confirm_next"
 
@@ -161,10 +161,15 @@ module SeleniumServices
       email = ''
       phone_number = ''
       @paidy_data.each do |conversation|
-        if conversation.dig("text_input", "email_address", "value").present?
-          email = conversation.dig("text_input", "email_address", "value")
-        elsif conversation.dig("text_input", "phone_number", "value").present?
-          phone_number = conversation.dig("text_input", "phone_number", "value")
+        case conversation[:type]
+        when "text_input"
+          puts "-----------------------------conversion: #{conversation[:text_input][:save_input_content]}"
+          case conversation[:text_input][:save_input_content]
+          when "user_email"
+            email = conversation.dig(:text_input, :email_address, :value)
+          when "phone_number"
+            phone_number = conversation.dig(:text_input, :phone_number, :value)
+          end
         end
       end
 
@@ -174,43 +179,38 @@ module SeleniumServices
       click PAIDY_PAYMENT_LABEL, "Click paidy option"
       click PAY_NOW_BUTTON, "Click pay now button"
 
-      iframes = @driver.find_elements(:tag_name, PAIDY_PAYMENT_IFRAME)
-      iframe = iframes.first
-      @driver.switch_to.frame iframe
       # input email
-      @driver.find_element(:id, 'root')
+      wait_element_load PAIDY_PAYMENT_EMAIL_INPUT
+      element = @driver.find_element(:css, PAIDY_PAYMENT_EMAIL_INPUT)
+      element.clear
+      fill_to_text_input PAIDY_PAYMENT_EMAIL_INPUT, email, "Fill-in user email"
 
-      email_element = @driver.find_element(:id, PAIDY_PAYMENT_EMAIL_INPUT)
-      js_script = "document.querySelector('#ip_email').value = ''"
-      @driver.execute_script(js_script)
-      email_element.send_keys(email)
-
-      # input phone
-      phone_element = @driver.find_element(:id, PAIDY_PAYMENT_PHONE_INPUT)
-      phone_element.send_keys(phone_number)
+      # input password
+      wait_element_load PAIDY_PAYMENT_PHONE_INPUT
+      fill_to_text_input PAIDY_PAYMENT_PHONE_INPUT, phone_number, "Fill-in phone number"
 
       # click login
-      login_paypal = @driver.find_element(:id, PAIDY_PAYMENT_NEXT_BUTTON)
-      login_paypal.click
+      wait_element_load PAIDY_PAYMENT_NEXT_BUTTON
+      click PAIDY_PAYMENT_NEXT_BUTTON, "Click login paypal"
 
       #input pincode
       pin_code = @pin_code.split('')
-      sleep 120
-      pin_code_0 = @driver.find_element(:id, PAIDY_PAYMENT_INPUT_PIN_0)
-      pin_code_0.send_keys(pin_code[0])
-      pin_code_1 = @driver.find_element(:id, PAIDY_PAYMENT_INPUT_PIN_1)
-      pin_code_1.send_keys(pin_code[1])
-      pin_code_2 = @driver.find_element(:id, PAIDY_PAYMENT_INPUT_PIN_2)
-      pin_code_2.send_keys(pin_code[2])
-      pin_code_3 = @driver.find_element(:id, PAIDY_PAYMENT_INPUT_PIN_3)
-      pin_code_3.send_keys(pin_code[3])
+      sleep 60
+      wait_element_load PAIDY_PAYMENT_INPUT_PIN_0
+      fill_to_text_input PAIDY_PAYMENT_INPUT_PIN_0, pin_code[0], "Fill-in pin 0"
+      fill_to_text_input PAIDY_PAYMENT_INPUT_PIN_1, pin_code[1], "Fill-in pin 1"
+      fill_to_text_input PAIDY_PAYMENT_INPUT_PIN_2, pin_code[2], "Fill-in pin 2"
+      fill_to_text_input PAIDY_PAYMENT_INPUT_PIN_3, pin_code[3], "Fill-in pin 3"
 
       # click checkout
+      wait_element_load PAIDY_PAYMENT_SELECT_SINGLE_PAY
       click PAIDY_PAYMENT_SELECT_SINGLE_PAY, "Click select single pay"
 
       #confirm payment
+      wait_element_load PAIDY_PAYMENT_NEXT_CONFIRM
       click PAIDY_PAYMENT_NEXT_CONFIRM, "Click select single pay"
 
+      wait_element_load PAIDY_PAYMENT_NEXT_CONFIRM
       click PAIDY_PAYMENT_NEXT_CONFIRM, "Click select single pay"
 
       @driver.switch_to.default_content
