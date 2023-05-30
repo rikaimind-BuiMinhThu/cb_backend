@@ -200,6 +200,8 @@ module SeleniumServices
 
       #input pincode
       sleep 120
+      new_conversations = @scenario.scenario_user_responses.reload.where(scenario_id: @scenario.id, user_input_id: @user_input_id)
+      @pin_code =  new_conversations.detect { |c| c.data_input_name == 'pin_code' }&.value
       pin_code = @pin_code.split('')
       wait_element_load PAIDY_PAYMENT_INPUT_PIN_0
       fill_to_text_input PAIDY_PAYMENT_INPUT_PIN_0, pin_code[0], "Fill-in pin 0"
@@ -374,7 +376,6 @@ module SeleniumServices
       @password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"] if encrypted_password_value.present?
       @country = find_response_by_data_input_name("country")
       @last_name = find_response_by_data_input_name("last_name")
-      @pin_code = find_response_by_data_input_name("pin_code")
       @first_name = find_response_by_data_input_name("first_name")
       @data_address = JSON.parse find_response_by_data_input_name("zip_code_address")
       @post_code = @data_address["value_post_code"].gsub("-", "")
