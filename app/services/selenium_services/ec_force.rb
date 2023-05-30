@@ -9,8 +9,6 @@ module SeleniumServices
     ADD_TO_CART_BUTTON = "button#btn-add"
 
     CHECKOUT_BUTTON = "a.c-cart_submit__block__link"
-    CHECKOUT_BUTTON_2 = "button.c-cart_submit__block__submit"
-    
 
     LAST_NAME_INPUT = "input#order_billing_address_attributes_name01"
     FIRST_NAME_INPUT = "input#order_billing_address_attributes_name02"
@@ -71,13 +69,12 @@ module SeleniumServices
 
       begin
         product_page
-        # no account
         if @has_account == "0"
         checkout_page
         entry_checkout_information
-        else #has account
-          checkout_page_login
-          entry_checkout_information_login
+        else
+          checkout_page_regist
+        entry_checkout_information_regist
         end
         confirm_page
         quit
@@ -101,32 +98,39 @@ module SeleniumServices
       @log_tab_level += 1
       Log.info "product_page", @log_tab_level
       navigate @scenario.landing_page_product_url
-      
-      begin driver.find_element(:css, "select#quantity").any?
-      rescue Selenium::WebDriver::Error::NoSuchElementError
-        puts 'Phần tử không tồn tại.'
-      end
+      # wait_element_load QUANLITY_INPUT 
+      # if quantity_value.present?
+      #     fill_to_text_input QUANLITY_INPUT, quantity_value, "Fill-in quantity", true
+      # end
+      # capture false
+      # click ADD_TO_CART_BUTTON, "Add product to cart"
       wait_element_load QUANLITY_SELECT
       if @quantity_value.present?
         select QUANLITY_SELECT, @quantity_value.to_s, :quantity
-        capture
+        capture false
         click ADD_TO_CART_BUTTON, "Add product to cart"
       end
-      end
+   
+    end
+
+
+    # def checkout_page
+    #   @log_tab_level += 1
+    #   Log.info "checkout_page", @log_tab_level
+    #   wait_element_load CHECKOUT_BUTTON
+    #   capture
+    #   click CHECKOUT_BUTTON, "Click checkout button"
+    # end
 
 
     def checkout_page
       @log_tab_level += 1
       Log.info "checkout_page", @log_tab_level
-      # if CHECKOUT_BUTTON_2
-
       # wait_element_load CHECKOUT_BUTTON
       # capture
-      # click CHECKOUT_BUTTON_2, "Click checkout button"
+      # click CHECKOUT_BUTTON, "Click checkout button"
       # wait_element_load driver.find_element(:css, "a[href*='shop/order/new?register_as_member=0']")
-      # else
       driver.find_element(:css, "a[href*='/shop/order/new?register_as_member=1']").click()
-      # end
     end
 
     def entry_checkout_information
@@ -168,19 +172,23 @@ module SeleniumServices
       select_radio_btn CHECKBOX_ODER, 1, "check oder"
 
       click NEXT_CONFIRM_CONTENT, "next to page confirm"
-     
+      # select COUNTRY_SELECT, @country, "", "Select country name"
+      # fill_to_text_input POSTAL_CODE_INPUT, @post_code, "Fill-in post code"
+      # fill_to_text_input CITY_INPUT, @data_address["value_municipality"], "Fill-in city name"
+      # fill_to_text_input ADDRESS_INPUT, @data_address["value_address"], "Fill-in address"
+      # fill_to_text_input APARTMENT_INPUT, @data_address["value_building_name"], "Fill-in building name"
+      # click CHECKOUT_SUBMIT_BUTTON, "Click checkout submit button"
     end
 
    
-    def checkout_page_login
+    def checkout_page_regist
       @log_tab_level += 1
       Log.info "checkout_page", @log_tab_level
       wait_element_load LOGIN_EMAIL2
       fill_to_text_input LOGIN_EMAIL2, @user_email, "fill email_address"
       fill_to_text_input LOGIN_PASSWORD2, password_value, "fill pass"
-      click LOGIN_BUTTON2, "click login button"
-      # click CHECKOUT_BUTTON_2, "click login button"
 
+      click LOGIN_BUTTON2, "click login button"
       # capture
       # click CHECKOUT_BUTTON, "Click checkout button"
       # wait_element_load driver.find_element(:css, "a[href*='shop/order/new?register_as_member=0']")
@@ -188,54 +196,37 @@ module SeleniumServices
     end
 
 
-    def entry_checkout_information_login
+    def entry_checkout_information_regist
       @log_tab_level += 1
       Log.info "entry_checkout_information", @log_tab_level
       wait_element_load FIRST_NAME_INPUT
-      first_name = driver.find_element(:id, 'order_billing_address_attributes_name01')
-      first_name.clear
-      last_name = driver.find_element(:id, 'order_billing_address_attributes_name02')
-      last_name.clear
-      first_name_kana = driver.find_element(:id, 'order_billing_address_attributes_kana01')
-      first_name_kana.clear
-      last_name_kana = driver.find_element(:id, 'order_billing_address_attributes_kana02')
-      last_name_kana.clear
+      element = driver.find_element(:id, 'order_billing_address_attributes_name01')
+      sleep(3)
+      element.clear
+      element = driver.find_element(:id, 'order_billing_address_attributes_name02')
+      sleep(3)
+      element.clear
+      element = driver.find_element(:id, 'order_billing_address_attributes_kana01')
+      sleep(3)
+      element.clear
+      element = driver.find_element(:id, 'order_billing_address_attributes_kana02')
+      sleep(3)
+      element.clear
       fill_to_text_input FIRST_NAME_INPUT, @first_name, "Fill-in first name"
       fill_to_text_input LAST_NAME_INPUT, @last_name, "Fill-in last name"
       fill_to_text_input FIRST_NAME_KANA_INPUT, @first_name_kana, "Fill-in_first_name_kana"
       fill_to_text_input LAST_NAME_KANA_INPUT, @last_name_kana, "Fill-in_last_name_kana"
-      postal_code = driver.find_element(:id, 'order_billing_address_attributes_zip01')
-      postal_code.clear
+      element = driver.find_element(:id, 'order_billing_address_attributes_zip01')
+      sleep(3)
+      element.clear
       fill_to_text_input POSTAL_CODE_INPUT, @data_address["value_post_code_left"] + @data_address["value_post_code_right"], "Fill-in postal code"
       fill_to_text_input ADDRESS_INPUT, @data_address["value_address"] + @data_address["value_building_name"], "Fill-in address"
-      phone_number = driver.find_element(:css, 'input[name="order[billing_address_attributes][tel01]"]')
-      sleep(3)
-      phone_number.clear
       fill_to_text_input PHONE_NUMBER_INPUT, @phone_number, "Fill-in phonenumber"
-      
       if @np_delivery_payment.present?
         select PAYMENT_METHOD, @np_delivery_payment.to_s, :payment_method
-      elsif @credit_card_payment.present?
+        elsif @credit_card_payment.present?
         select PAYMENT_METHOD, "1", :payment_method
-        card_number = card_data["card_number"][-4..-1]
-      card_date = "#{card_data["month"]}/#{card_data["year"][-2, 2]}"
-      
-      x = ""
-      
-      driver.find_element(:css, 'select#card-id').find_elements(tag_name: 'option').each do |option|
-        if option.attribute('innerHTML').include?("************#{card_number} （#{card_date}）")
-          x = option.attribute('value')
-          puts x
-          break
-        end
-      end
-      
-      puts ""
         if SELECT_PAYMENT_ID
-          if x != ""
-            select SELECT_PAYMENT_ID, x, :add_new_card
-          else
-          
           select SELECT_PAYMENT_ID, "0", :add_new_card
           fill_to_text_input EC_FORCE_PAYMENT_CARD_NUMBER_INPUT, card_data["card_number"], :card_number
           select EC_FORCE_PAYMENT_EXPIRY_MONTH_INPUT, card_data["month"].to_i.to_s, :expire_month
@@ -243,7 +234,6 @@ module SeleniumServices
           select EC_FORCE_PAYMENT_EXPIRY_YEAR_INPUT, card_data["year"][-2,2], :expire_year
   
           fill_to_text_input EC_FORCE_PAYMENT_NAME_ON_CARD_INPUT, card_data["card_holder"], :card_name
-        end
         else
         fill_to_text_input EC_FORCE_PAYMENT_CARD_NUMBER_INPUT, card_data["card_number"], :card_number
           select EC_FORCE_PAYMENT_EXPIRY_MONTH_INPUT, card_data["month"].to_i.to_s, :expire_month
