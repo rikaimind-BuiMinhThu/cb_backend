@@ -149,7 +149,7 @@ class ScenarioUserResponse < ApplicationRecord
         when "coupons_code"
           selected = get_selected_obj_for_radio_button_image(conversation)
           value = selected[:value]
-          data_input_name = "coupons_code"
+          data_input_name = "coupons_code" 
         when "delivery_frequency"
           selected = get_selected_obj_for_radio_button(conversation)
           value = selected[:value]
