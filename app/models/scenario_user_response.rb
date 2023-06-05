@@ -146,6 +146,10 @@ class ScenarioUserResponse < ApplicationRecord
           selected = get_selected_obj_for_radio_button(conversation)
           value = selected[:value]
           data_input_name = "has_account"
+        when "coupons_code"
+          selected = get_selected_obj_for_radio_button_image(conversation)
+          value = selected[:value]
+          data_input_name = "coupons_code"
         when "delivery_frequency"
           selected = get_selected_obj_for_radio_button(conversation)
           value = selected[:value]
@@ -232,6 +236,11 @@ class ScenarioUserResponse < ApplicationRecord
     conversation[:card_payment_radio_button][:radio_contents].detect { |obj| obj[:value] == selected_value }
   end
 
+  def self.get_selected_obj_for_radio_button_image(conversation)
+    selected_id = conversation[:radio_button][:initial_selection]
+    conversation[:radio_button][:radio_button_img].detect { |obj| obj[:id] == selected_id }
+  end
+  
   def self.get_selected_value_for_pull_down(conversation)
     selected_text = conversation[:pull_down][:customization][:value]
     selected = conversation[:pull_down][:customization][:options_without_comment].detect { |o| o[:text] == selected_text }
