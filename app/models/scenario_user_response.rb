@@ -91,16 +91,18 @@ class ScenarioUserResponse < ApplicationRecord
     built_result = []
 
     puts "-----------------------------------------------------"
-    if params[:message][:conditions].present?
+    if params[:message][:conditions].present? && params[:message][:message_content].first[:text_input][:save_input_content] != 'pin_code'
       scenario = Scenario.find(scenario_id)
       conversations = scenario.scenario_user_responses.where(user_input_id: user_id)
       condition = params[:message][:conditions].first
+      user_response = nil
       if condition['inputCondition'] == 'paypal'
         user_response = conversations.find_by(data_input_name: 'paypal_payment')
+        user_response.update(value: params[:message][:message_content].to_json)
       elsif condition['inputCondition'] == 'paidy'
         user_response = conversations.find_by(data_input_name: 'paidy_payment')
+        user_response.update(value: params[:message][:message_content].to_json)
       end
-      user_response.update(value: params[:message][:message_content].to_json)
       [user_response]
     else
       params[:message][:message_content].each do |conversation|
@@ -145,7 +147,7 @@ class ScenarioUserResponse < ApplicationRecord
           when "coupons_code"
             data_input_name = "coupons_code"
             value = conversation.dig(:text_input, :text, :value)
-          else
+          when "pin_code"
             data_input_name = "pin_code"
             value = conversation.dig(:text_input, :text, :value)
           end
@@ -164,7 +166,7 @@ class ScenarioUserResponse < ApplicationRecord
           when "coupons_code"
             selected = get_selected_obj_for_radio_button_image(conversation)
             value = selected[:value]
-            data_input_name = "coupons_code" 
+            data_input_name = "coupons_code"
           when "delivery_frequency"
             selected = get_selected_obj_for_radio_button(conversation)
             value = selected[:value]
@@ -246,8 +248,6 @@ class ScenarioUserResponse < ApplicationRecord
       built_result
     end
   end
- 
-  
 
   def self.get_selected_obj_for_radio_button(conversation)
     selected_id = conversation[:radio_button][:initial_selection]
@@ -263,7 +263,7 @@ class ScenarioUserResponse < ApplicationRecord
     selected_id = conversation[:radio_button][:initial_selection]
     conversation[:radio_button][:radio_button_img].detect { |obj| obj[:id] == selected_id }
   end
-  
+
   def self.get_selected_value_for_pull_down(conversation)
     selected_text = conversation[:pull_down][:customization][:value]
     selected = conversation[:pull_down][:customization][:options_without_comment].detect { |o| o[:text] == selected_text }
