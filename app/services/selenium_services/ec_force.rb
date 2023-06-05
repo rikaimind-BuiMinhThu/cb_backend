@@ -107,6 +107,7 @@ module SeleniumServices
       wait_element_load QUANLITY_SELECT
       if @quantity_value.present?
         select QUANLITY_SELECT, @quantity_value.to_s, :quantity
+
         capture false
         click ADD_TO_CART_BUTTON, "Add product to cart"
       end
