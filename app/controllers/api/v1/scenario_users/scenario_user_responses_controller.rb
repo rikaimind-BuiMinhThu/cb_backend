@@ -37,11 +37,10 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
     if params[:user_id].present?
       selenium_result = ScenarioUserResponseSeleniumResult.find_by(user_input_id: params[:user_id])
       return if selenium_result.present?
-      scenario = Scenario.find_by_id(params[:scenario_id])
       ScenarioUserResponseSeleniumResult.create(
-        scenario_id: scenario.id,
-        chatbot_id: scenario.chatbot_id,
-        client_id: scenario.chatbot&.user&.client_id,
+        scenario_id: @scenario.id,
+        chatbot_id: @scenario.chatbot_id,
+        client_id: @scenario.chatbot&.user&.client_id,
         user_input_id: params[:user_id],
         last_step_no: 0,
         last_step_description: "",

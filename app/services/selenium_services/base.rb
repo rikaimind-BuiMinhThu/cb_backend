@@ -7,7 +7,7 @@ module SeleniumServices
     NORMAL_ORDER_SELECT_QUANTITY_SELECTOR = "#order_order_qty_0"
     TIMEOUT = 300
     SECRET_KEY = Rails.application.secrets.secret_refresh_token
-    attr_accessor :scenario, :conversations, :driver, :tamago_repeat_config
+    attr_accessor :scenario, :conversations, :driver, :tamago_repeat_config, :user_input_id
 
     attr_accessor :quantity_value, :user_name, :user_name_kana, :data_address,
       :post_code, :phone_number, :sex_value, :birth_date, :user_email, :password_value,
@@ -238,7 +238,7 @@ module SeleniumServices
     end
 
     def find_response_by_data_input_name(data_input_name)
-      conversations.detect { |c| c.data_input_name == data_input_name }&.value
+      @conversations.detect { |c| c.data_input_name == data_input_name }&.value
     end
 
     def user_agents

@@ -37,14 +37,15 @@ module SeleniumServices
     PAYPAL_PAYMENT_LOGIN_BUTTON = "button#btnLogin"
     PAYPAL_PAYMENT_CHECKOUT_BUTTON = "button#payment-submit-btn"
 
-    KOMOJU_PAYMENT_CREDIT_CARD_LABEL = "label[for=basic-Credit / Debit Card]"
+    KOMOJU_PAYMENT_CREDIT_CARD_LABEL = 'label[for="basic-Credit / Debit Card"]'
     KOMOJU_PAYMENT_CARD_NUMBER_INPUT = "input[name=number]:not(:-webkit-autofill)"
     KOMOJU_PAYMENT_NAME_ON_CARD_INPUT = "input#name"
     KOMOJU_PAYMENT_EXPIRY_DATE_INPUT = "input#expiration"
     KOMOJU_PAYMENT_SECURITY_CODE_INPUT = "input#verification"
     KOMOJU_PAY_NOW_BUTTON = "input[type=submit]"
 
-    PAIDY_PAYMENT_LABEL = "label[for=basic-あと払い（ペイディ）]"
+    PAIDY_PAYMENT_LABEL = 'label[for="basic-あと払い（ペイディ）"]'
+    PAIDY_PAYMENT_IFRAME = 'iframe'
     PAIDY_PAYMENT_EMAIL_INPUT = "input#ip_email"
     PAIDY_PAYMENT_PHONE_INPUT = "input#ip_phone"
     PAIDY_PAYMENT_NEXT_BUTTON = "button#btn_login"
@@ -161,15 +162,10 @@ module SeleniumServices
       email = ''
       phone_number = ''
       @paidy_data.each do |conversation|
-        case conversation[:type]
-        when "text_input"
-          puts "-----------------------------conversion: #{conversation[:text_input][:save_input_content]}"
-          case conversation[:text_input][:save_input_content]
-          when "user_email"
-            email = conversation.dig(:text_input, :email_address, :value)
-          when "phone_number"
-            phone_number = conversation.dig(:text_input, :phone_number, :value)
-          end
+        if conversation.dig("text_input", "email_address", "value").present?
+          email = conversation.dig("text_input", "email_address", "value")
+        elsif conversation.dig("text_input", "phone_number", "value").present?
+          phone_number = conversation.dig("text_input", "phone_number", "value")
         end
       end
 
@@ -179,14 +175,20 @@ module SeleniumServices
       click PAIDY_PAYMENT_LABEL, "Click paidy option"
       click PAY_NOW_BUTTON, "Click pay now button"
 
-      # switch to paidy tab
-      @driver.switch_to.window driver.window_handles.at(1)
+      # switch to iframe
+      wait_element_load PAIDY_PAYMENT_IFRAME
+      iframe = @driver.find_elements(:tag_name, PAIDY_PAYMENT_IFRAME).first
+      @driver.switch_to.frame iframe
 
+      # check page intro
+      if @driver.find_elements(:id, 'btn_intro').size > 0
+        intro = @driver.find_elements(:id, 'btn_intro').first
+        intro.click
+      end
       # input email
       wait_element_load PAIDY_PAYMENT_EMAIL_INPUT
-      element = @driver.find_element(:css, PAIDY_PAYMENT_EMAIL_INPUT)
-      element.clear
-      fill_to_text_input PAIDY_PAYMENT_EMAIL_INPUT, email, "Fill-in user email"
+
+      fill_to_text_input PAIDY_PAYMENT_EMAIL_INPUT, email, "Fill-in user email", true
 
       # input password
       wait_element_load PAIDY_PAYMENT_PHONE_INPUT
@@ -197,8 +199,10 @@ module SeleniumServices
       click PAIDY_PAYMENT_NEXT_BUTTON, "Click login paypal"
 
       #input pincode
+      sleep 120
+      new_conversations = @scenario.scenario_user_responses.reload.where(scenario_id: @scenario.id, user_input_id: @user_input_id)
+      @pin_code =  new_conversations.detect { |c| c.data_input_name == 'pin_code' }&.value
       pin_code = @pin_code.split('')
-      sleep 60
       wait_element_load PAIDY_PAYMENT_INPUT_PIN_0
       fill_to_text_input PAIDY_PAYMENT_INPUT_PIN_0, pin_code[0], "Fill-in pin 0"
       fill_to_text_input PAIDY_PAYMENT_INPUT_PIN_1, pin_code[1], "Fill-in pin 1"
@@ -240,8 +244,6 @@ module SeleniumServices
       wait_element_load PAYPAL_PAYMENT_LABEL
       click PAYPAL_PAYMENT_LABEL, "Click paypal option"
       click PAY_NOW_BUTTON, "Click pay now button"
-      # switch to paypal tab
-      @driver.switch_to.window driver.window_handles.at(1)
 
       if @driver.find_elements(id: "otpVerification").size() > 0
         click PAYPAL_PAYMENT_WITH_ANOTHER_METHOD, 'switch to another payment method'
@@ -279,39 +281,32 @@ module SeleniumServices
       Log.info "entry_komoju_payment_information", @log_tab_level
       wait_element_load KOMOJU_PAYMENT_CREDIT_CARD_LABEL
       click KOMOJU_PAYMENT_CREDIT_CARD_LABEL, "Click komoju card option"
+      click PAY_NOW_BUTTON, "Click pay now button"
 
+      @driver.switch_to.default_content
       # enter card number
       wait_element_load "#session"
       wait_element_load KOMOJU_PAYMENT_CARD_NUMBER_INPUT
-      @card_data["card_number"].split(//).map do |each|
-        fill_to_text_input KOMOJU_PAYMENT_CARD_NUMBER_INPUT, each.to_i, "card_number"
-      end
-      @driver.switch_to.default_content
+      fill_to_text_input KOMOJU_PAYMENT_CARD_NUMBER_INPUT, @komoju_data["card_number"], "card_number"
 
       # enter card name
       wait_element_load KOMOJU_PAYMENT_NAME_ON_CARD_INPUT
-      @card_data["card_holder"].split(//).map do |each|
-        fill_to_text_input KOMOJU_PAYMENT_NAME_ON_CARD_INPUT, each, "card_name"
-      end
-      @driver.switch_to.default_content
+      fill_to_text_input KOMOJU_PAYMENT_NAME_ON_CARD_INPUT, @komoju_data["card_holder"], "card_name"
 
       # enter card date
       wait_element_load KOMOJU_PAYMENT_EXPIRY_DATE_INPUT
-      expiry_date = @card_data["month"].to_s + @card_data["year"].to_s
-      expiry_date.split(//).map do |each|
-        fill_to_text_input KOMOJU_PAYMENT_EXPIRY_DATE_INPUT, each.to_i, "card_name"
-      end
-      @driver.switch_to.default_content
+      year = @komoju_data["year"].to_s.split('')
+      year = [year[-2], year[-1]].join('')
+      expiry_date = @komoju_data["month"].to_s + '/'  + year
+      fill_to_text_input KOMOJU_PAYMENT_EXPIRY_DATE_INPUT, expiry_date, "expiry_date"
 
        # enter card code
       wait_element_load KOMOJU_PAYMENT_SECURITY_CODE_INPUT
-      @card_data["cvc"].to_s.split(//).map do |each|
-        fill_to_text_input KOMOJU_PAYMENT_SECURITY_CODE_INPUT, each.to_i, "cvc"
-      end
-      @driver.switch_to.default_content
+      fill_to_text_input KOMOJU_PAYMENT_SECURITY_CODE_INPUT, @komoju_data["cvc"], "cvc"
 
       capture
       click KOMOJU_PAY_NOW_BUTTON, "Click pay now button"
+      @driver.switch_to.default_content
     end
 
     def entry_credit_payment_information
@@ -364,7 +359,10 @@ module SeleniumServices
       Log.info "input_element = @driver.find_element(css: #{css_selector})", @log_tab_level + 1
       input_element = @driver.find_element(css: css_selector)
       Log.info "input_element.send_keys(#{value})", @log_tab_level + 1
-      input_element.clear if clear_input
+      if clear_input
+        js_script = "document.querySelector('#{css_selector}').value = ''"
+        @driver.execute_script(js_script)
+      end
       input_element.send_keys(value)
       capture
       @log_tab_level -= 1
@@ -375,10 +373,9 @@ module SeleniumServices
       @quantity_value = find_response_by_data_input_name("quantity")
       @user_email = find_response_by_data_input_name("user_email")
       encrypted_password_value = find_response_by_data_input_name("user_password")
-      @password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"]
+      @password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"] if encrypted_password_value.present?
       @country = find_response_by_data_input_name("country")
       @last_name = find_response_by_data_input_name("last_name")
-      @pin_code = find_response_by_data_input_name("pin_code")
       @first_name = find_response_by_data_input_name("first_name")
       @data_address = JSON.parse find_response_by_data_input_name("zip_code_address")
       @post_code = @data_address["value_post_code"].gsub("-", "")
