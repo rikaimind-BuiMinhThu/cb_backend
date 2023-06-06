@@ -228,15 +228,16 @@ class ScenarioUserResponse < ApplicationRecord
             value = conversation[:textarea][:text_input][:value]
           end
         end
-          puts "=============================="
-          puts "data_input_name: #{data_input_name}"
-          next unless data_input_name.present?
-          new_record = self.new(
-            scenario_id: scenario_id,
-            user_input_id: user_id,
-            data_input_name: data_input_name,
-            value: value,
-          )
+        puts "=============================="
+        puts "data_input_name: #{data_input_name}"
+        next unless data_input_name.present?
+        new_record = self.new(
+          scenario_id: scenario_id,
+          user_input_id: user_id,
+          data_input_name: data_input_name,
+          value: value,
+          type: conversation[:type],
+        )
 
           built_result.push(new_record)
         end
