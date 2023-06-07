@@ -27,11 +27,11 @@ class Api::V1::Managements::PaymentHistoriesController < ApplicationController
   end
 
   def show
-    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel?
+    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
     puts("Client id "+params[:id])
     @paymens = PaymentHistory.ransack(client_id_eq: params[:id]).result
     @total = @paymens.size
-    @paymens = @paymens.page(params[:page])
+    @paymens = @paymens.page(params[:page]).per(20)
     render json: {code: 1, data: @paymens, total: @total}
   end
 
