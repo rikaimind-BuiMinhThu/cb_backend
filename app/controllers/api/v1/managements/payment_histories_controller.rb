@@ -31,7 +31,7 @@ class Api::V1::Managements::PaymentHistoriesController < ApplicationController
     puts("Client id "+params[:id])
     @paymens = PaymentHistory.ransack(client_id_eq: params[:id]).result
     @total = @paymens.size
-    @paymens = @paymens.page(params[:page]).per(20)
+    @paymens = @paymens.order('created_at DESC').page(params[:page]).per(20)
     render json: {code: 1, data: @paymens, total: @total}
   end
 

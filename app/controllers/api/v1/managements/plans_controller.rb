@@ -30,7 +30,7 @@ class Api::V1::Managements::PlansController < ApplicationController
       @plans = Plan.all
     end
     @total = @plans.size
-    @plans = @plans.page(params[:page])
+    @plans = @plans.page(params[:page]).per(20)
     render json: {code: 1, data: @plans, total: @total}
   end
 
