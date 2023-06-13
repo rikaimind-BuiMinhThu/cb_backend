@@ -5,7 +5,3 @@
 #
 #   movies = Movie.create([{ name: "Star Wars" }, { name: "Lord of the Rings" }])
 #   Character.create(name: "Luke", movie: movies.first)
-Plan.create(name: "スタートアップ", code: 0, price: 0)
-Plan.create(name: "プレミアム", code: 1, price: 0)
-Plan.create(name: "エキスパート", code: 2, price: 0)
-Plan.create(name: "完全成果報酬", code: 4, price: 0)

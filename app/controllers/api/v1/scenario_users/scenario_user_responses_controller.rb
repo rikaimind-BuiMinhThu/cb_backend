@@ -31,23 +31,30 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
         start_time: DateTime.now,
         result: :running,
       )
-      if @client.tamago_repeat?
-        TamagoScenarioJob.perform_async(params[:scenario_id], params[:user_id])
-      elsif @client.subsc_store?
-        SubscStoreJob.perform_async(params[:scenario_id], params[:user_id])
-      elsif @client.shopify?
-        scenario_id = params[:scenario_id]
-        user_id = params[:user_id]
-        ShopifyJob.perform_async(params[:scenario_id], params[:user_id])
-      elsif @client.ec_force?
-        scenario_id = params[:scenario_id]
-        user_id = params[:user_id]
-        # scenario = Scenario.find(scenario_id)
-        # conversations = scenario.scenario_user_responses.where(user_input_id: user_id)
-        # service = SeleniumServices::EcForce.new(scenario, conversations )
-        # service.process
-        EcForceJob.perform_async(params[:scenario_id], params[:user_id])
-
+      if @client.tamago_repeat? || @client.subsc_store? || @client.shopify? || @client.ec_force?
+        if @client.tamago_repeat?
+          TamagoScenarioJob.perform_async(params[:scenario_id], params[:user_id])
+        elsif @client.subsc_store?
+          SubscStoreJob.perform_async(params[:scenario_id], params[:user_id])
+        elsif @client.shopify?
+          scenario_id = params[:scenario_id]
+          user_id = params[:user_id]
+          ShopifyJob.perform_async(params[:scenario_id], params[:user_id])
+        elsif @client.ec_force?
+          scenario_id = params[:scenario_id]
+          user_id = params[:user_id]
+          # scenario = Scenario.find(scenario_id)
+          # conversations = scenario.scenario_user_responses.where(user_input_id: user_id)
+          # service = SeleniumServices::EcForce.new(scenario, conversations )
+          # service.process
+          EcForceJob.perform_async(params[:scenario_id], params[:user_id])
+        end
+        Order.create(
+          client_id: @scenario.chatbot&.user&.client_id,
+          scenario_id: @scenario.id,
+          user_input_id: params[:user_id],
+          bot_type: params[:bot_type],
+        )
       else
         render json: { code: 1, message: "not create order" }
       end

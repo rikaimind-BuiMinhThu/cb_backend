@@ -1,37 +1,12 @@
 class Api::V1::Managements::PlansController < ApplicationController
 
   def create
-    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel?
-    begin
-      Plan.transaction do 
-        max_code = Plan.maximum(:code)
-        item = Plan.find_by(code: max_code)
-        @plan = Plan.new(plan_params)
-        @plan.code = item.code + 1
-        if @plan.save!
-          render json: {code: 1, message: "Success"}
-        end
-      end
-      rescue Exception => e
-        return render json: {code: 2, message: e}
-    end
+    return render json: {code: 2, message: "Function not available"} 
   end
 
   def index
-    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel?
-    k = params[:keyword]
-    if k.present?
-      if parse_price(k).present?
-        @plans = Plan.ransack(price_eq: parse_price(k)).result
-      else
-        @plans = Plan.ransack(name_cont: params[:keyword]).result
-      end
-    else 
-      @plans = Plan.all
-    end
-    @total = @plans.size
-    @plans = @plans.page(params[:page]).per(20)
-    render json: {code: 1, data: @plans, total: @total}
+    return render json: {code: 2, message: "No have permission"} unless current_user.admin_deel?
+    render json: {code: 1, data: Plan.all}
   end
 
   def show
@@ -52,24 +27,12 @@ class Api::V1::Managements::PlansController < ApplicationController
   end
 
   def destroy
-    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel?
-    plan = Plan.find_by(id: params[:id])
-    return render json: {code: 1, message: "Success"} if plan.destroy
-    render json: {code: 2, message: "Fail"}
+    return render json: {code: 2, message: "Function not available"} 
   end
 
   private
 
   def plan_params
-    params.require(:plan).permit(:description, :price, :name)
-  end
-
-  def parse_price(keyword)
-    # Kiểm tra xem keyword có phải là một số nguyên hay không
-    if keyword.to_i.to_s == keyword
-      keyword.to_i
-    else
-      nil
-    end
+    params.require(:plan).permit(:description, :price)
   end
 end

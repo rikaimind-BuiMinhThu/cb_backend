@@ -3,6 +3,7 @@ class CreatePaymentHistories < ActiveRecord::Migration[7.0]
     create_table :payment_histories do |t|
       t.integer :client_id
       t.integer :status, default: 0, null: false
+      t.integer :price, default: 0
       t.datetime :start_at
       t.datetime :end_at
       t.datetime :paid_at
