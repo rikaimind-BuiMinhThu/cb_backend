@@ -14,12 +14,15 @@ module SeleniumServices
     LAST_NAME_INPUT = "input[name=lastName]"
     FIRST_NAME_INPUT = "input[name=firstName]"
     POSTAL_CODE_INPUT = "input#postalCode"
+    PREFECTURE_INPUT = "select[name=zone]"
     CITY_INPUT = "input[name=city]"
     ADDRESS_INPUT = "input[name=address1]"
     APARTMENT_INPUT = "input[name=address2]"
     CHECKOUT_SUBMIT_BUTTON = "button[type=submit]"
 
     PAYMENT_SUBMIT_BUTTON = "button[type=submit]"
+
+    SKIP_CONTENT = 'a[href="#checkout-main"]'
 
     SHOPIFY_PAYMENT_CREDIT_CARD_LABEL = "label[for=basic-creditCards]"
     SHOPIFY_PAYMENT_CARD_NUMBER_INPUT = "input[name=number]:not(:-webkit-autofill)"
@@ -126,6 +129,7 @@ module SeleniumServices
       fill_to_text_input FIRST_NAME_INPUT, @first_name, "Fill-in first name"
       select COUNTRY_SELECT, @country, "", "Select country name"
       fill_to_text_input POSTAL_CODE_INPUT, @post_code, "Fill-in post code"
+      select PREFECTURE_INPUT, 'JP-01', '', "Select PREFECTURE INPUT"
       fill_to_text_input CITY_INPUT, @data_address["value_municipality"], "Fill-in city name"
       fill_to_text_input ADDRESS_INPUT, @data_address["value_address"], "Fill-in address"
       fill_to_text_input APARTMENT_INPUT, @data_address["value_building_name"], "Fill-in building name"
@@ -380,6 +384,7 @@ module SeleniumServices
       @first_name = find_response_by_data_input_name("first_name")
       @data_address = JSON.parse find_response_by_data_input_name("zip_code_address")
       @post_code = @data_address["value_post_code"].gsub("-", "")
+      @prefecture = @data_address["value_prefecture"]
       @credit_card_payment = find_response_by_data_input_name("credit_card_payment")
       @card_data = JSON.parse(JWT.decode(@credit_card_payment, SECRET_KEY)[0]["data"]) if @credit_card_payment.present?
       @paypal_payment = find_response_by_data_input_name("paypal_payment")
