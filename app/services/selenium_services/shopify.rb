@@ -370,11 +370,12 @@ module SeleniumServices
     end
 
     def extract_conversions_data
-      @quantity_value = find_response_by_data_input_name("quantity")
+      quantity_value = find_response_by_data_input_name("quantity").to_i
+      @quantity_value = quantity_value.zero? ? 1 : quantity_value
       @user_email = find_response_by_data_input_name("user_email")
       encrypted_password_value = find_response_by_data_input_name("user_password")
       @password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"] if encrypted_password_value.present?
-      @country = find_response_by_data_input_name("country")
+      @country = find_response_by_data_input_name("country") || "JP"
       @last_name = find_response_by_data_input_name("last_name")
       @first_name = find_response_by_data_input_name("first_name")
       @data_address = JSON.parse find_response_by_data_input_name("zip_code_address")

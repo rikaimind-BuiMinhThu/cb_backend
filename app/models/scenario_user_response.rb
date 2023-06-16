@@ -220,26 +220,26 @@ class ScenarioUserResponse < ApplicationRecord
             data_input_name = "country"
             value = conversation[:pull_down][:customization][:options_without_comment][0][:value]
           end
-      when "textarea"
-        puts "-----------------------------conversion: #{conversation[:textarea][:save_input_content]}"
-        case conversation[:textarea][:save_input_content]
-        when "sent_message"
-          data_input_name = "sent_message"
-          value = conversation[:textarea][:text_input][:value]
+        when "textarea"
+          puts "-----------------------------conversion: #{conversation[:textarea][:save_input_content]}"
+          case conversation[:textarea][:save_input_content]
+          when "sent_message"
+            data_input_name = "sent_message"
+            value = conversation[:textarea][:text_input][:value]
+          end
         end
-      end
-        puts "=============================="
-        puts "data_input_name: #{data_input_name}"
-        next unless data_input_name.present?
-        new_record = self.new(
-          scenario_id: scenario_id,
-          user_input_id: user_id,
-          data_input_name: data_input_name,
-          value: value,
-        )
+          puts "=============================="
+          puts "data_input_name: #{data_input_name}"
+          next unless data_input_name.present?
+          new_record = self.new(
+            scenario_id: scenario_id,
+            user_input_id: user_id,
+            data_input_name: data_input_name,
+            value: value,
+          )
 
-        built_result.push(new_record)
-      end
+          built_result.push(new_record)
+        end
 
       built_result
     end
