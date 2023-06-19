@@ -1,6 +1,6 @@
 class Api::V1::Managements::ChatLogController < ApplicationController
   def index
-    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel?
+    return render json: {code: 2, message: "No permission"} unless ["admin_deel", "admin_client"].include?(current_user.role)
     begin
       scenarios = Scenario.where(chatbot_id: params[:bot_id])
       if(params[:sc_id].present?)
@@ -11,10 +11,16 @@ class Api::V1::Managements::ChatLogController < ApplicationController
                                         .group(:scenario_id, :user_input_id)
                                         .order('newest DESC')
       if(params[:date].present?)
-        scenario_user_responses = scenario_user_responses.where('DATE(updated_at) = ? ',params[:date].to_date)
+        scenario_user_responses = scenario_user_responses.where('DATE(created_at) = ? ',params[:date].to_date)
       end
       if(params[:user_id].present?)
         scenario_user_responses = scenario_user_responses.where('user_input_id = ? ',params[:user_id])
+      end
+      if(params[:start_date].present?)
+        scenario_user_responses = scenario_user_responses.where('DATE(created_at) >= ? ',params[:start_date].to_date)
+      end
+      if(params[:end_date].present?)
+        scenario_user_responses = scenario_user_responses.where('DATE(created_at) <= ? ',params[:end_date].to_date)
       end
       render json: { code: 1, scenarios: scenarios, chats: scenario_user_responses }
     rescue Exception => e
@@ -23,7 +29,7 @@ class Api::V1::Managements::ChatLogController < ApplicationController
   end
 
   def show
-    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel?
+    return render json: {code: 2, message: "No permission"} unless ["admin_deel", "admin_client"].include?(current_user.role)
     if(params[:sc_id].blank? || params[:user_id].blank?)
       return render json: { code: 2, message: "Missing scenario_id or user_id" }
     end

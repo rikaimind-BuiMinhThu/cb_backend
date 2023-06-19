@@ -108,13 +108,16 @@ class ScenarioUserResponse < ApplicationRecord
         puts "-----------------------------conversion: #{conversation[:type]}"
         data_input_name = nil
         value = nil
-
+        
         case conversation[:type]
         when "text_input"
           puts "-----------------------------conversion: #{conversation[:text_input][:save_input_content]}"
           case conversation[:text_input][:save_input_content]
           when "user_email"
             data_input_name = "user_email"
+            value = conversation.dig(:text_input, :email_address, :value)
+          when "email"
+            data_input_name = "email"
             value = conversation.dig(:text_input, :email_address, :value)
           when "user_name"
             data_input_name = "user_name"
@@ -131,8 +134,11 @@ class ScenarioUserResponse < ApplicationRecord
           when "phone_number"
             data_input_name = "phone_number"
             value = conversation.dig(:text_input, :phone_number, :value)
+          when "phone"
+            data_input_name = "phone"
+            value = conversation.dig(:text_input, :phone_number, :value)
           when "password"
-            data_input_name = "user_password"
+            data_input_name = "password"
             value = conversation.dig(:text_input, :password_confirmation, :value)
           when "quantity"
             data_input_name = "quantity"
@@ -153,6 +159,9 @@ class ScenarioUserResponse < ApplicationRecord
         when "zip_code_address"
           data_input_name = "zip_code_address"
           value = conversation[:zip_code_address].to_json
+        when "agree_term"
+          data_input_name = "agree_term"
+          value = true
         when "radio_button"
           case conversation[:radio_button][:save_input_content]
           when "is_regular_order"
