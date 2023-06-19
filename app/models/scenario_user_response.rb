@@ -89,7 +89,6 @@ class ScenarioUserResponse < ApplicationRecord
     scenario_id = params[:scenario_id]
     user_id = params[:user_id]
     built_result = []
-
     puts "-----------------------------------------------------"
     if params[:message][:conditions].present? && params[:message][:message_content].first[:text_input][:save_input_content] != 'pin_code'
       scenario = Scenario.find(scenario_id)
@@ -236,7 +235,8 @@ class ScenarioUserResponse < ApplicationRecord
           user_input_id: user_id,
           data_input_name: data_input_name,
           value: value,
-          type: conversation[:type],
+          ui_type: conversation[:type],
+          message_id: params[:message][:id],
         )
 
           built_result.push(new_record)
