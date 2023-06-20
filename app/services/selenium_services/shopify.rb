@@ -439,8 +439,10 @@ module SeleniumServices
         @value_address = @data_address["value_address"]
         @value_building_name = @data_address["value_building_name"]
       else
-        @value_building_name = @data_address["value_address"].first
-        @value_address = @data_address["value_address"].slice!(@value_building_name)
+        value_address = @data_address["value_address"]
+        @value_building_name = value_address.first
+        value_address.slice!(@value_building_name)
+        @value_address = value_address
       end
       @credit_card_payment = find_response_by_data_input_name("credit_card_payment")
       @card_data = JSON.parse(JWT.decode(@credit_card_payment, SECRET_KEY)[0]["data"]) if @credit_card_payment.present?
