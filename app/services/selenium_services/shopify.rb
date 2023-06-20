@@ -131,8 +131,8 @@ module SeleniumServices
       fill_to_text_input POSTAL_CODE_INPUT, @post_code, "Fill-in post code"
       select PREFECTURE_INPUT, 'JP-01', '', "Select PREFECTURE INPUT"
       fill_to_text_input CITY_INPUT, @data_address["value_municipality"], "Fill-in city name"
-      fill_to_text_input ADDRESS_INPUT, @data_address["value_address"], "Fill-in address"
-      fill_to_text_input APARTMENT_INPUT, @data_address["value_building_name"], "Fill-in building name"
+      fill_to_text_input ADDRESS_INPUT, @value_address, "Fill-in address"
+      fill_to_text_input APARTMENT_INPUT, @value_building_name, "Fill-in building name"
       capture
       click CHECKOUT_SUBMIT_BUTTON, "Click checkout submit button"
     end
@@ -385,6 +385,13 @@ module SeleniumServices
       @data_address = JSON.parse find_response_by_data_input_name("zip_code_address")
       @post_code = @data_address["value_post_code"].gsub("-", "")
       @prefecture = @data_address["value_prefecture"]
+      if @data_address["value_building_name"].present?
+        @value_address = @data_address["value_address"]
+        @value_building_name = @data_address["value_building_name"]
+      else
+        @value_building_name = @data_address["value_address"].first
+        @value_address = @data_address["value_address"].slice!(@value_building_name)
+      end
       @credit_card_payment = find_response_by_data_input_name("credit_card_payment")
       @card_data = JSON.parse(JWT.decode(@credit_card_payment, SECRET_KEY)[0]["data"]) if @credit_card_payment.present?
       @paypal_payment = find_response_by_data_input_name("paypal_payment")
