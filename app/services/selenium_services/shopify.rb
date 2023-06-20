@@ -62,6 +62,56 @@ module SeleniumServices
 
     PAY_NOW_BUTTON = "button[type=submit]"
 
+    PREFECTURE_LIST = {
+      "北海道" => "JP-01",
+      "青森県" => "JP-02",
+      "岩手県" => "JP-03",
+      "宮城県" => "JP-04",
+      "秋田県" => "JP-05",
+      "山形県" => "JP-06",
+      "福島県" => "JP-07",
+      "東京都" => "JP-08",
+      "栃木県" => "JP-09",
+      "群馬県" => "JP-10",
+      "埼玉県" => "JP-11",
+      "千葉県" => "JP-12",
+      "東京都" => "JP-13",
+      "神奈川県" => "JP-14",
+      "新潟県" => "JP-15",
+      "富山県" => "JP-16",
+      "石川県" => "JP-17",
+      "福井県" => "JP-18",
+      "山梨県" => "JP-19",
+      "長野県" => "JP-20",
+      "岐阜県" => "JP-21",
+      "静岡県" => "JP-22",
+      "愛知県" => "JP-23",
+      "三重県" => "JP-24",
+      "滋賀県" => "JP-25",
+      "京都府" => "JP-26",
+      "大阪府" => "JP-27",
+      "兵庫県" => "JP-28",
+      "奈良県" => "JP-29",
+      "和歌山県" => "JP-30",
+      "鳥取県" => "JP-31",
+      "島根県" => "JP-32",
+      "岡山県" => "JP-33",
+      "広島県" => "JP-34",
+      "山口県" => "JP-35",
+      "徳島県" => "JP-36",
+      "香川県" => "JP-37",
+      "愛媛県" => "JP-38",
+      "高知県" => "JP-39",
+      "福岡県" => "JP-40",
+      "佐賀県" => "JP-41",
+      "長崎県" => "JP-42",
+      "熊本県" => "JP-43",
+      "大分県" => "JP-44",
+      "宮崎県" => "JP-45",
+      "鹿児島県" => "JP-46",
+      "沖縄県" => "JP-47"
+    }
+
     def process
       @log_tab_level += 1
       Log.info "Start process", @log_tab_level
@@ -129,7 +179,7 @@ module SeleniumServices
       fill_to_text_input FIRST_NAME_INPUT, @first_name, "Fill-in first name"
       select COUNTRY_SELECT, @country, "", "Select country name"
       fill_to_text_input POSTAL_CODE_INPUT, @post_code, "Fill-in post code"
-      select PREFECTURE_INPUT, 'JP-01', '', "Select PREFECTURE INPUT"
+      select PREFECTURE_INPUT, @prefecture, '', "Select PREFECTURE INPUT"
       fill_to_text_input CITY_INPUT, @data_address["value_municipality"], "Fill-in city name"
       fill_to_text_input ADDRESS_INPUT, @value_address, "Fill-in address"
       fill_to_text_input APARTMENT_INPUT, @value_building_name, "Fill-in building name"
@@ -384,7 +434,7 @@ module SeleniumServices
       @first_name = find_response_by_data_input_name("first_name")
       @data_address = JSON.parse find_response_by_data_input_name("zip_code_address")
       @post_code = @data_address["value_post_code"].gsub("-", "")
-      @prefecture = @data_address["value_prefecture"]
+      @prefecture = PREFECTURE_LIST[@data_address["value_prefecture"].strip]
       if @data_address["value_building_name"].present?
         @value_address = @data_address["value_address"]
         @value_building_name = @data_address["value_building_name"]
