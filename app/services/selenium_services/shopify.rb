@@ -435,14 +435,11 @@ module SeleniumServices
       @data_address = JSON.parse find_response_by_data_input_name("zip_code_address")
       @post_code = @data_address["value_post_code"].gsub("-", "")
       @prefecture = PREFECTURE_LIST[@data_address["value_prefecture"].strip]
+      @value_address = @data_address["value_address"]
       if @data_address["value_building_name"].present?
-        @value_address = @data_address["value_address"]
         @value_building_name = @data_address["value_building_name"]
       else
-        value_address = @data_address["value_address"]
-        @value_building_name = value_address.first
-        value_address.slice!(@value_building_name)
-        @value_address = value_address
+        @value_building_name = '/'
       end
       @credit_card_payment = find_response_by_data_input_name("credit_card_payment")
       @card_data = JSON.parse(JWT.decode(@credit_card_payment, SECRET_KEY)[0]["data"]) if @credit_card_payment.present?
