@@ -91,103 +91,161 @@ class ScenarioUserResponse < ApplicationRecord
     built_result = []
 
     puts "-----------------------------------------------------"
-    params[:message][:message_content].each do |conversation|
-      puts "-----------------------------conversion: #{conversation[:type]}"
-      data_input_name = nil
-      value = nil
-
-      case conversation[:type]
-      when "text_input"
-        puts "-----------------------------conversion: #{conversation[:text_input][:save_input_content]}"
-        case conversation[:text_input][:save_input_content]
-        when "user_email"
-          data_input_name = "user_email"
-          value = conversation.dig(:text_input, :email_address, :value)
-        when "user_name"
-          data_input_name = "user_name"
-          value = conversation[:text_input][:text].to_json
-        when "user_name_kana"
-          data_input_name = "user_name_kana"
-          value = conversation[:text_input][:text].to_json
-        when "phone_number"
-          data_input_name = "phone_number"
-          value = conversation.dig(:text_input, :phone_number, :value)
-        when "password"
-          data_input_name = "user_password"
-          value = conversation.dig(:text_input, :password_confirmation, :value)
-        end
-      when "zip_code_address"
-        data_input_name = "zip_code_address"
-        value = conversation[:zip_code_address].to_json
-      when "radio_button"
-        case conversation[:radio_button][:save_input_content]
-        when "is_regular_order"
-          value = conversation[:radio_button][:initial_selection] == 1
-          data_input_name = "is_regular_order"
-        when "delivery_frequency"
-          selected = get_selected_obj_for_radio_button(conversation)
-          value = selected[:value]
-          data_input_name = "delivery_frequency"
-        when "delivery_method"
-          selected = get_selected_obj_for_radio_button(conversation)
-          value = selected[:value]
-          data_input_name = "delivery_method"
-        when "payment_method"
-          selected = get_selected_obj_for_radio_button(conversation)
-          value = selected[:value]
-          data_input_name = "payment_method"
-        when "sex"
-          selected = get_selected_obj_for_radio_button(conversation)
-          value = selected[:value]
-          data_input_name = "sex"
-        end
-      when "card_payment_radio_button"
-        selected = get_selected_obj_for_card_payment_radio_button(conversation)
-
-        if conversation[:card_payment_radio_button][:initial_selection] == conversation[:card_payment_radio_button][:card_linked_setting]
-          data_input_name = "credit_card_payment"
-          value = conversation[:card_payment_radio_button].to_json
-        else
-          data_input_name = "np_delivery_payment"
-          value = selected[:value]
-        end
-      when "pull_down"
-        case conversation[:pull_down][:save_input_content]
-        when "birthday" # 誕生日
-          value = conversation[:pull_down][:dob_ymd].to_json
-          data_input_name = "birth_date"
-        when "delivery_date" # お届け希望日
-          value = get_selected_value_for_pull_down(conversation)
-          data_input_name = "delivery_date"
-        when "delivery_time" # 時間帯指定
-          value = get_selected_value_for_pull_down(conversation)
-          data_input_name = "delivery_time"
-        when "quantity" # 数量
-          selected = get_selected_value_for_pull_down(conversation)
-          value = selected.to_i
-          data_input_name = "quantity"
-        when "delivery_method"
-          selected = get_selected_value_for_pull_down(conversation)
-          value = selected.to_i
-          data_input_name = "delivery_method"
-        end
+    if params[:message][:conditions].present? && params[:message][:message_content].first[:text_input][:save_input_content] != 'pin_code'
+      scenario = Scenario.find(scenario_id)
+      conversations = scenario.scenario_user_responses.where(user_input_id: user_id)
+      condition = params[:message][:conditions].first
+      user_response = nil
+      if condition['inputCondition'] == 'paypal'
+        user_response = conversations.find_by(data_input_name: 'paypal_payment')
+        user_response.update(value: params[:message][:message_content].to_json)
+      elsif condition['inputCondition'] == 'paidy'
+        user_response = conversations.find_by(data_input_name: 'paidy_payment')
+        user_response.update(value: params[:message][:message_content].to_json)
       end
+      [user_response]
+    else
+      params[:message][:message_content].each do |conversation|
+        puts "-----------------------------conversion: #{conversation[:type]}"
+        data_input_name = nil
+        value = nil
 
-      puts "=============================="
-      puts "data_input_name: #{data_input_name}"
-      next unless data_input_name.present?
-      new_record = self.new(
-        scenario_id: scenario_id,
-        user_input_id: user_id,
-        data_input_name: data_input_name,
-        value: value,
-      )
+        case conversation[:type]
+        when "text_input"
+          puts "-----------------------------conversion: #{conversation[:text_input][:save_input_content]}"
+          case conversation[:text_input][:save_input_content]
+          when "user_email"
+            data_input_name = "user_email"
+            value = conversation.dig(:text_input, :email_address, :value)
+          when "user_name"
+            data_input_name = "user_name"
+            value = conversation[:text_input][:text].to_json
+          when "user_name_kana"
+            data_input_name = "user_name_kana"
+            value = conversation[:text_input][:text].to_json
+          when "first_name_kana"
+            data_input_name = "first_name_kana"
+            value = conversation.dig(:text_input, :text, :value)
+          when "last_name_kana"
+            data_input_name = "last_name_kana"
+            value = conversation.dig(:text_input, :text, :value)
+          when "phone_number"
+            data_input_name = "phone_number"
+            value = conversation.dig(:text_input, :phone_number, :value)
+          when "password"
+            data_input_name = "user_password"
+            value = conversation.dig(:text_input, :password_confirmation, :value)
+          when "quantity"
+            data_input_name = "quantity"
+            value = conversation.dig(:text_input, :text, :value)
+          when "last_name"
+            data_input_name = "last_name"
+            value = conversation.dig(:text_input, :text, :value)
+          when "first_name"
+            data_input_name = "first_name"
+            value = conversation.dig(:text_input, :text, :value)
+          when "coupons_code"
+            data_input_name = "coupons_code"
+            value = conversation.dig(:text_input, :text, :value)
+          when "pin_code"
+            data_input_name = "pin_code"
+            value = conversation.dig(:text_input, :text, :value)
+          end
+        when "zip_code_address"
+          data_input_name = "zip_code_address"
+          value = conversation[:zip_code_address].to_json
+        when "radio_button"
+          case conversation[:radio_button][:save_input_content]
+          when "is_regular_order"
+            value = conversation[:radio_button][:initial_selection] == 1
+            data_input_name = "is_regular_order"
+          when "has_account"
+            selected = get_selected_obj_for_radio_button(conversation)
+            value = selected[:value]
+            data_input_name = "has_account"
+          when "delivery_frequency"
+            selected = get_selected_obj_for_radio_button(conversation)
+            value = selected[:value]
+            data_input_name = "delivery_frequency"
+          when "delivery_method"
+            selected = get_selected_obj_for_radio_button(conversation)
+            value = selected[:value]
+            data_input_name = "delivery_method"
+          when "payment_method"
+            selected = get_selected_obj_for_radio_button(conversation)
+            value = selected[:value]
+            data_input_name = "payment_method"
+          when "sex"
+            selected = get_selected_obj_for_radio_button(conversation)
+            value = selected[:value]
+            data_input_name = "sex"
+          end
+        when "card_payment_radio_button"
+          selected = get_selected_obj_for_card_payment_radio_button(conversation)
+          case conversation["card_payment_radio_button"]["initial_selection"]
+          when 'credit_card'
+            data_input_name = "credit_card_payment"
+            value = conversation[:card_payment_radio_button].to_json
+          when 'paypal'
+            data_input_name = "paypal_payment"
+          when 'komoju'
+            data_input_name = "komoju_payment"
+            value = conversation[:card_payment_radio_button].to_json
+          when 'paidy'
+            data_input_name = "paidy_payment"
+          else
+            data_input_name = "np_delivery_payment"
+            value = selected[:value]
+          end
+        when "pull_down"
+          case conversation[:pull_down][:save_input_content]
+          when "birthday" # 誕生日
+            value = conversation[:pull_down][:dob_ymd].to_json
+            data_input_name = "birth_date"
+          when "delivery_date" # お届け希望日
+            value = get_selected_value_for_pull_down(conversation)
+            data_input_name = "delivery_date"
+          when "delivery_time" # 時間帯指定
+            value = get_selected_value_for_pull_down(conversation)
+            data_input_name = "delivery_time"
+          when "quantity" # 数量
+            selected = get_selected_value_for_pull_down(conversation)
+            value = selected.to_i
+            data_input_name = "quantity"
+          when "delivery_method"
+            selected = get_selected_value_for_pull_down(conversation)
+            value = selected.to_i
+            data_input_name = "delivery_method"
+          when "country"
+            data_input_name = "country"
+            value = conversation[:pull_down][:customization][:options_without_comment][0][:value]
+          end
+        when "textarea"
+          puts "-----------------------------conversion: #{conversation[:textarea][:save_input_content]}"
+          case conversation[:textarea][:save_input_content]
+          when "sent_message"
+            data_input_name = "sent_message"
+            value = conversation[:textarea][:text_input][:value]
+          end
+        end
+          puts "=============================="
+          puts "data_input_name: #{data_input_name}"
+          next unless data_input_name.present?
+          new_record = self.new(
+            scenario_id: scenario_id,
+            user_input_id: user_id,
+            data_input_name: data_input_name,
+            value: value,
+          )
 
-      built_result.push(new_record)
+          built_result.push(new_record)
+        end
+
+      built_result
     end
-
-    built_result
   end
+ 
+  
 
   def self.get_selected_obj_for_radio_button(conversation)
     selected_id = conversation[:radio_button][:initial_selection]
@@ -221,4 +279,8 @@ class ScenarioUserResponse < ApplicationRecord
   integer :delivery_method, is_encrypt: false
   string :delivery_date, is_encrypt: false
   string :delivery_time, is_encrypt: false
+  text :komoju_payment, is_encrypt: true
+  text :paypal_payment, is_encrypt: true
+  text :paidy_payment, is_encrypt: false
+  string :pin_code, is_encrypt: false
 end

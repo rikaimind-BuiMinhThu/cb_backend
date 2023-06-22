@@ -4,20 +4,53 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
   before_action :set_scenario
 
   def create
-    if @client.tamago_repeat? && params[:user_id].present?
+    if (@client.tamago_repeat? || @client.shopify? || @client.subsc_store?) && params[:user_id].present?
       scenario_user_responses = ScenarioUserResponse.build_record(params)
       scenario_user_responses.each(&:save!) if scenario_user_responses.present?
       render json: { code: 1, data: scenario_user_responses }
+    elsif (@client.ec_force?) && params[:user_id].present?
+      scenario_user_responses = ScenarioUserResponse.build_record(params)
+      scenario_user_responses.each(&:save!) if scenario_user_responses.present?
+      render json: { code: 1, data: scenario_user_responses}
     else
       render json: { code: 0, data: [] }
     end
   end
 
   def create_order
-    if @client.tamago_repeat? && params[:user_id].present?
-      TamagoScenarioJob.perform_async(params[:scenario_id], params[:user_id])
-    else
-      render json: { code: 1, message: "not create order" }
+    if params[:user_id].present?
+      selenium_result = ScenarioUserResponseSeleniumResult.find_by(user_input_id: params[:user_id])
+      return if selenium_result.present?
+      ScenarioUserResponseSeleniumResult.create(
+        scenario_id: @scenario.id,
+        chatbot_id: @scenario.chatbot_id,
+        client_id: @scenario.chatbot&.user&.client_id,
+        user_input_id: params[:user_id],
+        last_step_no: 0,
+        last_step_description: "",
+        start_time: DateTime.now,
+        result: :running,
+      )
+      if @client.tamago_repeat?
+        TamagoScenarioJob.perform_async(params[:scenario_id], params[:user_id])
+      elsif @client.subsc_store?
+        SubscStoreJob.perform_async(params[:scenario_id], params[:user_id])
+      elsif @client.shopify?
+        scenario_id = params[:scenario_id]
+        user_id = params[:user_id]
+        ShopifyJob.perform_async(params[:scenario_id], params[:user_id])
+      elsif @client.ec_force?
+        scenario_id = params[:scenario_id]
+        user_id = params[:user_id]
+        # scenario = Scenario.find(scenario_id)
+        # conversations = scenario.scenario_user_responses.where(user_input_id: user_id)
+        # service = SeleniumServices::EcForce.new(scenario, conversations )
+        # service.process
+        EcForceJob.perform_async(params[:scenario_id], params[:user_id])
+
+      else
+        render json: { code: 1, message: "not create order" }
+      end
     end
   end
 

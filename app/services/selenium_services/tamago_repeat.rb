@@ -1,8 +1,8 @@
 require "selenium-webdriver"
 require File.dirname(__FILE__) + "/../log"
 
-module TamagoScenario
-  class SeleniumService
+module SeleniumServices
+  class TamagoRepeat
     REGULAR_ORDER_SELECT_QUANTITY_SELECTOR = "#periodically_order_order_qty_0"
     NORMAL_ORDER_SELECT_QUANTITY_SELECTOR = "#order_order_qty_0"
     TIMEOUT = 300
@@ -15,7 +15,7 @@ module TamagoScenario
       :delivery_frequency, :is_regular_order, :delivery_method, :delivery_date,
       :credit_card_payment, :card_data, :np_delivery_payment, :delivery_time
 
-    attr_accessor :is_error
+    attr_accessor :is_error, :user_is_existed
 
     def initialize(scenario, conversations)
       Log.info "Start selenium service for: \n\tscenario: #{scenario.id}\n\tconversations: #{conversations.map(&:id).inspect}"
@@ -28,15 +28,9 @@ module TamagoScenario
       @current_frame = nil
       @log_tab_level = 0
       @is_error = nil
-      @selenium_result = ScenarioUserResponseSeleniumResult.create(
-        scenario_id: scenario.id,
-        chatbot_id: scenario.chatbot_id,
-        client_id: scenario.chatbot&.user&.client_id,
-        user_input_id: @user_input_id,
-        last_step_no: 0,
-        last_step_description: "",
-        start_time: DateTime.now,
-        result: :running,
+      @user_is_existed = false
+      @selenium_result = ScenarioUserResponseSeleniumResult.find_by(
+        user_input_id: @user_input_id
       )
 
       extract_conversions_data
@@ -121,80 +115,86 @@ module TamagoScenario
       @log_tab_level += 1
       Log.info "Current URL: #{@driver.current_url}", @log_tab_level
 
-      wait_element_load "#new_signup #shipping_address_family_name"
+      wait_element_load "#new_signup #login_user_email"
+      fill_to_text_input "#new_signup input#login_user_email", user_email, "User email login"
+      fill_to_text_input "#new_signup input#login_user_password", user_email, "User password login"
 
-      # sleep_by_seconds 1
+      click "input#hide_display", pointer_action: false
+      if @driver.find_elements(class: "formError").size() > 0
 
-      fill_to_text_input "#new_signup input#shipping_address_family_name", user_name["valueLeft"], "Shipping address Family name"
-      # sleep_by_seconds 1
-      fill_to_text_input "#new_signup input#shipping_address_first_name", user_name["valueRight"], "Shipping address First name"
-      # sleep_by_seconds 1
-      fill_to_text_input "#new_signup input#shipping_address_family_name_kana", user_name_kana["valueLeft"], "Shipping address First name Kana"
-      # sleep_by_seconds 1
-      fill_to_text_input "#new_signup input#shipping_address_first_name_kana", user_name_kana["valueRight"], "Shipping address Family name Kana"
-      # sleep_by_seconds 1
-
-      fill_to_text_input "#new_signup input#shipping_address_zip", post_code, "Post code"
-      # sleep_by_seconds 1
-
-      click "#new_signup #hide_display_shipping_address a", "Search by post_code"
-
-      sleep_by_seconds 1
-      fill_to_text_input "#new_signup [name='shipping_address[address]']", data_address["value_address"], "Shipping Address address"
-      # sleep_by_seconds 1
-
-      fill_to_text_input "#new_signup [name='shipping_address[building]']", data_address["value_building_name"], "Shipping Address building"
-      # sleep_by_seconds 1
-
-      fill_to_text_input "#new_signup input#shipping_address_tel", phone_number, "Shipping Address Tel"
-      # sleep_by_seconds 1
-
-      if sex_value.present?
-        select_radio_btn "#new_signup #sex_#{sex_value}", sex_value, "Sex"
+        fill_to_text_input "#new_signup input#shipping_address_family_name", user_name["valueLeft"], "Shipping address Family name"
         # sleep_by_seconds 1
-      end
-
-      select "#new_signup #user_birthday_1i", birth_date["valueYear"], :birthday_year
-      # sleep_by_seconds 1
-      select "#new_signup #user_birthday_2i", birth_date["valueMonth"].to_i.to_s, :birthday_month
-      # sleep_by_seconds 1
-      select "#new_signup #user_birthday_3i", birth_date["valueDay"].to_i.to_s, :birthday_day
-      # sleep_by_seconds 1
-
-      fill_to_text_input "#new_signup #user_email", user_email, "User email"
-      # sleep_by_seconds 1
-
-      unless tamago_repeat_config.email_confirm_none?
-        fill_to_text_input "#new_signup #user_email_confirmation", user_email, "User email"
+        fill_to_text_input "#new_signup input#shipping_address_first_name", user_name["valueRight"], "Shipping address First name"
         # sleep_by_seconds 1
-      end
-
-      try_count = 1
-      while try_count < 10
-        Log.info "Try #{try_count} times", @log_tab_level
-        sleep_by_seconds 5
-        break unless @driver.current_url.include?("order/entry_login")
-
-        verify_recaptcha
-        fill_to_text_input "#new_signup #user_password", password_value, "Password"
+        fill_to_text_input "#new_signup input#shipping_address_family_name_kana", user_name_kana["valueLeft"], "Shipping address First name Kana"
         # sleep_by_seconds 1
-        fill_to_text_input "#new_signup #user_password_confirmation", password_value, "Password confirmation"
+        fill_to_text_input "#new_signup input#shipping_address_first_name_kana", user_name_kana["valueRight"], "Shipping address Family name Kana"
         # sleep_by_seconds 1
 
-        click "input#hide_display2", pointer_action: false
-        try_count += 1
+        fill_to_text_input "#new_signup input#shipping_address_zip", post_code, "Post code"
+        # sleep_by_seconds 1
+
+        click "#new_signup #hide_display_shipping_address a", "Search by post_code"
+
+        sleep_by_seconds 1
+        fill_to_text_input "#new_signup [name='shipping_address[address]']", data_address["value_address"], "Shipping Address address"
+        # sleep_by_seconds 1
+
+        fill_to_text_input "#new_signup [name='shipping_address[building]']", data_address["value_building_name"], "Shipping Address building"
+        # sleep_by_seconds 1
+
+        fill_to_text_input "#new_signup input#shipping_address_tel", phone_number, "Shipping Address Tel"
+        # sleep_by_seconds 1
+
+        if sex_value.present?
+          select_radio_btn "#new_signup #sex_#{sex_value}", sex_value, "Sex"
+          # sleep_by_seconds 1
+        end
+
+        select "#new_signup #user_birthday_1i", birth_date["valueYear"], :birthday_year
+        # sleep_by_seconds 1
+        select "#new_signup #user_birthday_2i", birth_date["valueMonth"].to_i.to_s, :birthday_month
+        # sleep_by_seconds 1
+        select "#new_signup #user_birthday_3i", birth_date["valueDay"].to_i.to_s, :birthday_day
+        # sleep_by_seconds 1
+
+        fill_to_text_input "#new_signup #user_email", user_email, "User email"
+        # sleep_by_seconds 1
+
+        unless tamago_repeat_config.email_confirm_none?
+          fill_to_text_input "#new_signup #user_email_confirmation", user_email, "User email"
+          # sleep_by_seconds 1
+        end
+
+        try_count = 1
+        while try_count < 10
+          Log.info "Try #{try_count} times", @log_tab_level
+          sleep_by_seconds 5
+          break unless @driver.current_url.include?("order/entry_login")
+
+          verify_recaptcha
+          fill_to_text_input "#new_signup #user_password", password_value, "Password"
+          # sleep_by_seconds 1
+          fill_to_text_input "#new_signup #user_password_confirmation", password_value, "Password confirmation"
+          # sleep_by_seconds 1
+
+          click "input#hide_display2", pointer_action: false
+          try_count += 1
+        end
+
+        if try_count == 10
+          raise "Can not pass captcha"
+        end
+
+        # logs = @driver.manage.logs.get(:browser)
+        # Log.info logs.inspect
+
+        wait_page_load "order/select_order_method"
+        capture
+        @log_tab_level -= 1
+      else
+        @user_is_existed = true
       end
-
-      if try_count == 10
-        raise "Can not pass captcha"
-      end
-
-      # logs = @driver.manage.logs.get(:browser)
-      # Log.info logs.inspect
-
-      wait_page_load "order/select_order_method"
-      capture
-      @log_tab_level -= 1
     end
 
     # def recaptcha_page
