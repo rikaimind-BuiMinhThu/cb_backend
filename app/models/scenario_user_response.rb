@@ -89,7 +89,6 @@ class ScenarioUserResponse < ApplicationRecord
     scenario_id = params[:scenario_id]
     user_id = params[:user_id]
     built_result = []
-
     puts "-----------------------------------------------------"
     if params[:message][:conditions].present? && params[:message][:message_content].first[:text_input][:save_input_content] != 'pin_code'
       scenario = Scenario.find(scenario_id)
@@ -109,13 +108,16 @@ class ScenarioUserResponse < ApplicationRecord
         puts "-----------------------------conversion: #{conversation[:type]}"
         data_input_name = nil
         value = nil
-
+        
         case conversation[:type]
         when "text_input"
           puts "-----------------------------conversion: #{conversation[:text_input][:save_input_content]}"
           case conversation[:text_input][:save_input_content]
           when "user_email"
             data_input_name = "user_email"
+            value = conversation.dig(:text_input, :email_address, :value)
+          when "email"
+            data_input_name = "email"
             value = conversation.dig(:text_input, :email_address, :value)
           when "user_name"
             data_input_name = "user_name"
@@ -132,8 +134,11 @@ class ScenarioUserResponse < ApplicationRecord
           when "phone_number"
             data_input_name = "phone_number"
             value = conversation.dig(:text_input, :phone_number, :value)
+          when "phone"
+            data_input_name = "phone"
+            value = conversation.dig(:text_input, :phone_number, :value)
           when "password"
-            data_input_name = "user_password"
+            data_input_name = "password"
             value = conversation.dig(:text_input, :password_confirmation, :value)
           when "quantity"
             data_input_name = "quantity"
@@ -154,6 +159,9 @@ class ScenarioUserResponse < ApplicationRecord
         when "zip_code_address"
           data_input_name = "zip_code_address"
           value = conversation[:zip_code_address].to_json
+        when "agree_term"
+          data_input_name = "agree_term"
+          value = true
         when "radio_button"
           case conversation[:radio_button][:save_input_content]
           when "is_regular_order"
@@ -228,15 +236,17 @@ class ScenarioUserResponse < ApplicationRecord
             value = conversation[:textarea][:text_input][:value]
           end
         end
-          puts "=============================="
-          puts "data_input_name: #{data_input_name}"
-          next unless data_input_name.present?
-          new_record = self.new(
-            scenario_id: scenario_id,
-            user_input_id: user_id,
-            data_input_name: data_input_name,
-            value: value,
-          )
+        puts "=============================="
+        puts "data_input_name: #{data_input_name}"
+        next unless data_input_name.present?
+        new_record = self.new(
+          scenario_id: scenario_id,
+          user_input_id: user_id,
+          data_input_name: data_input_name,
+          value: value,
+          ui_type: conversation[:type],
+          message_id: params[:message][:id],
+        )
 
           built_result.push(new_record)
         end
