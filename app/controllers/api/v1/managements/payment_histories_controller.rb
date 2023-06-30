@@ -3,9 +3,39 @@ class Api::V1::Managements::PaymentHistoriesController < ApplicationController
     return render json: {code: 2, message: "No permission"} unless current_user.admin_deel?
     PaymentHistory.transaction do
       if(params[:payment].present?)
-        @payment = PaymentHistory.new(payment_params)
-        if @payment.save!
+        current_date = Date.today
+        end_at = DateTime.parse(payment_params[:end_at]).to_date
+
+        if (current_date > end_at)
+          is_break = false
+          payment_params_list = [payment_params]
+          while !is_break
+            if (current_date <= end_at)
+              is_break = true
+              break
+            end
+            start_at = end_at + 1.day
+            end_at = end_at + 1.month
+            payment_params_list.push({
+                                       client_id: payment_params[:client_id],
+                                       start_at: start_at,
+                                       end_at: end_at,
+                                       paid_at: payment_params[:paid_at],
+                                       status: payment_params[:status],
+                                       price: payment_params[:price]
+                                     })
+
+          end
+          payment_params_list.each do |params|
+            @payment = PaymentHistory.new(params)
+            @payment.save!
+          end
           render json: {code: 1, message: "Success"}
+        else
+          @payment = PaymentHistory.new(payment_params)
+          if @payment.save!
+            render json: {code: 1, message: "Success"}
+          end
         end
       end
     rescue Exception => e
