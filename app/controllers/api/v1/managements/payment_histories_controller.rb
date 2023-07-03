@@ -6,9 +6,18 @@ class Api::V1::Managements::PaymentHistoriesController < ApplicationController
         current_date = Date.today
         end_at = DateTime.parse(payment_params[:end_at]).to_date
 
-        if (current_date > end_at)
+        if (current_date >= end_at)
+          client = Client.find_by(id: payment_params[:client_id])
           is_break = false
-          payment_params_list = [payment_params]
+          payment_params_list = []
+          payment_params_list.push({
+                                     client_id: payment_params[:client_id],
+                                     start_at: payment_params[:start_at],
+                                     end_at: payment_params[:end_at],
+                                     paid_at: payment_params[:paid_at],
+                                     status: payment_params[:status],
+                                     price: client.plan == 4 ? 0 : client.price
+                                   })
           while !is_break
             if (current_date <= end_at)
               is_break = true
@@ -16,15 +25,18 @@ class Api::V1::Managements::PaymentHistoriesController < ApplicationController
             end
             start_at = end_at + 1.day
             end_at = end_at + 1.month
+            price = 0
+            if(current_date > end_at)
+              price = client.price
+            end
             payment_params_list.push({
                                        client_id: payment_params[:client_id],
                                        start_at: start_at,
                                        end_at: end_at,
                                        paid_at: payment_params[:paid_at],
                                        status: payment_params[:status],
-                                       price: payment_params[:price]
+                                       price: client.plan == 4 ? 0 : price
                                      })
-
           end
           payment_params_list.each do |params|
             @payment = PaymentHistory.new(params)
@@ -51,10 +63,10 @@ class Api::V1::Managements::PaymentHistoriesController < ApplicationController
     @paymens = @paymens.order('created_at DESC').page(params[:page]).per(20)
     if client.plan == 4
       @paymens.each do |payment|
-        if payment.end_at >= Date.today
-          bot_cv = Order.where(client_id: client.id).where('created_at >= ? AND created_at <= ?', payment.start_at, payment.end_at)
-          payment.price = bot_cv.size * client.price
-        end
+        # if payment.end_at >= Date.today
+        bot_cv = Order.where(client_id: client.id).where('created_at >= ? AND created_at <= ?', payment.start_at, payment.end_at)
+        payment.price = bot_cv.size * client.price
+        # end
       end
     end
     render json: {code: 1, data: @paymens, total: @total}
@@ -81,7 +93,7 @@ class Api::V1::Managements::PaymentHistoriesController < ApplicationController
   end
 
   private
-  def payment_params 
+  def payment_params
     params.fetch(:payment, nil).permit(:client_id, :start_at, :end_at, :paid_at, :status, :price)
   end
 end
