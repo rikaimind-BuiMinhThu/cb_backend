@@ -24,7 +24,7 @@ class Api::V1::Managements::PaymentHistoriesController < ApplicationController
               break
             end
             start_at = end_at + 1.day
-            end_at = end_at + 1.month
+            end_at = (start_at + 1.month) - 1.day
             price = 0
             if(current_date > end_at)
               price = client.price
