@@ -3,9 +3,9 @@ class Api::V1::Managements::ChatLogController < ApplicationController
     return render json: {code: 2, message: "No permission"} unless ["admin_deel", "admin_client"].include?(current_user.role)
     begin
       scenarios = Scenario.where(chatbot_id: params[:bot_id])
-      if(params[:sc_id].present?)
-        scenarios = scenarios.where(id: params[:sc_id])
-      end
+      # if(params[:sc_id].present?)
+      #   scenarios = scenarios.where(id: params[:sc_id])
+      # end
       scenario_user_responses = ScenarioUserResponse.select(:scenario_id, :user_input_id, 'MAX(updated_at) as newest')
                                         .where(scenario_id: scenarios.map(&:id))
                                         .group(:scenario_id, :user_input_id)

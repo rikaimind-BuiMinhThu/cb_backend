@@ -196,11 +196,13 @@ class ScenarioUserResponse < ApplicationRecord
             value = conversation[:card_payment_radio_button].to_json
           when 'paypal'
             data_input_name = "paypal_payment"
+            value = selected[:value]
           when 'komoju'
             data_input_name = "komoju_payment"
             value = conversation[:card_payment_radio_button].to_json
           when 'paidy'
             data_input_name = "paidy_payment"
+            value = selected[:value]
           else
             data_input_name = "np_delivery_payment"
             value = selected[:value]
