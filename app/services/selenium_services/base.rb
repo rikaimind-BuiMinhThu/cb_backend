@@ -81,7 +81,7 @@ module SeleniumServices
           Log.info "#{@step}: capture", @log_tab_level
           @driver.save_screenshot("#{@screenshot_path}/#{@scenario.id}_#{@user_input_id}_#{@step}.png")
         end
-      rescue e
+      rescue
         Log.error "#{@step}: capture failue", @log_tab_level
       end
       @step += 1

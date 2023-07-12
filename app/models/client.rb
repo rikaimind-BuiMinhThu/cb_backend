@@ -16,7 +16,8 @@ class Client < ApplicationRecord
     tamago_repeat: 1,
     subsc_store: 2,
     shopify: 3,
-    ec_force: 4
+    ec_force: 4,
+    repeat_plus: 5
   }
 
   def subscription_start_at_cannot_be_greater_than_subscription_end_at
