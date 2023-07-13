@@ -4,7 +4,7 @@ require File.dirname(__FILE__) + "/../log"
 
 module SeleniumServices
   class RepeatPlus < Base
-    QUANTITY_INPUT = "#ctl00_ContentPlaceHolder1_tbCartAddProductCount"
+    QUANTITY_INPUT = "#ctl00_ContentPlaceHolder1_rCartList_ctl01_rCart_ctl00_tbProductCount"
     VARIATION_INPUT = "#ctl00_ContentPlaceHolder1_ddlVariationSelect"
     ADD_TO_CART_BUTTON = "#ctl00_ContentPlaceHolder1_lbCartAdd"
     CHECKOUT_SUBMIT_BUTTON = ".btmbtn.below .btn-success"
@@ -13,10 +13,16 @@ module SeleniumServices
     COUPON_CODE_INPUT = "#ctl00_ContentPlaceHolder1_rCartList_ctl01_tbCouponCode"
     BUTTON_CART = "#HeadCartView a"
 
+    CREDIT_CARD_TITLE = "クレジットカード"
+    NP_TITLE = "NP後払い"
+
     EMAIL_INPUT_LOGIN = "#ctl00_ContentPlaceHolder1_tbLoginIdInMailAddr"
     PASSWORD_INPUT_LOGIN = "#ctl00_ContentPlaceHolder1_tbPassword"
     LOGIN_BUTTON = "#ctl00_ContentPlaceHolder1_lbLogin"
     MESSAGE_ERROR_LOGIN = "#ctl00_ContentPlaceHolder1_dLoginErrorMessage"
+    HEADER_MEMBER = "#HeadMembers"
+    BODY_MINI_CART = "#HeadCartView .inner ul li"
+    HEADER_CART_VIEW = "#HeadCartView"
 
     REGISTER_BUTTON = "#ctl00_ContentPlaceHolder1_lbUserEasyRegist"
     EMAIL_REGISTER_INPUT = "#ctl00_ContentPlaceHolder1_tbUserMailAddr"
@@ -45,14 +51,15 @@ module SeleniumServices
     SEX_FEMALE_INPUT = "#ctl00_ContentPlaceHolder1_rCartList_ctl00_rblOwnerSex_1"
 
     PAYMENT_METHOD_LABEL = "#ctl00_ContentPlaceHolder1_rCartList_ctl00_Div1"
-    PAYMENT_CREDIT_CARD_LABEL = "label[for=ctl00_ContentPlaceHolder1_rCartList_ctl00_rPayment_ctl00_rbgPayment]"
-    PAYMENT_NP_LABEL = "label[for=ctl00_ContentPlaceHolder1_rCartList_ctl00_rPayment_ctl00_rbgPayment]"
 
     CARD_NUMBER_INPUT = "#ctl00_ContentPlaceHolder1_rCartList_ctl00_rPayment_ctl00_tbCreditCardNo1"
     EXPIRY_MONTH_INPUT = "#ctl00_ContentPlaceHolder1_rCartList_ctl00_rPayment_ctl00_ddlCreditExpireMonth"
     EXPIRY_YEAR_INPUT = "#ctl00_ContentPlaceHolder1_rCartList_ctl00_rPayment_ctl00_ddlCreditExpireYear"
     CREDIT_AUTHOR_NAME = "#ctl00_ContentPlaceHolder1_rCartList_ctl00_rPayment_ctl00_tbCreditAuthorName"
     SECURITY_CODE_INPUT = "#ctl00_ContentPlaceHolder1_rCartList_ctl00_rPayment_ctl00_tbCreditSecurityCode"
+
+    PAYMENT_ERROR = "#ctl00_ContentPlaceHolder1_dvErrorContents"
+    SHOPPING_CONTINUE_BTN = ".orderCompleteSum"
     def initialize(scenario, conversations)
       Log.info "Start selenium service for: \n\tscenario: #{scenario.id}\n\tconversations: #{conversations.map(&:id).inspect}"
       @scenario = scenario
@@ -111,7 +118,7 @@ module SeleniumServices
         payment_method
         quit
 
-        @selenium_result.update! result: :done, end_time: DateTime.now, last_step_no: @step
+        @selenium_result.update! result: @status, end_time: DateTime.now, last_step_no: @step
       rescue => e
         Log.error e.message
         Log.error e.backtrace.join("\n\t")
@@ -139,6 +146,7 @@ module SeleniumServices
       #navigate @scenario.landing_page_product_url
       capture
       wait_element_load ADD_TO_CART_BUTTON
+      wait_page_load_complete
 
       if !@variation.empty?
         select_element = @driver.find_elements(:id, 'ctl00_ContentPlaceHolder1_ddlVariationSelect')
@@ -156,9 +164,6 @@ module SeleniumServices
           end
         end
       end
-      fill_to_text_input QUANTITY_INPUT, @quantity_value, "Fill-in quantity", true
-      sleep_by_seconds 1
-      capture
       click ADD_TO_CART_BUTTON, "Add product to cart"
     end
 
@@ -166,10 +171,14 @@ module SeleniumServices
       @log_tab_level += 1
       Log.info "checkout_page", @log_tab_level
       wait_element_load CHECKOUT_SUBMIT_BUTTON
-      if @driver.find_elements(:id, 'ctl00_ContentPlaceHolder1_rCartList_ctl01_tbCouponCode').size > 0 && @coupons_code.present?
-        fill_to_text_input COUPON_CODE_INPUT, @coupons_code, "Fill-in coupon code"
-      end
       capture
+      fill_to_text_input QUANTITY_INPUT, @quantity_value, "Fill-in quantity", true
+      sleep_by_seconds 1
+      if @driver.find_elements(:id, 'ctl00_ContentPlaceHolder1_rCartList_ctl01_tbCouponCode').size > 0 && @coupons_code.present?
+        click COUPON_CODE_INPUT
+        fill_to_text_input COUPON_CODE_INPUT, @coupons_code, "Fill-in coupon code", true
+        click CHECKOUT_SUBMIT_BUTTON
+      end
       click CHECKOUT_SUBMIT_BUTTON, "Click checkout button"
     end
 
@@ -177,10 +186,12 @@ module SeleniumServices
       wait_element_load BTN_SUCCESS
       capture
       if @driver.find_elements(:css, BUTTON_CART).size > 0
-        click BUTTON_CART, "Click button cart"
+        click BUTTON_CART, "Click cart button"
+        sleep_by_seconds 1
+        wait_page_load_complete
+        wait_element_load BTN_SUCCESS
       end
 
-      wait_element_load BTN_SUCCESS
       checkout_page
     end
 
@@ -194,9 +205,12 @@ module SeleniumServices
       fill_to_text_input PASSWORD_INPUT_LOGIN, @password_value, "Fill-in password login"
       capture
       click LOGIN_BUTTON,"Click login button"
-      sleep_by_seconds 5
+      sleep_by_seconds 1
 
-      if @driver.current_url.include?("OrderOwnerDecision.aspx")
+      wait_page_load_complete
+      wait_element_load HEADER_MEMBER
+      elements = @driver.find_elements(:css, '#HeadMembers a')
+      if elements.first.attribute('href').include?("Login")
         capture
         register_member
       end
@@ -259,32 +273,55 @@ module SeleniumServices
     def payment_method
       @log_tab_level += 1
       Log.info "payment_method", @log_tab_level
-      wait_element_load(PAYMENT_METHOD_LABEL)
+      wait_element_load PAYMENT_METHOD_LABEL
       capture
+      choose_payment_method
+      sleep_by_seconds 1
       if @credit_card_payment.present?
         entry_credit_payment_information
-        Log.info "finish", @log_tab_level
-        sleep_by_seconds 1
-        capture
       elsif @np_delivery_payment.present?
-        entry_np_delivery_payment
+        Log.info "np_delivery_payment", @log_tab_level
+        wait_element_load CHECKOUT_SUBMIT_BUTTON
+        click CHECKOUT_SUBMIT_BUTTON, "Click payment button"
+        sleep_by_seconds 1
+        click CHECKOUT_SUBMIT_BUTTON, "Click payment button confirm"
+      end
+      wait_page_load_complete
+      capture
+      wait_element_load HEADER_CART_VIEW
+      element = @driver.find_elements(:css, "#HeadCartView .inner ul li")
+
+      if element.size > 0
+        if (element.size == 1)
+          Log.info "Successful shopping", @log_tab_level
+        else
+          @status = :error
+          Log.error "Failed shopping", @log_tab_level
+        end
       end
     end
 
-    def entry_np_delivery_payment
-      @log_tab_level += 1
-      Log.info "entry_np_delivery_payment", @log_tab_level
-      # wait_element_load PAYMENT_NP_LABEL
-      # capture
-      # click PAYMENT_NP_LABEL, "Click NP option"
+    def choose_payment_method
+      Log.info "choose_payment_method", @log_tab_level
+      sleep_by_seconds 1
+      payment_methods = @driver.find_elements(:css, ".radioBtn")
+      if payment_methods.size > 0
+        payment_methods.each do |payment_method|
+          element = payment_method.find_element(:css, "label")
+          if element.text == CREDIT_CARD_TITLE && @credit_card_payment.present?
+            click "label[for="+element.attribute('for')+"]", "Click payment method credit card"
+            break
+          elsif element.text == NP_TITLE && @np_delivery_payment.present?
+            click "label[for="+element.attribute('for')+"]", "Click payment method NP"
+            break
+          end
+        end
+      end
     end
 
     def entry_credit_payment_information
       @log_tab_level += 1
       Log.info "entry_credit_payment_information", @log_tab_level
-      wait_element_load PAYMENT_CREDIT_CARD_LABEL
-      click PAYMENT_CREDIT_CARD_LABEL, "Click credit card option"
-      sleep_by_seconds 1
 
       wait_element_load CARD_NUMBER_INPUT
       fill_to_text_input CARD_NUMBER_INPUT, @card_data["card_number"], "Fill-in card number"
@@ -302,10 +339,8 @@ module SeleniumServices
       fill_to_text_input SECURITY_CODE_INPUT, @card_data["cvc"], "Fill-in cvc"
 
       wait_element_load CHECKOUT_SUBMIT_BUTTON
-      capture
       click CHECKOUT_SUBMIT_BUTTON, "Click payment button"
       sleep_by_seconds 1
-      capture
       click CHECKOUT_SUBMIT_BUTTON, "Click payment button confirm"
     end
 
@@ -327,6 +362,7 @@ module SeleniumServices
 
     def extract_conversions_data
 
+      @status = :done
       quantity = find_response_by_data_input_name("quantity").to_i
       @quantity_value = quantity.zero? ? 1 : quantity
       text_with_thumbnail_image = find_response_by_data_input_name("text_with_thumbnail_image")

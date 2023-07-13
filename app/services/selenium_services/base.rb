@@ -182,6 +182,14 @@ module SeleniumServices
       @log_tab_level -= 1
     end
 
+    def wait_page_load_complete
+      @log_tab_level += 1
+      Log.info "wait_page_load_complete", @log_tab_level
+      wait = Selenium::WebDriver::Wait.new(:timeout => TIMEOUT)
+      wait.until { @driver.execute_script('return document.readyState') == 'complete' }
+      @log_tab_level -= 1
+    end
+
     def is_displaying_recaptcha?
       @log_tab_level += 1
       Log.info "Check is_displaying_recaptcha", @log_tab_level
