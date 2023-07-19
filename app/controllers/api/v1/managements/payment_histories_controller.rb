@@ -63,10 +63,10 @@ class Api::V1::Managements::PaymentHistoriesController < ApplicationController
     @paymens = @paymens.order('created_at DESC').page(params[:page]).per(20)
     if client.plan == 4
       @paymens.each do |payment|
-        # if payment.end_at >= Date.today
-        bot_cv = Order.where(client_id: client.id).where('created_at >= ? AND created_at <= ?', payment.start_at, payment.end_at)
+        start_at = Time.zone.parse(payment.start_at.to_s).to_date.to_s
+        end_at = Time.zone.parse(payment.end_at.to_s).to_date.to_s
+        bot_cv = Order.where(client_id: client.id).where('DATE(created_at) >= ? AND DATE(created_at) <= ?', start_at, end_at)
         payment.price = bot_cv.size * client.price
-        # end
       end
     end
     render json: {code: 1, data: @paymens, total: @total}
