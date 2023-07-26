@@ -81,7 +81,7 @@ module SeleniumServices
           Log.info "#{@step}: capture", @log_tab_level
           @driver.save_screenshot("#{@screenshot_path}/#{@scenario.id}_#{@user_input_id}_#{@step}.png")
         end
-      rescue e
+      rescue
         Log.error "#{@step}: capture failue", @log_tab_level
       end
       @step += 1
@@ -179,6 +179,14 @@ module SeleniumServices
       wait = Selenium::WebDriver::Wait.new(:timeout => TIMEOUT)
       wait.until { @driver.find_element(css: css_selector).displayed? }
       capture
+      @log_tab_level -= 1
+    end
+
+    def wait_page_load_complete
+      @log_tab_level += 1
+      Log.info "wait_page_load_complete", @log_tab_level
+      wait = Selenium::WebDriver::Wait.new(:timeout => TIMEOUT)
+      wait.until { @driver.execute_script('return document.readyState') == 'complete' }
       @log_tab_level -= 1
     end
 

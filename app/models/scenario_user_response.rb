@@ -237,6 +237,12 @@ class ScenarioUserResponse < ApplicationRecord
             data_input_name = "sent_message"
             value = conversation[:textarea][:text_input][:value]
           end
+        when "product_purchase_radio_button"
+          case conversation[:product_purchase_radio_button][:type]
+          when "text_with_thumbnail_image"
+            data_input_name = "text_with_thumbnail_image"
+            value = conversation[:product_purchase_radio_button].to_json
+          end
         end
         puts "=============================="
         puts "data_input_name: #{data_input_name}"
@@ -279,7 +285,7 @@ class ScenarioUserResponse < ApplicationRecord
   text :zip_code_address, is_encrypt: false
   string :phone_number, is_encrypt: false
   string :user_email, is_encrypt: false
-  string :user_password, is_encrypt: true
+  string :password, is_encrypt: true
   integer :sex, is_encrypt: false
   text :birth_date, is_encrypt: false
   text :credit_card_payment, is_encrypt: true
@@ -295,4 +301,5 @@ class ScenarioUserResponse < ApplicationRecord
   text :paypal_payment, is_encrypt: true
   text :paidy_payment, is_encrypt: false
   string :pin_code, is_encrypt: false
+  text :text_with_thumbnail_image, is_encrypt: false
 end
