@@ -301,7 +301,7 @@ module SeleniumServices
       @delivery_date = find_response_by_data_input_name("delivery_date")
       @sent_message = find_response_by_data_input_name("sent_message")
       encrypted_password_value = find_response_by_data_input_name("user_password")
-      @password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"]
+      @password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"] if encrypted_password_value.present?
     end
   end
 end
