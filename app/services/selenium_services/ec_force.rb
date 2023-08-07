@@ -4,7 +4,6 @@ include Selenium::WebDriver::Keys
 
 module SeleniumServices
   class EcForce < Base
-    QUANLITY_SELECT = "select#quantity"
     QUANLITY_INPUT = "input#input-quantity"
     ADD_TO_CART_BUTTON = "button#btn-add"
 
@@ -98,19 +97,19 @@ module SeleniumServices
       @log_tab_level += 1
       Log.info "product_page", @log_tab_level
       navigate @scenario.landing_page_product_url
-      # wait_element_load QUANLITY_INPUT 
-      # if quantity_value.present?
-      #     fill_to_text_input QUANLITY_INPUT, quantity_value, "Fill-in quantity", true
-      # end
-      # capture false
-      # click ADD_TO_CART_BUTTON, "Add product to cart"
-      wait_element_load QUANLITY_SELECT
-      if @quantity_value.present?
-        select QUANLITY_SELECT, @quantity_value.to_s, :quantity
-
-        capture false
-        click ADD_TO_CART_BUTTON, "Add product to cart"
+      wait_element_load QUANLITY_INPUT
+      if quantity_value.present?
+          fill_to_text_input QUANLITY_INPUT, quantity_value, "Fill-in quantity", true
       end
+      capture false
+      click ADD_TO_CART_BUTTON, "Add product to cart"
+      # wait_element_load QUANLITY_SELECT
+      # if @quantity_value.present?
+      #   select QUANLITY_SELECT, @quantity_value.to_s, :quantity
+
+      #   capture false
+      #   click ADD_TO_CART_BUTTON, "Add product to cart"
+      # end
    
     end
 
