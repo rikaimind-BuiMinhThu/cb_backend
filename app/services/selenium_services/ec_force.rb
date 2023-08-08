@@ -27,7 +27,7 @@ module SeleniumServices
     EMAIL_CONFIRM_INPUT = "input[name='order[email_confirmation]']"
     # PHONE_NUMBER_INPUT = "input#form-validation-field-0"
     PHONE_NUMBER_INPUT = "input[name='order[billing_address_attributes][tel01]']"
-    PASSWORD_INPUT = "input#customer_password"
+    PASSWORD_INPUT = "input[name='order[customer_attributes][password]']"
     SELECT_ADDRESS = "select[name='order[shipping_address_id]']"
     SEND_MESSAGE = "textarea[name='order[remark]']"
     COUPON_CODE = "input[name='order[coupon_code]']"
@@ -55,6 +55,8 @@ module SeleniumServices
     EC_FORCE_PAYMENT_NAME_ON_CARD_INPUT = "input#input-cc-name"
     EC_FORCE_PAYMENT_EXPIRY_MONTH_INPUT = "select#input-cc-month"
     EC_FORCE_PAYMENT_EXPIRY_YEAR_INPUT = "select#input-cc-year"
+    AMAZON_CAPTCHA_VERIFY_BUTTON = "button#amzn-captcha-verify-button"
+
     # EC_FORCE_PAYMENT_SECURITY_CODE_INPUT = "input[name=paymentMethodShop.creditCard.securityCode]"
 
 
@@ -69,11 +71,11 @@ module SeleniumServices
       begin
         product_page
         if @has_account == "0"
-        checkout_page
-        entry_checkout_information
+          checkout_page
+          entry_checkout_information
         else
           checkout_page_regist
-        entry_checkout_information_regist
+          entry_checkout_information_regist
         end
         confirm_page
         quit
@@ -152,11 +154,11 @@ module SeleniumServices
       
       # fill_to_text_input COUPON_CODE, @coupons_code, "Fill-in user email"
       if @np_delivery_payment.present?
-      select PAYMENT_METHOD, @np_delivery_payment.to_s, :payment_method
+        select PAYMENT_METHOD, '9', :payment_method
       elsif @credit_card_payment.present?
-      select PAYMENT_METHOD, "1", :payment_method
+        select PAYMENT_METHOD, "1", :payment_method
 
-      fill_to_text_input EC_FORCE_PAYMENT_CARD_NUMBER_INPUT, card_data["card_number"], :card_number
+        fill_to_text_input EC_FORCE_PAYMENT_CARD_NUMBER_INPUT, card_data["card_number"], :card_number
         select EC_FORCE_PAYMENT_EXPIRY_MONTH_INPUT, card_data["month"].to_i.to_s, :expire_month
 
         select EC_FORCE_PAYMENT_EXPIRY_YEAR_INPUT, card_data["year"][-2,2], :expire_year
@@ -165,11 +167,11 @@ module SeleniumServices
 
         # fill_to_text_input SUBSC_STORE_PAYMENT_SECURITY_CODE_INPUT, card_data["cvc"], :cvc
       end
-      select SELECT_PAYMENT_SCHEDULE, "day_of_week", :select_address
-      select SELECT_PAYMENT_SCHEDULE_DATE, (Time.now + @delivery_date.to_i.days).strftime("%Y-%-m-%-d").to_s, :delivery_date
-      select SELECT_PAYMENT_SCHEDULE_TIME, @delivery_time, :delivery_time
-      fill_to_text_input SEND_MESSAGE, @sent_message, :send_message
-      select_radio_btn CHECKBOX_ODER, 1, "check oder"
+      # select SELECT_PAYMENT_SCHEDULE, "day_of_week", :select_address
+      # select SELECT_PAYMENT_SCHEDULE_DATE, (Time.now + @delivery_date.to_i.days).strftime("%Y-%-m-%-d").to_s, :delivery_date
+      # select SELECT_PAYMENT_SCHEDULE_TIME, @delivery_time, :delivery_time
+      # fill_to_text_input SEND_MESSAGE, @sent_message, :send_message
+      # select_radio_btn CHECKBOX_ODER, 1, "check oder"
 
       click NEXT_CONFIRM_CONTENT, "next to page confirm"
       # select COUNTRY_SELECT, @country, "", "Select country name"
@@ -223,7 +225,7 @@ module SeleniumServices
       fill_to_text_input ADDRESS_INPUT, @data_address["value_address"] + @data_address["value_building_name"], "Fill-in address"
       fill_to_text_input PHONE_NUMBER_INPUT, @phone_number, "Fill-in phonenumber"
       if @np_delivery_payment.present?
-        select PAYMENT_METHOD, @np_delivery_payment.to_s, :payment_method
+        select PAYMENT_METHOD, '9', :payment_method
         elsif @credit_card_payment.present?
         select PAYMENT_METHOD, "1", :payment_method
         if SELECT_PAYMENT_ID
