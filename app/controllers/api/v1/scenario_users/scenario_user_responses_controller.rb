@@ -19,7 +19,7 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
 
   def create_order
     if params[:user_id].present?
-      selenium_result = ScenarioUserResponseSeleniumResult.find_by(user_input_id: params[:user_id])
+      selenium_result = ScenarioUserResponseSeleniumResult.find_by(user_input_id: user_id)
       return if selenium_result.present?
       ScenarioUserResponseSeleniumResult.create(
         scenario_id: @scenario.id,
@@ -31,6 +31,7 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
         start_time: DateTime.now,
         result: :running,
       )
+      bot_type = params[:bot_type]
       if @client.tamago_repeat? || @client.subsc_store? || @client.shopify? || @client.ec_force? || @client.repeat_plus?
         if @client.tamago_repeat?
           TamagoScenarioJob.perform_async(params[:scenario_id], params[:user_id])
@@ -48,6 +49,7 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
           # service = SeleniumServices::EcForce.new(scenario, conversations )
           # service.process
           EcForceJob.perform_async(params[:scenario_id], params[:user_id])
+          bot_type = 'web'
         elsif @client.repeat_plus?
           RepeatPlusJob.perform_async(params[:scenario_id], params[:user_id])
         end
@@ -55,7 +57,7 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
           client_id: @scenario.chatbot&.user&.client_id,
           scenario_id: @scenario.id,
           user_input_id: params[:user_id],
-          bot_type: params[:bot_type],
+          bot_type: bot_type,
         )
       else
         render json: { code: 1, message: "not create order" }
