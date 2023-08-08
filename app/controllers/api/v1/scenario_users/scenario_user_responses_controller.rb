@@ -19,7 +19,7 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
 
   def create_order
     if params[:user_id].present?
-      selenium_result = ScenarioUserResponseSeleniumResult.find_by(user_input_id: user_id)
+      selenium_result = ScenarioUserResponseSeleniumResult.find_by(user_input_id: params[:user_id])
       return if selenium_result.present?
       ScenarioUserResponseSeleniumResult.create(
         scenario_id: @scenario.id,
