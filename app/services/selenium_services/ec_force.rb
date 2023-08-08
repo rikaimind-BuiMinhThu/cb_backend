@@ -9,10 +9,10 @@ module SeleniumServices
 
     CHECKOUT_BUTTON = "a.c-cart_submit__block__link"
 
-    LAST_NAME_INPUT = "input#order_billing_address_attributes_name01"
-    FIRST_NAME_INPUT = "input#order_billing_address_attributes_name02"
-    LAST_NAME_KANA_INPUT = "input#order_billing_address_attributes_kana01"
-    FIRST_NAME_KANA_INPUT = "input#order_billing_address_attributes_kana02"
+    FIRST_NAME_INPUT = "input#order_billing_address_attributes_name01"
+    # FIRST_NAME_INPUT = "input#order_billing_address_attributes_name02"
+    FIRST_NAME_KANA_INPUT = "input#order_billing_address_attributes_kana01"
+    # FIRST_NAME_KANA_INPUT = "input#order_billing_address_attributes_kana02"
     POSTAL_CODE_INPUT = "input#order_billing_address_attributes_zip01"
     ADDRESS_INPUT = "input#order_billing_address_attributes_addr02"
     EMAIL_INPUT = "input#email"
@@ -98,8 +98,8 @@ module SeleniumServices
       Log.info "product_page", @log_tab_level
       navigate @scenario.landing_page_product_url
       wait_element_load QUANLITY_INPUT
-      if quantity_value.present?
-          fill_to_text_input QUANLITY_INPUT, quantity_value, "Fill-in quantity", true
+      if @quantity_value.present?
+          fill_to_text_input QUANLITY_INPUT, @quantity_value, "Fill-in quantity", true
       end
       capture false
       click ADD_TO_CART_BUTTON, "Add product to cart"
@@ -130,7 +130,7 @@ module SeleniumServices
       # capture
       # click CHECKOUT_BUTTON, "Click checkout button"
       # wait_element_load driver.find_element(:css, "a[href*='shop/order/new?register_as_member=0']")
-      driver.find_element(:css, "a[href*='/shop/order/new?register_as_member=1']").click()
+      @driver.find_element(:css, "a[href*='/shop/order/new?register_as_member=1']").click()
     end
 
     def entry_checkout_information
@@ -138,9 +138,9 @@ module SeleniumServices
       Log.info "entry_checkout_information", @log_tab_level
       wait_element_load FIRST_NAME_INPUT
       fill_to_text_input FIRST_NAME_INPUT, @first_name, "Fill-in first name"
-      fill_to_text_input LAST_NAME_INPUT, @last_name, "Fill-in last name"
+      # fill_to_text_input LAST_NAME_INPUT, @last_name, "Fill-in last name"
       fill_to_text_input FIRST_NAME_KANA_INPUT, @first_name_kana, "Fill-in_first_name_kana"
-      fill_to_text_input LAST_NAME_KANA_INPUT, @last_name_kana, "Fill-in_last_name_kana"
+      # fill_to_text_input LAST_NAME_KANA_INPUT, @last_name_kana, "Fill-in_last_name_kana"
       fill_to_text_input POSTAL_CODE_INPUT, @data_address["value_post_code_left"] + @data_address["value_post_code_right"], "Fill-in postal code"
       fill_to_text_input ADDRESS_INPUT, @data_address["value_address"] + @data_address["value_building_name"], "Fill-in address"
       fill_to_text_input PHONE_NUMBER_INPUT, @phone_number, "Fill-in phonenumber"
