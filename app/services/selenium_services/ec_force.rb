@@ -5,7 +5,7 @@ include Selenium::WebDriver::Keys
 module SeleniumServices
   class EcForce < Base
     CLIENT_KEY = Settings::captcha.client_key
-    WEBSITE_URL = 'https://demo.ec-force.com/shop/products/SStestteiki02'
+    WEBSITE_URL = @scenario.landing_page_product_url
     CAPSOLVER_API_CREATE_TASK = 'https://api.capsolver.com/createTask'
     CAPSOLVER_API_GET_TASK_RESULT = 'https://api.capsolver.com/getTaskResult'
     QUANLITY_INPUT = "input#input-quantity"
@@ -77,7 +77,7 @@ module SeleniumServices
 
       begin
         product_page
-        if @has_account == "1"
+        if @has_account == "0"
           checkout_page
           entry_checkout_information
         else
