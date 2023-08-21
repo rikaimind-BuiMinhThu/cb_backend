@@ -5,7 +5,6 @@ include Selenium::WebDriver::Keys
 module SeleniumServices
   class EcForce < Base
     CLIENT_KEY = Settings::captcha.client_key
-    WEBSITE_URL = @scenario.landing_page_product_url
     CAPSOLVER_API_CREATE_TASK = 'https://api.capsolver.com/createTask'
     CAPSOLVER_API_GET_TASK_RESULT = 'https://api.capsolver.com/getTaskResult'
     QUANLITY_INPUT = "input#input-quantity"
@@ -322,6 +321,8 @@ module SeleniumServices
     def bypass_captcha
       @log_tab_level += 1
       Log.info "bypass_captcha", @log_tab_level
+      website_url = @scenario.landing_page_product_url
+
       text = @driver.page_source
       key_match = text.scan(/"key":"([^"]+)"/)
       iv_match = text.scan(/"iv":"([^"]+)"/)
@@ -339,7 +340,7 @@ module SeleniumServices
         'clientKey': CLIENT_KEY,
         'task': {
           'type': 'AntiAwsWafTaskProxyless',
-          'websiteURL': WEBSITE_URL,
+          'websiteURL': website_url,
           'awsKey': awsKey,
           'awsIv': awsIv,
           'awsContext': awsContext,
