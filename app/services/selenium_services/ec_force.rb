@@ -153,6 +153,11 @@ module SeleniumServices
       select SELECT_ADDRESS, "same", :select_address
       
       # fill_to_text_input COUPON_CODE, @coupons_code, "Fill-in user email"
+      if @coupons_code.present?
+        click COUPON_CODE
+        fill_to_text_input COUPON_CODE, @coupons_code, "Fill-in coupon code"
+      end
+
       if @np_delivery_payment.present?
         select PAYMENT_METHOD, '9', :payment_method
       elsif @credit_card_payment.present?
