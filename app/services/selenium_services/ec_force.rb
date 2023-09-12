@@ -14,8 +14,10 @@ module SeleniumServices
 
     FIRST_NAME_INPUT = "input#order_billing_address_attributes_name01"
     # FIRST_NAME_INPUT = "input#order_billing_address_attributes_name02"
+    LAST_NAME_INPUT = "input#order_billing_address_attributes_name02"
     FIRST_NAME_KANA_INPUT = "input#order_billing_address_attributes_kana01"
     # FIRST_NAME_KANA_INPUT = "input#order_billing_address_attributes_kana02"
+    LAST_NAME_KANA_INPUT = "input#order_billing_address_attributes_kana02"
     # POSTAL_CODE_INPUT = "input#order_billing_address_attributes_zip01"
     POSTAL_CODE_INPUT_LEFT = "input#order_billing_address_attributes_zip01"
     POSTAL_CODE_INPUT_RIGHT = "input#order_billing_address_attributes_zip02"
@@ -43,6 +45,7 @@ module SeleniumServices
     SELECT_PAYMENT_SCHEDULE_DATE="select#select_scheduled_to_be_delivered_at"
 
     CHECKBOX_ODER = "input#order_free_columns_0_0_13_22"
+    CHECKBOX_AGREE_ORDER = "input#agree"
 
     SELECT_PAYMENT_ID = "select#card-id"
     
@@ -81,6 +84,7 @@ module SeleniumServices
           entry_checkout_information
         else
           checkout_page_regist
+          bypass_captcha
           entry_checkout_information_regist
         end
         bypass_captcha
@@ -208,7 +212,7 @@ module SeleniumServices
       fill_to_text_input LOGIN_EMAIL2, @user_email, "fill email_address"
       fill_to_text_input LOGIN_PASSWORD2, password_value, "fill pass"
 
-      click LOGIN_BUTTON2, "click login button"
+      click LOGIN_BUTTON, "click login button"
       # capture
       # click CHECKOUT_BUTTON, "Click checkout button"
       # wait_element_load driver.find_element(:css, "a[href*='shop/order/new?register_as_member=0']")
@@ -239,7 +243,9 @@ module SeleniumServices
       element = driver.find_element(:id, 'order_billing_address_attributes_zip01')
       sleep(3)
       element.clear
-      fill_to_text_input POSTAL_CODE_INPUT, @data_address["value_post_code_left"] + @data_address["value_post_code_right"], "Fill-in postal code"
+      # fill_to_text_input POSTAL_CODE_INPUT, @data_address["value_post_code_left"] + @data_address["value_post_code_right"], "Fill-in postal code"
+      fill_to_text_input POSTAL_CODE_INPUT_LEFT, @data_address["value_post_code_left"], "Fill-in postal code"
+      fill_to_text_input POSTAL_CODE_INPUT_RIGHT, @data_address["value_post_code_right"], "Fill-in postal code"
       fill_to_text_input ADDRESS_INPUT, @data_address["value_address"] + @data_address["value_building_name"], "Fill-in address"
       fill_to_text_input PHONE_NUMBER_INPUT, @phone_number, "Fill-in phonenumber"
       if @np_delivery_payment.present?
@@ -265,11 +271,11 @@ module SeleniumServices
           # fill_to_text_input SUBSC_STORE_PAYMENT_SECURITY_CODE_INPUT, card_data["cvc"], :cvc
         end
         end
-        select SELECT_PAYMENT_SCHEDULE, "day_of_week", :select_address
-        select SELECT_PAYMENT_SCHEDULE_DATE, (Time.now + @delivery_date.to_i.days).strftime("%Y-%-m-%-d").to_s, :delivery_date
-        select SELECT_PAYMENT_SCHEDULE_TIME, @delivery_time, :delivery_time
-      fill_to_text_input SEND_MESSAGE, @sent_message, :send_message
-      select_radio_btn CHECKBOX_ODER, 1, "check oder"
+        # select SELECT_PAYMENT_SCHEDULE, "day_of_week", :select_address
+        # select SELECT_PAYMENT_SCHEDULE_DATE, (Time.now + @delivery_date.to_i.days).strftime("%Y-%-m-%-d").to_s, :delivery_date
+        # select SELECT_PAYMENT_SCHEDULE_TIME, @delivery_time, :delivery_time
+      # fill_to_text_input SEND_MESSAGE, @sent_message, :send_message
+      select_radio_btn CHECKBOX_AGREE_ORDER, 1, "check oder"
 
       click NEXT_CONFIRM_CONTENT, "next to page confirm"
       # select COUNTRY_SELECT, @country, "", "Select country name"
@@ -284,9 +290,9 @@ module SeleniumServices
     def confirm_page
       @log_tab_level += 1
       Log.info "confirm_page", @log_tab_level
-      wait_element_load PAYMENT_SUBMIT_BUTTON3
+      wait_element_load PAYMENT_SUBMIT_BUTTON2
       capture
-      click PAYMENT_SUBMIT_BUTTON3, "Click payment submit button"
+      click PAYMENT_SUBMIT_BUTTON2, "Click payment submit button"
     end
     def fill_to_text_input(css_selector, value, description = "", clear_input = false, pointer_action: true)
       @log_tab_level += 1
