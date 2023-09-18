@@ -33,7 +33,9 @@ module SeleniumServices
     # EMAIL_CONFIRM_INPUT = "input#form-validation-field-4"
     EMAIL_CONFIRM_INPUT = "input[name='order[email_confirmation]']"
     # PHONE_NUMBER_INPUT = "input#form-validation-field-0"
-    PHONE_NUMBER_INPUT = "input[name='order[billing_address_attributes][tel01]']"
+    PHONE_NUMBER_INPUT1 = "input[name='order[billing_address_attributes][tel01]']"
+    PHONE_NUMBER_INPUT2 = "input[name='order[billing_address_attributes][tel02]']"
+    PHONE_NUMBER_INPUT3 = "input[name='order[billing_address_attributes][tel03]']"
     PASSWORD_INPUT = "input[name='order[customer_attributes][password]']"
     SELECT_ADDRESS = "select[name='order[shipping_address_id]']"
     SEND_MESSAGE = "textarea[name='order[remark]']"
@@ -63,13 +65,14 @@ module SeleniumServices
     EC_FORCE_PAYMENT_NAME_ON_CARD_INPUT = "input#input-cc-name"
     EC_FORCE_PAYMENT_EXPIRY_MONTH_INPUT = "select#input-cc-month"
     EC_FORCE_PAYMENT_EXPIRY_YEAR_INPUT = "select#input-cc-year"
+    EC_FORCE_PAYMENT_CVV_ON_CARD_INPUT = "input#input-cc-cvv"
     AMAZON_CAPTCHA_VERIFY_BUTTON = "button#amzn-captcha-verify-button"
 
     # EC_FORCE_PAYMENT_SECURITY_CODE_INPUT = "input[name=paymentMethodShop.creditCard.securityCode]"
 
 
     PAY_NOW_BUTTON = "button[type=submit]"
-
+    AGREE_CHECK_BOX = "input[name=agree]"
     CHECKBOX_30_INPUT = "input[name='checklist_30']"
     CHECKBOX_35_INPUT = "input[name='checklist_35']"
 
@@ -79,13 +82,13 @@ module SeleniumServices
 
       begin
         product_page
-        if @has_account == "0"
-          checkout_page
-          entry_checkout_information
-        else
+        if @has_account == "1"
           checkout_page_regist
           bypass_captcha
           entry_checkout_information_regist
+        else
+          checkout_page
+          entry_checkout_information
         end
         bypass_captcha
         confirm_page
@@ -151,14 +154,16 @@ module SeleniumServices
       Log.info "entry_checkout_information", @log_tab_level
       wait_element_load FIRST_NAME_INPUT
       fill_to_text_input FIRST_NAME_INPUT, @first_name, "Fill-in first name"
-      # fill_to_text_input LAST_NAME_INPUT, @last_name, "Fill-in last name"
+      fill_to_text_input LAST_NAME_INPUT, @last_name, "Fill-in last name"
       fill_to_text_input FIRST_NAME_KANA_INPUT, @first_name_kana, "Fill-in_first_name_kana"
-      # fill_to_text_input LAST_NAME_KANA_INPUT, @last_name_kana, "Fill-in_last_name_kana"
+      fill_to_text_input LAST_NAME_KANA_INPUT, @last_name_kana, "Fill-in_last_name_kana"
       # fill_to_text_input POSTAL_CODE_INPUT, @data_address["value_post_code_left"] + @data_address["value_post_code_right"], "Fill-in postal code"
       fill_to_text_input POSTAL_CODE_INPUT_LEFT, @data_address["value_post_code_left"], "Fill-in postal code"
       fill_to_text_input POSTAL_CODE_INPUT_RIGHT, @data_address["value_post_code_right"], "Fill-in postal code"
       fill_to_text_input ADDRESS_INPUT, @data_address["value_address"] + @data_address["value_building_name"], "Fill-in address"
-      fill_to_text_input PHONE_NUMBER_INPUT, @phone_number, "Fill-in phonenumber"
+      fill_to_text_input PHONE_NUMBER_INPUT1, @phone_number["value1"], "Fill-in phonenumber"
+      fill_to_text_input PHONE_NUMBER_INPUT2, @phone_number["value2"], "Fill-in phonenumber"
+      fill_to_text_input PHONE_NUMBER_INPUT3, @phone_number["value3"], "Fill-in phonenumber"
       fill_to_text_input EMAIL_INPUT, @user_email, "Fill-in user email"
       fill_to_text_input EMAIL_CONFIRM_INPUT, @user_email, "Fill-in user email"
       # fill_to_text_input PASSWORD_INPUT, password_value, "Fill-in user email"
@@ -172,9 +177,9 @@ module SeleniumServices
       end
 
       if @np_delivery_payment.present?
-        select PAYMENT_METHOD, '9', :payment_method
+        select PAYMENT_METHOD, "58", :payment_method
       elsif @credit_card_payment.present?
-        select PAYMENT_METHOD, "1", :payment_method
+        select PAYMENT_METHOD, "71", :payment_method
 
         fill_to_text_input EC_FORCE_PAYMENT_CARD_NUMBER_INPUT, card_data["card_number"], :card_number
         select EC_FORCE_PAYMENT_EXPIRY_MONTH_INPUT, card_data["month"].to_i.to_s, :expire_month
@@ -183,18 +188,18 @@ module SeleniumServices
 
         fill_to_text_input EC_FORCE_PAYMENT_NAME_ON_CARD_INPUT, card_data["card_holder"], :card_name
 
-        # fill_to_text_input SUBSC_STORE_PAYMENT_SECURITY_CODE_INPUT, card_data["cvc"], :cvc
+        fill_to_text_input EC_FORCE_PAYMENT_CVV_ON_CARD_INPUT, card_data["cvc"], :cvc
       end
-      checkbox_30 = @driver.find_element css: CHECKBOX_30_INPUT
-      @driver.execute_script "arguments[0].click();", checkbox_30
-      checkbox_35 = @driver.find_element css: CHECKBOX_35_INPUT
-      @driver.execute_script "arguments[0].click();", checkbox_35
+      # checkbox_30 = @driver.find_element css: CHECKBOX_30_INPUT
+      # @driver.execute_script "arguments[0].click();", checkbox_30
+      # checkbox_35 = @driver.find_element css: CHECKBOX_35_INPUT
+      # @driver.execute_script "arguments[0].click();", checkbox_35
       # select SELECT_PAYMENT_SCHEDULE, "day_of_week", :select_address
       # select SELECT_PAYMENT_SCHEDULE_DATE, (Time.now + @delivery_date.to_i.days).strftime("%Y-%-m-%-d").to_s, :delivery_date
       # select SELECT_PAYMENT_SCHEDULE_TIME, @delivery_time, :delivery_time
       # fill_to_text_input SEND_MESSAGE, @sent_message, :send_message
       # select_radio_btn CHECKBOX_ODER, 1, "check oder"
-
+      click AGREE_CHECK_BOX, "Click checkbox agree"
       click NEXT_CONFIRM_CONTENT, "next to page confirm"
       # select COUNTRY_SELECT, @country, "", "Select country name"
       # fill_to_text_input POSTAL_CODE_INPUT, @post_code, "Fill-in post code"
@@ -313,7 +318,7 @@ module SeleniumServices
       @first_name_kana = find_response_by_data_input_name("first_name_kana")
       @last_name_kana = find_response_by_data_input_name("last_name_kana")
       @data_address = JSON.parse find_response_by_data_input_name("zip_code_address")
-      @phone_number = find_response_by_data_input_name("phone_number")
+      @phone_number = JSON.parse find_response_by_data_input_name("phone_number")
       @user_email = find_response_by_data_input_name("user_email")
       @quantity_value = find_response_by_data_input_name("quantity")
       @coupons_code = find_response_by_data_input_name("coupons_code")
