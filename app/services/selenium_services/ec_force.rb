@@ -252,11 +252,17 @@ module SeleniumServices
       fill_to_text_input POSTAL_CODE_INPUT_LEFT, @data_address["value_post_code_left"], "Fill-in postal code"
       fill_to_text_input POSTAL_CODE_INPUT_RIGHT, @data_address["value_post_code_right"], "Fill-in postal code"
       fill_to_text_input ADDRESS_INPUT, @data_address["value_address"] + @data_address["value_building_name"], "Fill-in address"
-      fill_to_text_input PHONE_NUMBER_INPUT, @phone_number, "Fill-in phonenumber"
+
+      driver.find_element(:css, PHONE_NUMBER_INPUT1).clear
+      fill_to_text_input PHONE_NUMBER_INPUT1, @phone_number["value1"], "Fill-in phonenumber"
+      driver.find_element(:css, PHONE_NUMBER_INPUT2).clear
+      fill_to_text_input PHONE_NUMBER_INPUT2, @phone_number["value2"], "Fill-in phonenumber"
+      driver.find_element(:css, PHONE_NUMBER_INPUT3).clear
+      fill_to_text_input PHONE_NUMBER_INPUT3, @phone_number["value3"], "Fill-in phonenumber"
       if @np_delivery_payment.present?
-        select PAYMENT_METHOD, '9', :payment_method
-        elsif @credit_card_payment.present?
-        select PAYMENT_METHOD, "1", :payment_method
+        select PAYMENT_METHOD, '58', :payment_method
+      elsif @credit_card_payment.present?
+        select PAYMENT_METHOD, "71", :payment_method
         if SELECT_PAYMENT_ID
           select SELECT_PAYMENT_ID, "0", :add_new_card
           fill_to_text_input EC_FORCE_PAYMENT_CARD_NUMBER_INPUT, card_data["card_number"], :card_number
@@ -330,7 +336,7 @@ module SeleniumServices
       @delivery_time = find_response_by_data_input_name("delivery_time")
       @delivery_date = find_response_by_data_input_name("delivery_date")
       @sent_message = find_response_by_data_input_name("sent_message")
-      encrypted_password_value = find_response_by_data_input_name("user_password")
+      encrypted_password_value = find_response_by_data_input_name("password")
       @password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"] if encrypted_password_value.present?
     end
 
