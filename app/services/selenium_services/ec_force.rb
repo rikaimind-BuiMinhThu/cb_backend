@@ -166,9 +166,9 @@ module SeleniumServices
       # select SELECT_ADDRESS, "same", :select_address
       
       # fill_to_text_input COUPON_CODE, @coupons_code, "Fill-in user email"
-      if @coupons_code.present?
+      if @driver.find_elements(:css, COUPON_CODE).size > 0 && @coupon.present? && @is_use_coupon == "true"
         click COUPON_CODE
-        fill_to_text_input COUPON_CODE, @coupons_code, "Fill-in coupon code"
+        fill_to_text_input COUPON_CODE, @coupon, "Fill-in coupon code"
       end
 
       if @np_delivery_payment.present?
@@ -247,7 +247,19 @@ module SeleniumServices
       fill_to_text_input POSTAL_CODE_INPUT_LEFT, @data_address["value_post_code_left"], "Fill-in postal code"
       fill_to_text_input POSTAL_CODE_INPUT_RIGHT, @data_address["value_post_code_right"], "Fill-in postal code"
       fill_to_text_input ADDRESS_INPUT, @data_address["value_address"] + @data_address["value_building_name"], "Fill-in address"
-      fill_to_text_input PHONE_NUMBER_INPUT, @phone_number, "Fill-in phonenumber"
+
+      driver.find_element(:css, PHONE_NUMBER_INPUT1).clear
+      fill_to_text_input PHONE_NUMBER_INPUT1, @phone_number["value1"], "Fill-in phonenumber"
+      driver.find_element(:css, PHONE_NUMBER_INPUT2).clear
+      fill_to_text_input PHONE_NUMBER_INPUT2, @phone_number["value2"], "Fill-in phonenumber"
+      driver.find_element(:css, PHONE_NUMBER_INPUT3).clear
+      fill_to_text_input PHONE_NUMBER_INPUT3, @phone_number["value3"], "Fill-in phonenumber"
+
+      if @driver.find_elements(:css, COUPON_CODE).size > 0 && @coupon.present? && @is_use_coupon == "true"
+        click COUPON_CODE
+        fill_to_text_input COUPON_CODE, @coupon, "Fill-in coupon code"
+      end
+
       if @np_delivery_payment.present?
         select PAYMENT_METHOD, '9', :payment_method
         elsif @credit_card_payment.present?
@@ -316,7 +328,6 @@ module SeleniumServices
       @phone_number = find_response_by_data_input_name("phone_number")
       @user_email = find_response_by_data_input_name("user_email")
       @quantity_value = find_response_by_data_input_name("quantity")
-      @coupons_code = find_response_by_data_input_name("coupons_code")
       @payment_method = find_response_by_data_input_name("payment_method")
       @credit_card_payment = find_response_by_data_input_name("credit_card_payment")
       @card_data = JSON.parse(JWT.decode(@credit_card_payment, SECRET_KEY)[0]["data"]) if @credit_card_payment.present?
@@ -327,6 +338,8 @@ module SeleniumServices
       @sent_message = find_response_by_data_input_name("sent_message")
       encrypted_password_value = find_response_by_data_input_name("user_password")
       @password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"] if encrypted_password_value.present?
+      @coupon = JSON.parse(scenario.conversation)['coupon']
+      @is_use_coupon = find_response_by_data_input_name("is_use_coupon")
     end
 
     def bypass_captcha
