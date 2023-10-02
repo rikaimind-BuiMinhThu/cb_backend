@@ -133,7 +133,11 @@ class ScenarioUserResponse < ApplicationRecord
             value = conversation.dig(:text_input, :text, :value)
           when "phone_number"
             data_input_name = "phone_number"
-            value = conversation.dig(:text_input, :phone_number, :value)
+            if conversation[:text_input][:phone_number][:withHyphen]
+              value = conversation[:text_input][:phone_number].to_json
+            else
+              value = conversation.dig(:text_input, :phone_number, :value)
+            end
           when "phone"
             data_input_name = "phone"
             value = conversation.dig(:text_input, :phone_number, :value)

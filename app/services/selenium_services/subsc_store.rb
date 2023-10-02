@@ -149,7 +149,7 @@ module SeleniumServices
       @sex_value = find_response_by_data_input_name("sex")
       @birth_date = JSON.parse find_response_by_data_input_name("birth_date")
       @user_email = find_response_by_data_input_name("user_email")
-      encrypted_password_value = find_response_by_data_input_name("user_password")
+      encrypted_password_value = find_response_by_data_input_name("password")
       @password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"]
       @delivery_frequency = find_response_by_data_input_name("delivery_frequency")
       @is_regular_order = @scenario.is_use_only_regular_order || find_response_by_data_input_name("is_regular_order")
