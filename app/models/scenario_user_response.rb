@@ -191,6 +191,10 @@ class ScenarioUserResponse < ApplicationRecord
             selected = get_selected_obj_for_radio_button(conversation)
             value = selected[:value]
             data_input_name = "sex"
+          when "is_use_coupon"
+            selected = get_selected_obj_for_radio_button(conversation)
+            value = selected[:value]
+            data_input_name = "is_use_coupon"
           end
         when "card_payment_radio_button"
           selected = get_selected_obj_for_card_payment_radio_button(conversation)
