@@ -4,11 +4,11 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
   before_action :set_scenario
 
   def create
-    if (@client.tamago_repeat? || @client.shopify? || @client.subsc_store? || @client.repeat_plus?) && params[:user_id].present?
+    if !!@client && (@client.tamago_repeat? || @client.shopify? || @client.subsc_store? || @client.repeat_plus?) && params[:user_id].present?
       scenario_user_responses = ScenarioUserResponse.build_record(params)
       scenario_user_responses.each(&:save!) if scenario_user_responses.present?
       render json: { code: 1, data: scenario_user_responses }
-    elsif (@client.ec_force?) && params[:user_id].present?
+    elsif !!@client && (@client.ec_force?) && params[:user_id].present?
       scenario_user_responses = ScenarioUserResponse.build_record(params)
       scenario_user_responses.each(&:save!) if scenario_user_responses.present?
       render json: { code: 1, data: scenario_user_responses}

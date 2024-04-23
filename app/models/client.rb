@@ -20,6 +20,9 @@ class Client < ApplicationRecord
     repeat_plus: 5
   }
 
+  validates :shopify_api_key, presence: true, if: :shopify?
+  validates :cart_payment_system_id, presence: true, if: :shopify?
+
   def subscription_start_at_cannot_be_greater_than_subscription_end_at
     if subscription_start_at.present? && subscription_end_at.present? && subscription_start_at > subscription_end_at
       errors.add(:subscription_start_at, "can't be greater than subscription end at")
@@ -31,7 +34,7 @@ class Client < ApplicationRecord
   end
     
   def self.ransackable_attributes(auth_object = nil)
-    ["address", "building_name", "cart_system", "created_at", "deleted_at", "department_name", "email", "enterprise_type", "enterprise_type_2", "id", "is_instagram", "is_line", "is_tiktok", "is_web", "logo_url", "municipality", "name", "name_katakana", "note", "phone_number", "plan", "prefecture", "price", "responsible_person", "responsible_person_katakana", "status", "subscription_end_at", "subscription_start_at", "title", "unit_price_instagram", "unit_price_line", "unit_price_tiktok", "unit_price_web", "updated_at", "url", "zip_code"]
-    end
+    ["address", "building_name", "cart_system", "cart_payment_system_id", "shopify_api_key", "created_at", "deleted_at", "department_name", "email", "enterprise_type", "enterprise_type_2", "id", "is_instagram", "is_line", "is_tiktok", "is_web", "logo_url", "municipality", "name", "name_katakana", "note", "phone_number", "plan", "prefecture", "price", "responsible_person", "responsible_person_katakana", "status", "subscription_end_at", "subscription_start_at", "title", "unit_price_instagram", "unit_price_line", "unit_price_tiktok", "unit_price_web", "updated_at", "url", "zip_code"]
+  end
     
 end

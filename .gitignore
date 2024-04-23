@@ -40,3 +40,4 @@ config/environments/*.local.yml
 db/schema.rb
 Gemfile.lock
 /mysql
+.idea
