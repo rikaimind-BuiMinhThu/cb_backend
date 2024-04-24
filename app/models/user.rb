@@ -31,6 +31,6 @@ class User < ApplicationRecord
   end
 
   def self.ransackable_attributes(auth_object = nil)
-    ["address", "business_division", "can_read", "can_write", "client_id", "company_name", "created_at", "current_sign_in_at", "current_sign_in_ip", "deleted_at", "department", "email", "encrypted_password", "english_name", "full_name", "id", "job_title", "language", "last_sign_in_at", "last_sign_in_ip", "phone_number", "post_code", "remember_created_at", "reset_password_sent_at", "reset_password_token", "role", "sign_in_count", "updated_at", "url"]
+    ["address", "business_division", "can_read", "can_write", "client_id", "company_name", "created_at", "current_sign_in_at", "current_sign_in_ip", "deleted_at", "department", "email", "encrypted_password", "english_name", "full_name", "id", "job_title", "language", "last_sign_in_at", "last_sign_in_ip", "phone_number", "post_code", "remember_created_at", "reset_password_sent_at", "reset_password_token", "role", "sign_in_count", "updated_at", "url", "cart_payment_system_id", "shopify_api_key"]
   end
 end
