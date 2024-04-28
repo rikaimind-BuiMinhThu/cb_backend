@@ -369,9 +369,9 @@ module SeleniumServices
       @variation = ""
       if text_with_thumbnail_image.present?
         text_with_thumbnail_image = JSON.parse text_with_thumbnail_image
-        if text_with_thumbnail_image["products"].present?
+        if text_with_thumbnail_image["shopify"].present?
           initial_selection = text_with_thumbnail_image["initial_selection"]
-          filtered_product = text_with_thumbnail_image["products"].find { |product| product["id"] == initial_selection }
+          filtered_product = text_with_thumbnail_image["shopify"].find { |product| product["id"] == initial_selection }
           if filtered_product.present?
             @variation = filtered_product["title"]
           end
