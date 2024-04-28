@@ -8,6 +8,8 @@ class User < ApplicationRecord
   has_many :message_groups, dependent: :destroy
   has_many :user_files, dependent: :destroy
   has_many :payment_gateways, dependent: :destroy
+  has_many :user_products, dependent: :destroy
+  has_many :products, through: :user_products
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable and :omniauthable
   devise :database_authenticatable, :registerable, :validatable, :trackable,
@@ -31,6 +33,6 @@ class User < ApplicationRecord
   end
 
   def self.ransackable_attributes(auth_object = nil)
-    ["address", "business_division", "can_read", "can_write", "client_id", "company_name", "created_at", "current_sign_in_at", "current_sign_in_ip", "deleted_at", "department", "email", "encrypted_password", "english_name", "full_name", "id", "job_title", "language", "last_sign_in_at", "last_sign_in_ip", "phone_number", "post_code", "remember_created_at", "reset_password_sent_at", "reset_password_token", "role", "sign_in_count", "updated_at", "url", "cart_payment_system_id", "shopify_api_key"]
+    ["address", "business_division", "can_read", "can_write", "client_id", "company_name", "created_at", "current_sign_in_at", "current_sign_in_ip", "deleted_at", "department", "email", "encrypted_password", "english_name", "full_name", "id", "job_title", "language", "last_sign_in_at", "last_sign_in_ip", "phone_number", "post_code", "remember_created_at", "reset_password_sent_at", "reset_password_token", "role", "sign_in_count", "updated_at", "url", "cart_payment_system_id", "shop_name"]
   end
 end

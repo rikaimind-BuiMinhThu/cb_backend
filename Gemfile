@@ -36,6 +36,7 @@ gem "sidekiq"
 gem 'whenever'
 gem "sidekiq-scheduler"
 gem 'rubocop', require: false
+gem 'shopify_api'
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
