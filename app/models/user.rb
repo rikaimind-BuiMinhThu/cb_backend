@@ -10,6 +10,7 @@ class User < ApplicationRecord
   has_many :payment_gateways, dependent: :destroy
   has_many :user_products, dependent: :destroy
   has_many :products, through: :user_products
+  has_many :cart_systems
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable and :omniauthable
   devise :database_authenticatable, :registerable, :validatable, :trackable,

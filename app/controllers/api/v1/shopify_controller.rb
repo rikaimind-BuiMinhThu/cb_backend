@@ -1,6 +1,6 @@
 class Api::V1::ShopifyController < ApplicationController
-  skip_before_action :permision, only: [:cart_create, :cart_lines_add]
-  skip_before_action :verify_authenticity_token, only: [:cart_create, :cart_lines_add]
+  skip_before_action :permision, only: [:cart_create, :cart_lines_add, :webhook]
+  skip_before_action :verify_authenticity_token, only: [:cart_create, :cart_lines_add, :webhook]
   before_action :set_admin_client, only: [:product_variants, :product_variant]
   before_action :set_storefront_client, only: [:cart_create, :cart_lines_add]
 
@@ -151,6 +151,8 @@ class Api::V1::ShopifyController < ApplicationController
     cart_id = params['cart_id'] || ''
     lines = params['lines'] || []
 
+    CartSystem.create(cart_token: cart_id, uid: params[:uuid], user_id: @user.id)
+
     query = <<~GRAPHQL
       mutation cartLinesAdd($cartId: ID!, $lines: [CartLineInput!]!) {
         cartLinesAdd(cartId: $cartId, lines: $lines) {
@@ -221,6 +223,19 @@ class Api::V1::ShopifyController < ApplicationController
       lines: lines
     })
     handle_response(response)
+  end
+
+  def webhook
+    data = JSON.parse(request.body.read)
+    cart_token = "gid://shopify/Cart/#{params['cart_token']}"
+    Rails.logger.info "Received Shopify order webhook: #{data.inspect}"
+    ActionCable.server.broadcast 'ShopifyChannel', cart_token
+
+    cart_system = CartSystem.find_by_cart_token(cart_token)
+    Rails.logger.info cart_system.inspect
+
+
+    render json: { message: 'Received Shopify webhook' }, status: :ok
   end
 
   def set_admin_client
