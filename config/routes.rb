@@ -120,6 +120,7 @@ Rails.application.routes.draw do
       get '/shopify/product_variant', to: 'shopify#product_variant'
       post '/shopify/cart_create', to: 'shopify#cart_create'
       post '/shopify/cart_lines_add', to: 'shopify#cart_lines_add'
+      post '/shopify/webhook', to: 'shopify#webhook'
     end
   end
 end
