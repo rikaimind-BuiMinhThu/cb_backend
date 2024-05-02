@@ -151,7 +151,8 @@ class Api::V1::ShopifyController < ApplicationController
     cart_id = params['cart_id'] || ''
     lines = params['lines'] || []
 
-    CartSystem.create(cart_token: cart_id, uid: params[:uuid], user_id: @user.id)
+    cart_system = CartSystem.new(cart_token: cart_id, uid: params[:uuid], user_id: @user.id)
+    cart_system.save
 
     query = <<~GRAPHQL
       mutation cartLinesAdd($cartId: ID!, $lines: [CartLineInput!]!) {
@@ -232,8 +233,22 @@ class Api::V1::ShopifyController < ApplicationController
     ActionCable.server.broadcast 'ShopifyChannel', cart_token
 
     cart_system = CartSystem.find_by_cart_token(cart_token)
-    Rails.logger.info cart_system.inspect
 
+    if cart_system
+      payment_system = PaymentSystem.find_by_name("Shopify Payment")
+      cart_payment_system = CartPaymentSystem.find_by_user_id(cart_system.user_id)
+
+      if cart_payment_system
+        cart_payment_system.cart_system_ids += [cart_system.id]
+        cart_payment_system.save
+        ShopifyOrder.create(cart_payment_system_id: cart_payment_system.id, order_id: params["id"])
+      else
+        new_cart_payment_system = CartPaymentSystem.new(user_id: cart_system.user_id, payment_system_id: payment_system.id)
+        new_cart_payment_system.cart_system_ids += [cart_system.id]
+        new_cart_payment_system.save
+        ShopifyOrder.create(cart_payment_system_id: new_cart_payment_system.id, order_id: params["id"])
+      end
+    end
 
     render json: { message: 'Received Shopify webhook' }, status: :ok
   end
