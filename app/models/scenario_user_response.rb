@@ -121,10 +121,24 @@ class ScenarioUserResponse < ApplicationRecord
             value = conversation.dig(:text_input, :email_address, :value)
           when "user_name"
             data_input_name = "user_name"
-            value = conversation[:text_input][:text].to_json
+            if conversation.dig(:text_input, :text, :isSplitInput)
+              value = {
+                valueLeft: conversation.dig(:text_input, :text, :valueLeft),
+                valueRight: conversation.dig(:text_input, :text, :valueRight)
+              }.to_json
+            else
+              value = conversation[:text_input][:text].to_json
+            end
           when "user_name_kana"
             data_input_name = "user_name_kana"
-            value = conversation[:text_input][:text].to_json
+            if conversation.dig(:text_input, :text, :isSplitInput)
+              value = {
+                valueLeft: conversation.dig(:text_input, :text, :valueLeft),
+                valueRight: conversation.dig(:text_input, :text, :valueRight)
+              }.to_json
+            else
+              value = conversation[:text_input][:text].to_json
+            end
           when "first_name_kana"
             data_input_name = "first_name_kana"
             value = conversation.dig(:text_input, :text, :value)
