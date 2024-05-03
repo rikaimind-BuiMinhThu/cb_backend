@@ -245,6 +245,15 @@ class Api::V1::ShopifyController < ApplicationController
     cart_system = CartSystem.find_by_cart_token(cart_token)
 
     if cart_system
+      user = User.find_by_id(cart_system.user_id)
+      scenario_user_response = ScenarioUserResponse.find_by_user_input_id(cart_system.uid)
+
+      Order.create(
+        client_id: user.client_id,
+        scenario_id: scenario_user_response.scenario_id,
+        user_input_id: cart_system.uid,
+        bot_type: 'web'
+      )
       payment_system = PaymentSystem.find_by_name("Shopify Payment")
       cart_payment_system = CartPaymentSystem.find_by_user_id(cart_system.user_id)
 
