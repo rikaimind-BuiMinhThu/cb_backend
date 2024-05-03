@@ -5,9 +5,16 @@ class Api::V1::ShopifyController < ApplicationController
   before_action :set_storefront_client, only: [:cart_create, :cart_lines_add]
 
   def product_variants
+    cursor = params[:cursor]
+    num_products = 10
+
     query = <<~QUERY
-      query {
-        productVariants(first: 10) {
+      query ($numProducts: Int!, $cursor: String) {
+        productVariants(first: $numProducts, after: $cursor) {
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
           edges {
             node {
               id
@@ -26,7 +33,10 @@ class Api::V1::ShopifyController < ApplicationController
       }
     QUERY
 
-    response = @client.query(query:)
+    response = @client.query(query:, variables: {
+      numProducts: num_products,
+      cursor: cursor,
+    })
     handle_response(response)
   end
 
@@ -241,12 +251,12 @@ class Api::V1::ShopifyController < ApplicationController
       if cart_payment_system
         cart_payment_system.cart_system_ids += [cart_system.id]
         cart_payment_system.save
-        ShopifyOrder.create(cart_payment_system_id: cart_payment_system.id, order_id: params["id"])
+        ShopifyOrder.create(cart_payment_system_id: cart_payment_system.id, order_id: params["id"], data: data.inspect)
       else
         new_cart_payment_system = CartPaymentSystem.new(user_id: cart_system.user_id, payment_system_id: payment_system.id)
         new_cart_payment_system.cart_system_ids += [cart_system.id]
         new_cart_payment_system.save
-        ShopifyOrder.create(cart_payment_system_id: new_cart_payment_system.id, order_id: params["id"])
+        ShopifyOrder.create(cart_payment_system_id: new_cart_payment_system.id, order_id: params["id"], data: data.inspect)
       end
     end
 
