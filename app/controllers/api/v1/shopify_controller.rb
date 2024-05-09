@@ -72,25 +72,16 @@ class Api::V1::ShopifyController < ApplicationController
     email = params['email'] || ''
     first_name = params['first_name'] || ''
     last_name = params['last_name'] || ''
+    lines = params['lines'] || []
+    zip = params['zip'] || ''
+    province = params['province'] || ''
+    city = params['city'] || ''
+    address1 = params['address1'] || ''
+    address2 = params['address2'] || ''
 
     query = <<~GRAPHQL
-      mutation {
-        cartCreate(
-          input: {
-            lines: [],
-            buyerIdentity: {
-              email: "#{email}",
-              countryCode: JP,
-              deliveryAddressPreferences: {
-                deliveryAddress: {
-                  country: "JP",
-                  firstName: "#{first_name}",
-                  lastName: "#{last_name}",
-                },
-              }
-            }
-          }
-        ) {
+      mutation cartCreate($cartInput: CartInput!) {
+        cartCreate(input: $cartInput) {
           cart {
             id
             createdAt
@@ -124,10 +115,6 @@ class Api::V1::ShopifyController < ApplicationController
                 }
               }
             }
-            attributes {
-              key
-              value
-            }
             checkoutUrl
             totalQuantity
             cost {
@@ -153,7 +140,27 @@ class Api::V1::ShopifyController < ApplicationController
       }
     GRAPHQL
 
-    response = @client.query(query:)
+    response = @client.query(query:, variables: {
+      cartInput: {
+        lines: lines,
+        buyerIdentity: {
+          email: email,
+          countryCode: "JP",
+          deliveryAddressPreferences: {
+            deliveryAddress: {
+              country: "JP",
+              firstName: first_name,
+              lastName: last_name,
+              zip: zip,
+              province: province,
+              city: city,
+              address1: address1,
+              address2: address2
+            }
+          }
+        }
+      }
+    })
     handle_response(response)
   end
 
