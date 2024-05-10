@@ -93,6 +93,10 @@ class Api::V1::ShopifyController < ApplicationController
                   merchandise {
                     ... on ProductVariant {
                       id
+                      title
+                      product {
+                        title
+                      }
                     }
                   }
                 }
@@ -103,15 +107,17 @@ class Api::V1::ShopifyController < ApplicationController
               phone
               deliveryAddressPreferences {
                 ... on MailingAddress {
-                  address1
-                  address2
+                  zip
                   city
+                  province
                   provinceCode
                   countryCodeV2
-                  zip
+                  address1
+                  address2
                   firstName
                   lastName
                   name
+                  formattedArea
                 }
               }
             }
