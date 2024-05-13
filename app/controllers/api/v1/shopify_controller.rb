@@ -69,6 +69,7 @@ class Api::V1::ShopifyController < ApplicationController
   end
 
   def cart_create
+    uuid = params['uuid'] || ''
     email = params['email'] || ''
     first_name = params['first_name'] || ''
     last_name = params['last_name'] || ''
@@ -167,6 +168,13 @@ class Api::V1::ShopifyController < ApplicationController
         }
       }
     })
+
+    if response.code == 200 && response.body['data'] && response.body['data']['cartCreate'] && response.body['data']['cartCreate']["cart"] && response.body['data']['cartCreate']["cart"]['id']
+      cart_id = response.body['data']['cartCreate']["cart"]['id']
+      cart_system = CartSystem.new(cart_token: cart_id, uid: uuid, user_id: @user.id)
+      cart_system.save
+    end
+
     handle_response(response)
   end
 
