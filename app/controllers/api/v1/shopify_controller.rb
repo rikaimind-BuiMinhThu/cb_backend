@@ -253,9 +253,10 @@ class Api::V1::ShopifyController < ApplicationController
     data = JSON.parse(request.body.read)
     cart_token = "gid://shopify/Cart/#{params['cart_token']}"
     Rails.logger.info "Received Shopify order webhook: #{data.inspect}"
-    ActionCable.server.broadcast 'ShopifyChannel', cart_token
+    # ActionCable.server.broadcast 'ShopifyChannel', cart_token
 
     cart_system = CartSystem.find_by_cart_token(cart_token)
+    Rails.logger.info "Cart system: #{cart_system.inspect}"
 
     if cart_system
       user = User.find_by_id(cart_system.user_id)
