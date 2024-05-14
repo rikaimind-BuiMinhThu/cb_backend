@@ -265,6 +265,12 @@ class ScenarioUserResponse < ApplicationRecord
             data_input_name = "text_with_thumbnail_image"
             value = conversation[:product_purchase_radio_button].to_json
           end
+        when "product_purchase_select_option"
+          case conversation[:product_purchase_select_option][:type]
+          when "text_with_thumbnail_image"
+            data_input_name = "text_with_thumbnail_image"
+            value = conversation[:product_purchase_select_option].to_json
+          end
         end
         puts "=============================="
         puts "data_input_name: #{data_input_name}"
