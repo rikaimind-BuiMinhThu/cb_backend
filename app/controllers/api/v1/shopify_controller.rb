@@ -298,9 +298,17 @@ class Api::V1::ShopifyController < ApplicationController
     user = User.find(current_user.id)
     shopify_api_key = user.shopify_api_key
     shop_name = user.shop_name
+
+    #  Rikai Shopify
+    # session = ShopifyAPI::Auth::Session.new(
+    #   shop: 'deel-ja-store.myshopify.com',
+    #   access_token: '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'
+    # )
+
+    # AKS Shopify
     session = ShopifyAPI::Auth::Session.new(
-      shop: 'deel-ja-store.myshopify.com',
-      access_token: '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'
+      shop: 'aks-teletherapy.myshopify.com',
+      access_token: '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'
     )
     @client = ShopifyAPI::Clients::Graphql::Admin.new(
       session:
@@ -312,8 +320,15 @@ class Api::V1::ShopifyController < ApplicationController
     @user = @scenario.chatbot&.user
     shop_name = @user.shop_name
     storefront_access_token = @user.storefront_access_token
-    shop = 'deel-ja-store.myshopify.com'
-    storefront_access_token = '20788c67b5dcd406a24e6a19f063a013'
+
+    # Rikai Shopify
+    # shop = 'deel-ja-store.myshopify.com'
+    # storefront_access_token = '20788c67b5dcd406a24e6a19f063a013'
+    # api_version = 'unstable'
+
+    # AKS Shopify
+    shop = 'aks-teletherapy.myshopify.com'
+    storefront_access_token = '7fe4560ee50e5773276d45ed209ecb76'
     api_version = 'unstable'
 
     @client = ShopifyAPI::Clients::Graphql::Storefront.new(
