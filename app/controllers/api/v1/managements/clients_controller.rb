@@ -32,10 +32,22 @@ class Api::V1::Managements::ClientsController < ApplicationController
     @clients = Client.ransack(name_or_address_cont: params[:name], plan_eq: params[:plan]).result
     @total = @clients.size
     status_orders = [Client.statuses[:active], Client.statuses[:trial], Client.statuses[:pause], Client.statuses[:ended]]
+    date_conditions = ""
+    if @conversion_begin_date.present?
+      date_conditions = "#{date_conditions} AND orders.created_at >= #{@conversion_begin_date}"
+    end 
+    if @conversion_end_date.present?
+      date_conditions = "#{date_conditions} AND orders.created_at <= #{@conversion_end_date}"
+    end
     @clients = @clients.select(:id, :logo_url, :name, :plan, :price, :subscription_start_at,
                                :subscription_end_at, :address, :prefecture, :building_name,
                                :status, :municipality, :is_instagram, :is_web, :is_line, :is_tiktok,
-                               :unit_price_instagram, :unit_price_web, :unit_price_line, :unit_price_tiktok)
+                               :unit_price_instagram, :unit_price_web, :unit_price_line, :unit_price_tiktok,
+                              "(SELECT COUNT(*) FROM orders WHERE orders.client_id = clients.id AND orders.bot_type = 0 #{date_conditions}) AS bot_cv_instagram",
+                              "(SELECT COUNT(*) FROM orders WHERE orders.client_id = clients.id AND orders.bot_type = 1 #{date_conditions}) AS bot_cv_web",
+                              "(SELECT COUNT(*) FROM orders WHERE orders.client_id = clients.id AND orders.bot_type = 2 #{date_conditions}) AS bot_cv_line",
+                              "(SELECT COUNT(*) FROM orders WHERE orders.client_id = clients.id AND orders.bot_type = 3 #{date_conditions}) AS bot_cv_tiktok",
+                              )
                        .order(Arel.sql("field(status, #{status_orders.join(',')})"), created_at: :desc)
                        .page(params[:page])
     # render json: {code: 1, data: {clients: clients, total: total}}

@@ -33,6 +33,8 @@ Rails.application.routes.draw do
         get "chatbots/:id/design_settings", :to => 'chatbots#get_design_settings'
         post "chatbots/:id/design_settings", :to => 'chatbots#update_design_settings'
         get "chatbots/:id/sdk", :to => 'chatbots#webchat_sdk'
+        get "chat_log/:bot_id/list", :to => 'chat_log#index'
+        get "chat_log/:sc_id/:user_id", :to => 'chat_log#show'
         get "get_list_chatbot_by_client", :to => 'chatbots#get_list_chatbot_by_client'
         get "get_list_scenario_by_client", :to => 'scenarios#get_list_scenario_by_client'
         resources :user_chatbots, only: [:index, :create, :update, :destroy]
@@ -43,10 +45,13 @@ Rails.application.routes.draw do
         resources :client_emails, only: [:index, :create, :update, :destroy]
         resources :file, only: [:index, :create, :destroy]
         post "/file/upload" => "file#presinged_aws"
-        resources :push_messages, only: [:index, :create, :show, :update, :destroy]
+        resources :push_message_histories, only: [:index]
         patch "push_messages/:id/subscribe" => "push_messages#subscribe"
         patch "push_messages/:id/unsubscribe" => "push_messages#unsubscribe"
         resources :history_click_urls, only: [:index, :create, :show, :update, :destroy]
+        resources :sms_templates, only: [:index, :create, :show, :update, :destroy]
+        resources :plans, only: [:index, :show, :update, :create, :destroy]
+        resources :payment_histories, only: [:show, :update, :create, :destroy]
       end
       namespace :message_managements do
         get "message_groups/data_analyst", :to => 'message_groups#data_analyst'
@@ -112,6 +117,11 @@ Rails.application.routes.draw do
           end
         end
       end
+      get '/shopify/product_variants', to: 'shopify#product_variants'
+      get '/shopify/product_variant', to: 'shopify#product_variant'
+      post '/shopify/cart_create', to: 'shopify#cart_create'
+      post '/shopify/cart_lines_add', to: 'shopify#cart_lines_add'
+      post '/shopify/webhook', to: 'shopify#webhook'
     end
   end
 end

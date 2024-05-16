@@ -15,6 +15,7 @@ module InstagramChatbot
 
     config.active_record.time_zone_aware_attributes = [:datetime]
     config.active_job.queue_adapter = :sidekiq
+    # config.web_console.permissions = '34.135.112.75'
 
     # Configuration for the application, engines, and railties goes here.
     #

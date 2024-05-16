@@ -89,7 +89,6 @@ class ScenarioUserResponse < ApplicationRecord
     scenario_id = params[:scenario_id]
     user_id = params[:user_id]
     built_result = []
-
     puts "-----------------------------------------------------"
     if params[:message][:conditions].present? && params[:message][:message_content].first[:text_input][:save_input_content] != 'pin_code'
       scenario = Scenario.find(scenario_id)
@@ -109,7 +108,7 @@ class ScenarioUserResponse < ApplicationRecord
         puts "-----------------------------conversion: #{conversation[:type]}"
         data_input_name = nil
         value = nil
-
+        
         case conversation[:type]
         when "text_input"
           puts "-----------------------------conversion: #{conversation[:text_input][:save_input_content]}"
@@ -117,12 +116,29 @@ class ScenarioUserResponse < ApplicationRecord
           when "user_email"
             data_input_name = "user_email"
             value = conversation.dig(:text_input, :email_address, :value)
+          when "email"
+            data_input_name = "email"
+            value = conversation.dig(:text_input, :email_address, :value)
           when "user_name"
             data_input_name = "user_name"
-            value = conversation[:text_input][:text].to_json
+            if conversation.dig(:text_input, :text, :isSplitInput)
+              value = {
+                valueLeft: conversation.dig(:text_input, :text, :valueLeft),
+                valueRight: conversation.dig(:text_input, :text, :valueRight)
+              }.to_json
+            else
+              value = conversation[:text_input][:text].to_json
+            end
           when "user_name_kana"
             data_input_name = "user_name_kana"
-            value = conversation[:text_input][:text].to_json
+            if conversation.dig(:text_input, :text, :isSplitInput)
+              value = {
+                valueLeft: conversation.dig(:text_input, :text, :valueLeft),
+                valueRight: conversation.dig(:text_input, :text, :valueRight)
+              }.to_json
+            else
+              value = conversation[:text_input][:text].to_json
+            end
           when "first_name_kana"
             data_input_name = "first_name_kana"
             value = conversation.dig(:text_input, :text, :value)
@@ -131,9 +147,16 @@ class ScenarioUserResponse < ApplicationRecord
             value = conversation.dig(:text_input, :text, :value)
           when "phone_number"
             data_input_name = "phone_number"
+            if conversation[:text_input][:phone_number][:withHyphen]
+              value = conversation[:text_input][:phone_number].to_json
+            else
+              value = conversation.dig(:text_input, :phone_number, :value)
+            end
+          when "phone"
+            data_input_name = "phone"
             value = conversation.dig(:text_input, :phone_number, :value)
           when "password"
-            data_input_name = "user_password"
+            data_input_name = "password"
             value = conversation.dig(:text_input, :password_confirmation, :value)
           when "quantity"
             data_input_name = "quantity"
@@ -154,6 +177,9 @@ class ScenarioUserResponse < ApplicationRecord
         when "zip_code_address"
           data_input_name = "zip_code_address"
           value = conversation[:zip_code_address].to_json
+        when "agree_term"
+          data_input_name = "agree_term"
+          value = true
         when "radio_button"
           case conversation[:radio_button][:save_input_content]
           when "is_regular_order"
@@ -179,6 +205,10 @@ class ScenarioUserResponse < ApplicationRecord
             selected = get_selected_obj_for_radio_button(conversation)
             value = selected[:value]
             data_input_name = "sex"
+          when "is_use_coupon"
+            selected = get_selected_obj_for_radio_button(conversation)
+            value = selected[:value]
+            data_input_name = "is_use_coupon"
           end
         when "card_payment_radio_button"
           selected = get_selected_obj_for_card_payment_radio_button(conversation)
@@ -188,11 +218,13 @@ class ScenarioUserResponse < ApplicationRecord
             value = conversation[:card_payment_radio_button].to_json
           when 'paypal'
             data_input_name = "paypal_payment"
+            value = selected[:value]
           when 'komoju'
             data_input_name = "komoju_payment"
             value = conversation[:card_payment_radio_button].to_json
           when 'paidy'
             data_input_name = "paidy_payment"
+            value = selected[:value]
           else
             data_input_name = "np_delivery_payment"
             value = selected[:value]
@@ -227,16 +259,30 @@ class ScenarioUserResponse < ApplicationRecord
             data_input_name = "sent_message"
             value = conversation[:textarea][:text_input][:value]
           end
+        when "product_purchase_radio_button"
+          case conversation[:product_purchase_radio_button][:type]
+          when "text_with_thumbnail_image"
+            data_input_name = "text_with_thumbnail_image"
+            value = conversation[:product_purchase_radio_button].to_json
+          end
+        when "product_purchase_select_option"
+          case conversation[:product_purchase_select_option][:type]
+          when "text_with_thumbnail_image"
+            data_input_name = "text_with_thumbnail_image"
+            value = conversation[:product_purchase_select_option].to_json
+          end
         end
-          puts "=============================="
-          puts "data_input_name: #{data_input_name}"
-          next unless data_input_name.present?
-          new_record = self.new(
-            scenario_id: scenario_id,
-            user_input_id: user_id,
-            data_input_name: data_input_name,
-            value: value,
-          )
+        puts "=============================="
+        puts "data_input_name: #{data_input_name}"
+        next unless data_input_name.present?
+        new_record = self.new(
+          scenario_id: scenario_id,
+          user_input_id: user_id,
+          data_input_name: data_input_name,
+          value: value,
+          ui_type: conversation[:type],
+          message_id: params[:message][:id],
+        )
 
           built_result.push(new_record)
         end
@@ -267,7 +313,7 @@ class ScenarioUserResponse < ApplicationRecord
   text :zip_code_address, is_encrypt: false
   string :phone_number, is_encrypt: false
   string :user_email, is_encrypt: false
-  string :user_password, is_encrypt: true
+  string :password, is_encrypt: true
   integer :sex, is_encrypt: false
   text :birth_date, is_encrypt: false
   text :credit_card_payment, is_encrypt: true
@@ -283,4 +329,5 @@ class ScenarioUserResponse < ApplicationRecord
   text :paypal_payment, is_encrypt: true
   text :paidy_payment, is_encrypt: false
   string :pin_code, is_encrypt: false
+  text :text_with_thumbnail_image, is_encrypt: false
 end
