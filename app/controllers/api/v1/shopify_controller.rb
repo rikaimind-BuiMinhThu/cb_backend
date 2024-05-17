@@ -71,10 +71,11 @@ class Api::V1::ShopifyController < ApplicationController
   def cart_create
     uuid = params['uuid'] || ''
     email = params['email'] || ''
+    phone = params['phone'] || ''
     first_name = params['first_name'] || ''
     last_name = params['last_name'] || ''
     lines = params['lines'] || []
-    zip = params['zip'] || ''
+    zip = params['zip'] || ""
     province = params['province'] || ''
     city = params['city'] || ''
     address1 = params['address1'] || ''
@@ -119,6 +120,7 @@ class Api::V1::ShopifyController < ApplicationController
                   lastName
                   name
                   formattedArea
+                  phone
                 }
               }
             }
@@ -162,7 +164,8 @@ class Api::V1::ShopifyController < ApplicationController
               province: province,
               city: city,
               address1: address1,
-              address2: address2
+              address2: address2,
+              phone: phone
             }
           }
         }
