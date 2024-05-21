@@ -69,11 +69,13 @@ class Api::V1::ShopifyController < ApplicationController
   end
 
   def cart_create
+    uuid = params['uuid'] || ''
     email = params['email'] || ''
+    phone = params['phone'] || ''
     first_name = params['first_name'] || ''
     last_name = params['last_name'] || ''
     lines = params['lines'] || []
-    zip = params['zip'] || ''
+    zip = params['zip'] || ""
     province = params['province'] || ''
     city = params['city'] || ''
     address1 = params['address1'] || ''
@@ -118,6 +120,7 @@ class Api::V1::ShopifyController < ApplicationController
                   lastName
                   name
                   formattedArea
+                  phone
                 }
               }
             }
@@ -161,12 +164,20 @@ class Api::V1::ShopifyController < ApplicationController
               province: province,
               city: city,
               address1: address1,
-              address2: address2
+              address2: address2,
+              phone: phone
             }
           }
         }
       }
     })
+
+    if response.code == 200 && response.body['data'] && response.body['data']['cartCreate'] && response.body['data']['cartCreate']["cart"] && response.body['data']['cartCreate']["cart"]['id']
+      cart_id = response.body['data']['cartCreate']["cart"]['id']
+      cart_system = CartSystem.new(cart_token: cart_id, uid: uuid, user_id: @user.id)
+      cart_system.save
+    end
+
     handle_response(response)
   end
 
@@ -253,9 +264,10 @@ class Api::V1::ShopifyController < ApplicationController
     data = JSON.parse(request.body.read)
     cart_token = "gid://shopify/Cart/#{params['cart_token']}"
     Rails.logger.info "Received Shopify order webhook: #{data.inspect}"
-    ActionCable.server.broadcast 'ShopifyChannel', cart_token
+    # ActionCable.server.broadcast 'ShopifyChannel', cart_token
 
     cart_system = CartSystem.find_by_cart_token(cart_token)
+    Rails.logger.info "Cart system: #{cart_system.inspect}"
 
     if cart_system
       user = User.find_by_id(cart_system.user_id)
@@ -289,9 +301,17 @@ class Api::V1::ShopifyController < ApplicationController
     user = User.find(current_user.id)
     shopify_api_key = user.shopify_api_key
     shop_name = user.shop_name
+
+    #  Rikai Shopify
+    # session = ShopifyAPI::Auth::Session.new(
+    #   shop: 'deel-ja-store.myshopify.com',
+    #   access_token: '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'
+    # )
+
+    # AKS Shopify
     session = ShopifyAPI::Auth::Session.new(
-      shop: 'deel-ja-store.myshopify.com',
-      access_token: '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'
+      shop: 'aks-teletherapy.myshopify.com',
+      access_token: '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'
     )
     @client = ShopifyAPI::Clients::Graphql::Admin.new(
       session:
@@ -303,8 +323,15 @@ class Api::V1::ShopifyController < ApplicationController
     @user = @scenario.chatbot&.user
     shop_name = @user.shop_name
     storefront_access_token = @user.storefront_access_token
-    shop = 'deel-ja-store.myshopify.com'
-    storefront_access_token = '20788c67b5dcd406a24e6a19f063a013'
+
+    # Rikai Shopify
+    # shop = 'deel-ja-store.myshopify.com'
+    # storefront_access_token = '20788c67b5dcd406a24e6a19f063a013'
+    # api_version = 'unstable'
+
+    # AKS Shopify
+    shop = 'aks-teletherapy.myshopify.com'
+    storefront_access_token = '7fe4560ee50e5773276d45ed209ecb76'
     api_version = 'unstable'
 
     @client = ShopifyAPI::Clients::Graphql::Storefront.new(

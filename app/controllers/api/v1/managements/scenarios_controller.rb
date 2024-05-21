@@ -32,7 +32,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     all_variables = Variable.select(:variable_name, :default_value)
                             .where(chatbot_id: scenario.chatbot_id)
 
-    chatbot = Chatbot.select(:id, :main_color, :icon, :title, :subtitle, :withdrawal_prevention_status,
+    chatbot = Chatbot.select(:id, :main_color, :main_color_other, :icon, :title, :subtitle, :withdrawal_prevention_status,
                              :withdrawal_prevention_link_url, :withdrawal_prevention_image_url, :design_settings)
                      .find_by(id: scenario.chatbot_id)
 
@@ -50,6 +50,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
       chatbot: {
         id: chatbot.id,
         main_color: chatbot.main_color,
+        main_color_other: chatbot.main_color_other,
         icon: chatbot.icon,
         title: chatbot.title,
         subtitle: chatbot.subtitle,

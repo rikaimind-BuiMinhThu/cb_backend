@@ -38,7 +38,7 @@ class Chatbot < ApplicationRecord
   validates :title, presence: true
   validates :subtitle, presence: true
   validates :design_type, presence: true
-  validates :main_color, presence: true
+  # validates :main_color, presence: true
   validates :status, presence: true
   validates :bot_name, presence: true
   validates :np_maximum_amount, presence: true, if: -> {need_np_deferred_payment_yes?}
