@@ -266,7 +266,8 @@ class Api::V1::ShopifyController < ApplicationController
     Rails.logger.info "Received Shopify order webhook: #{data.inspect}"
     # ActionCable.server.broadcast 'ShopifyChannel', cart_token
 
-    cart_system = CartSystem.find_by_cart_token(cart_token)
+    # cart_system = CartSystem.find_by_cart_token(cart_token)
+    cart_system = CartSystem.where('cart_token LIKE ?', "%#{cart_token}%").first
     Rails.logger.info "Cart system: #{cart_system.inspect}"
 
     if cart_system
@@ -308,10 +309,16 @@ class Api::V1::ShopifyController < ApplicationController
     #   access_token: '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'
     # )
 
-    # AKS Shopify
+    # # AKS Shopify
+    # session = ShopifyAPI::Auth::Session.new(
+    #   shop: 'aks-teletherapy.myshopify.com',
+    #   access_token: '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'
+    # )
+
+    # Playland Shopify
     session = ShopifyAPI::Auth::Session.new(
-      shop: 'aks-teletherapy.myshopify.com',
-      access_token: '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'
+      shop: Rails.application.secrets.shop_name,
+      access_token: Rails.application.secrets.access_token
     )
     @client = ShopifyAPI::Clients::Graphql::Admin.new(
       session:
@@ -330,8 +337,13 @@ class Api::V1::ShopifyController < ApplicationController
     # api_version = 'unstable'
 
     # AKS Shopify
-    shop = 'aks-teletherapy.myshopify.com'
-    storefront_access_token = '7fe4560ee50e5773276d45ed209ecb76'
+    # shop = 'aks-teletherapy.myshopify.com'
+    # storefront_access_token = '7fe4560ee50e5773276d45ed209ecb76'
+    # api_version = 'unstable'
+
+    # Playland Shopify
+    shop = Rails.application.secrets.shop_name
+    storefront_access_token = Rails.application.secrets.storefront_access_token
     api_version = 'unstable'
 
     @client = ShopifyAPI::Clients::Graphql::Storefront.new(
