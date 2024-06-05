@@ -267,7 +267,7 @@ class Api::V1::ShopifyController < ApplicationController
     # ActionCable.server.broadcast 'ShopifyChannel', cart_token
 
     # cart_system = CartSystem.find_by_cart_token(cart_token)
-    cart_system = CartSystem.where(cart_token: cart_token).first
+    cart_system = CartSystem.where('cart_token LIKE ?', "%#{cart_token}%").first
     Rails.logger.info "Cart system: #{cart_system.inspect}"
 
     if cart_system
