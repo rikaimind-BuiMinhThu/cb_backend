@@ -34,10 +34,10 @@ class Api::V1::Managements::ClientsController < ApplicationController
     status_orders = [Client.statuses[:active], Client.statuses[:trial], Client.statuses[:pause], Client.statuses[:ended]]
     date_conditions = ""
     if @conversion_begin_date.present?
-      date_conditions = "#{date_conditions} AND orders.created_at >= #{@conversion_begin_date}"
+      date_conditions = "#{date_conditions} AND orders.created_at >= '#{@conversion_begin_date}'"
     end 
     if @conversion_end_date.present?
-      date_conditions = "#{date_conditions} AND orders.created_at <= #{@conversion_end_date}"
+      date_conditions = "#{date_conditions} AND orders.created_at <= '#{@conversion_end_date}'"
     end
     @clients = @clients.select(:id, :logo_url, :name, :plan, :price, :subscription_start_at,
                                :subscription_end_at, :address, :prefecture, :building_name,
