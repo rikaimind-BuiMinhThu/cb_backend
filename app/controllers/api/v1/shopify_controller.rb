@@ -293,6 +293,11 @@ class Api::V1::ShopifyController < ApplicationController
         new_cart_payment_system.save
         ShopifyOrder.create(cart_payment_system_id: new_cart_payment_system.id, order_id: params["id"], data: data.inspect)
       end
+
+      scenario = Scenario.find_by(id: scenario_user_response.scenario_id)
+      analytic_scenario_data = "pc_conversion"
+      analytic_scenario = AnalyticScenario.new(type_of_analytic: analytic_scenario_data, scenario: scenario)
+      analytic_scenario.save
     end
 
     render json: { message: 'Received Shopify webhook' }, status: :ok
