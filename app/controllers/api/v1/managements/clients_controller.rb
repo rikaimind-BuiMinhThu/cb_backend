@@ -27,8 +27,8 @@ class Api::V1::Managements::ClientsController < ApplicationController
 
   def index
     return render json: {code: 2, message: "No permission"} unless current_user.admin_deel?
-    @conversion_begin_date = params[:conversion_begin_date].to_date rescue ''
-    @conversion_end_date = params[:conversion_end_date].to_date rescue ''
+    @conversion_begin_date = params[:conversion_begin_date].to_date.beginning_of_day rescue ''
+    @conversion_end_date = params[:conversion_end_date].to_date.end_of_day rescue ''
     @clients = Client.ransack(name_or_address_cont: params[:name], plan_eq: params[:plan]).result
     @total = @clients.size
     status_orders = [Client.statuses[:active], Client.statuses[:trial], Client.statuses[:pause], Client.statuses[:ended]]
