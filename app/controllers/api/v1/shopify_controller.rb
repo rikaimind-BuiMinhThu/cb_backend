@@ -260,12 +260,27 @@ class Api::V1::ShopifyController < ApplicationController
     handle_response(response)
   end
 
+  def detect_device(user_agent)
+    
+    if user_agent =~ /Mobile|Android|iPhone|iPod/i
+      return "smartphone_conversion"
+    
+    elsif user_agent =~ /iPad|Tablet/i
+      return "tablet_conversion"
+    
+    else
+      return "pc_conversion"
+    end
+  end
+
+
   def webhook
     data = JSON.parse(request.body.read)
     cart_token = "gid://shopify/Cart/#{params['cart_token']}"
     Rails.logger.info "Received Shopify order webhook: #{data.inspect}"
     # ActionCable.server.broadcast 'ShopifyChannel', cart_token
-
+    user_agent = data["client_details"]["user_agent"]
+    device_conversion = detect_device(user_agent)
     # cart_system = CartSystem.find_by_cart_token(cart_token)
     cart_system = CartSystem.where('cart_token LIKE ?', "%#{cart_token}%").first
     Rails.logger.info "Cart system: #{cart_system.inspect}"
@@ -295,7 +310,7 @@ class Api::V1::ShopifyController < ApplicationController
       end
 
       scenario = Scenario.find_by(id: scenario_user_response.scenario_id)
-      analytic_scenario_data = "pc_conversion"
+      analytic_scenario_data = device_conversion
       analytic_scenario = AnalyticScenario.new(type_of_analytic: analytic_scenario_data, scenario: scenario)
       analytic_scenario.save
     end
