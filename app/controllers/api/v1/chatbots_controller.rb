@@ -52,23 +52,18 @@ class Api::V1::ChatbotsController < ApplicationController
 
   def cart_system
     chatbot_id = params[:id]
-    chatbot = Chatbot.find_by(id: chatbot_id)
-    
+    chatbot = Chatbot.find_by(id: chatbot_id)    
     if chatbot.blank?
       return render json: { code: 2, message: "Chatbot not found" }
     else
-      user = User.find_by(id: chatbot.user_id)
-      
+      user = User.find_by(id: chatbot.user_id)      
       if user.blank?
         return render json: { code: 2, message: "User not found" }
-      end
-  
-      client = Client.find_by(id: user.client_id)
-      
+      end  
+      client = Client.find_by(id: user.client_id)      
       if client.blank?
         return render json: { code: 2, message: "Client not found" }
-      end
-  
+      end  
       return render json: { code: 1, data: {
         client_id: client.id,
         cart_system: client.cart_system
