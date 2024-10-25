@@ -167,7 +167,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     if scenario.blank?
       return render json: { code: 2, message: "Scenario not found" }
     end  
-    render json: {code: 1,data: scenario,cart_system: bot.user&.client&.cart_system}
+    render json: { code: 1, data: scenario, cart_system: bot.user&.client&.cart_system }
   end
 
   def get_list_scenario_by_client
