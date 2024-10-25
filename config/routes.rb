@@ -116,6 +116,7 @@ Rails.application.routes.draw do
           end
         end
       end
+      get 'chatbots/:id/cart_system', :to => 'chatbots#cart_system'
       get '/shopify/product_variants', to: 'shopify#product_variants'
       get '/shopify/product_variant', to: 'shopify#product_variant'
       post '/shopify/cart_create', to: 'shopify#cart_create'
