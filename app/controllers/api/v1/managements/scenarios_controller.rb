@@ -161,11 +161,19 @@ class Api::V1::Managements::ScenariosController < ApplicationController
   end
 
   def get_scenario_selected
-    chatbot = Chatbot.find_by(id: params[:chatbot_id])
+    chatbot = Chatbot.find_by(id: params[:chatbot_id])  
+    user = User.find_by(id: chatbot.user_id)      
+    if user.blank?
+      return render json: { code: 2, message: "User not found" }
+    end  
+    client = Client.find_by(id: user.client_id)      
+    if client.blank?
+      return render json: { code: 2, message: "Client not found" }
+    end    
     return render json: {code: 2, message: "Chatbot not found"} if chatbot.blank?
     scenario = Scenario.select(:id, :name)
                        .find_by(id: chatbot.scenario_selected)
-    render json: {code: 1, data: scenario}
+    render json: {code: 1, data: scenario, cart_system: client.cart_system}
   end
 
   def get_list_scenario_by_client
