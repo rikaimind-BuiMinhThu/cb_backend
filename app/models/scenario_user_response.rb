@@ -90,20 +90,23 @@ class ScenarioUserResponse < ApplicationRecord
     user_id = params[:user_id]
     built_result = []
     puts "-----------------------------------------------------"
-    if params[:message][:conditions].present? && params[:message][:message_content].first[:text_input][:save_input_content] != 'pin_code'
+    if params[:message][:conditions].present? && params[:message][:conditions].first[:inputCondition] == 'paypal' && params[:message][:message_content].first[:text_input][:save_input_content] != 'pin_code'
       scenario = Scenario.find(scenario_id)
       conversations = scenario.scenario_user_responses.where(user_input_id: user_id)
       condition = params[:message][:conditions].first
       user_response = nil
-      if condition['inputCondition'] == 'paypal'
-        user_response = conversations.find_by(data_input_name: 'paypal_payment')
-        user_response.update(value: params[:message][:message_content].to_json)
-      elsif condition['inputCondition'] == 'paidy'
-        user_response = conversations.find_by(data_input_name: 'paidy_payment')
-        user_response.update(value: params[:message][:message_content].to_json)
-      end
-      [user_response]
-    else
+      user_response = conversations.find_by(data_input_name: 'paypal_payment')
+      user_response.update(value: params[:message][:message_content].to_json)
+      built_result.push(user_response)
+    elsif params[:message][:conditions].present? && params[:message][:conditions].first[:inputCondition] == 'paidy' && params[:message][:message_content].first[:text_input][:save_input_content] != 'pin_code'
+      scenario = Scenario.find(scenario_id)
+      conversations = scenario.scenario_user_responses.where(user_input_id: user_id)
+      condition = params[:message][:conditions].first
+      user_response = nil  
+      user_response = conversations.find_by(data_input_name: 'paidy_payment')
+      user_response.update(value: params[:message][:message_content].to_json)
+      built_result.push(user_response)
+    else  
       params[:message][:message_content].each do |conversation|
         puts "-----------------------------conversion: #{conversation[:type]}"
         data_input_name = nil
