@@ -1,4 +1,4 @@
-class Api::V1::ScenarioUsers::ConversationsController < ApplicationController
+class Api::V1::ScenarioUsers::ConversionsController < ApplicationController
   skip_before_action :permision
   skip_before_action :verify_authenticity_token
 

@@ -115,7 +115,7 @@ Rails.application.routes.draw do
             post :create_order
           end
         end
-        resources :conversations, only: [:create]
+        resources :conversions, only: [:create]
       end
       get '/shopify/product_variants', to: 'shopify#product_variants'
       get '/shopify/product_variant', to: 'shopify#product_variant'
