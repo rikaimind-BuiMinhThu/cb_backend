@@ -3,28 +3,29 @@ class Api::V1::ScenarioUsers::ConversationsController < ApplicationController
   skip_before_action :verify_authenticity_token
 
   def create
-    params_to_check = %i[scenario_id client_id bot_type user_input_id]
+    permitted = order_params
 
-    params_to_check.each do |param|
-      if params[param].to_s.strip.empty?
-        render json: { message: "#{param} is required!" },
-               status: :bad_request and return
-      end
+    # Validate presence of required parameters
+    required_params = %i[scenario_id bot_type client_id user_input_id]
+    missing_params = required_params.select { |param| permitted[param].blank? }
+
+    if missing_params.any?
+      return render json: { message: "#{missing_params.join(', ')} #{missing_params.size > 1 ? 'are' : 'is'} required!" },
+                    status: :bad_request
     end
 
-    begin
-      @order = Order.create!(
-        scenario_id: params[:scenario_id],
-        bot_type: params[:bot_type],
-        client_id: params[:client_id],
-        user_input_id: params[:user_input_id]
-      )
+    # Create Order with the permitted parameters
+    @order = Order.create!(permitted)
+    render json: { message: 'Order created successfully' }, status: :ok
+  rescue StandardError => e
+    Rails.logger.error "An error occurred: #{e.message}"
+    render json: { message: e.message }, status: :internal_server_error
+  end
 
-      render json: { message: 'Order created successfully' }, status: :ok
-    rescue StandardError => e
-      render json: { message: e.message }, status: :internal_server_error
+  private
 
-      Rails.logger.error "An error occurred: #{e.message}"
-    end
+  # Only allow required fields
+  def order_params
+    params.permit(:scenario_id, :bot_type, :client_id, :user_input_id)
   end
 end
