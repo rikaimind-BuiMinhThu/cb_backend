@@ -58,7 +58,9 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         withdrawal_prevention_link_url: chatbot.withdrawal_prevention_link_url,
         withdrawal_prevention_image_url: chatbot.withdrawal_prevention_image_url,
         is_used_custom_css: scenario.is_used_custom_css,
-        custom_css_content: scenario.custom_css_content
+        custom_css_content: scenario.custom_css_content,
+        is_used_err_msg_by_js: scenario.is_used_err_msg_by_js,
+        err_msg_js_code: scenario.err_msg_js_code
       },
       all_variables: all_variables,
       design_settings: chatbot.design_settings ? JSON.parse(chatbot.design_settings) : ""
@@ -125,6 +127,8 @@ class Api::V1::Managements::ScenariosController < ApplicationController
       @scenario.is_used_fukushashiki = params[:is_used_fukushashiki]
       @scenario.is_used_custom_css = params[:is_used_custom_css]
       @scenario.custom_css_content = params[:custom_css_content]
+      @scenario.is_used_err_msg_by_js = params[:is_used_err_msg_by_js]
+      @scenario.err_msg_js_code = params[:err_msg_js_code]
 
       @scenario.save!
     rescue StandardError => error
