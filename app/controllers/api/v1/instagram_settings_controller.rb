@@ -14,6 +14,13 @@ class Api::V1::InstagramSettingsController < ApplicationController
     render json: {code: 1, data: instagram_account}
   end
 
+  def logout_fb
+    ig_account = InstagramAccount.find_by(ig_id: params[:ig_id], user_id: current_user.id)
+    ig_account.update(page_access_token: nil) if ig_account
+    return render json: {code: 2, message: "Cannot find instagram account"} if ig_account.blank?
+    render json: {code: 1, message: "Logout success"}
+  end
+
   def update
     instagram_account = InstagramAccount.find_by(id: params[:id])
     return render json: {code: 2, message: "Cannot find instagram account"} if instagram_account.blank?
