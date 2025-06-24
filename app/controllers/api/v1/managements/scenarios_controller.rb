@@ -60,7 +60,11 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         is_used_custom_css: scenario.is_used_custom_css,
         custom_css_content: scenario.custom_css_content,
         is_used_err_msg_by_js: scenario.is_used_err_msg_by_js,
-        err_msg_js_code: scenario.err_msg_js_code
+        err_msg_js_code: scenario.err_msg_js_code,
+        is_used_custom_js_code: scenario.is_used_custom_js_code,
+        head_custom_js_code: scenario.head_custom_js_code,
+        top_body_custom_js_code: scenario.top_body_custom_js_code,
+        bottom_body_custom_js_code: scenario.bottom_body_custom_js_code
       },
       all_variables: all_variables,
       design_settings: chatbot.design_settings ? JSON.parse(chatbot.design_settings) : ""
@@ -129,7 +133,10 @@ class Api::V1::Managements::ScenariosController < ApplicationController
       @scenario.custom_css_content = params[:custom_css_content]
       @scenario.is_used_err_msg_by_js = params[:is_used_err_msg_by_js]
       @scenario.err_msg_js_code = params[:err_msg_js_code]
-
+      @scenario.is_used_custom_js_code = params[:is_used_custom_js_code]
+      @scenario.head_custom_js_code = params[:head_custom_js_code]
+      @scenario.top_body_custom_js_code = params[:top_body_custom_js_code]
+      @scenario.bottom_body_custom_js_code = params[:bottom_body_custom_js_code]
       @scenario.save!
     rescue StandardError => error
       Rails.logger.debug(error)

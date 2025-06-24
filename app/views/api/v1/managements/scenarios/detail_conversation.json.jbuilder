@@ -8,6 +8,10 @@ json.data do
   json.is_used_custom_css @scenario.is_used_custom_css
   json.is_used_err_msg_by_js @scenario.is_used_err_msg_by_js
   json.err_msg_js_code @scenario.err_msg_js_code
+  json.is_used_custom_js_code @scenario.is_used_custom_js_code
+  json.head_custom_js_code @scenario.head_custom_js_code
+  json.top_body_custom_js_code @scenario.top_body_custom_js_code
+  json.bottom_body_custom_js_code @scenario.bottom_body_custom_js_code
   json.tamagoLandingPageUrl @landing_page_product_url
   json.conversation JSON.parse(@scenario.conversation) unless @scenario.conversation.blank?
 end
