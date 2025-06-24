@@ -62,7 +62,6 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         is_used_err_msg_by_js: scenario.is_used_err_msg_by_js,
         err_msg_js_code: scenario.err_msg_js_code,
         is_used_custom_js_code: scenario.is_used_custom_js_code,
-        timer_config: scenario.timer_config ? JSON.parse(scenario.timer_config) : "",
         head_custom_js_code: scenario.head_custom_js_code,
         top_body_custom_js_code: scenario.top_body_custom_js_code,
         bottom_body_custom_js_code: scenario.bottom_body_custom_js_code
@@ -138,7 +137,6 @@ class Api::V1::Managements::ScenariosController < ApplicationController
       @scenario.head_custom_js_code = params[:head_custom_js_code]
       @scenario.top_body_custom_js_code = params[:top_body_custom_js_code]
       @scenario.bottom_body_custom_js_code = params[:bottom_body_custom_js_code]
-      @scenario.timer_config = JSON.generate(params[:timer_config].as_json) if params[:timer_config].present?
       @scenario.save!
     rescue StandardError => error
       Rails.logger.debug(error)
