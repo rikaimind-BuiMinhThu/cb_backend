@@ -12,6 +12,7 @@ json.data do
   json.head_custom_js_code @scenario.head_custom_js_code
   json.top_body_custom_js_code @scenario.top_body_custom_js_code
   json.bottom_body_custom_js_code @scenario.bottom_body_custom_js_code
+  json.timer_config JSON.parse(@scenario.timer_config) unless @scenario.timer_config.blank?
   json.tamagoLandingPageUrl @landing_page_product_url
   json.conversation JSON.parse(@scenario.conversation) unless @scenario.conversation.blank?
 end
