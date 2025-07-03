@@ -176,6 +176,9 @@ class ScenarioUserResponse < ApplicationRecord
           when "pin_code"
             data_input_name = "pin_code"
             value = conversation.dig(:text_input, :text, :value)
+          else 
+            data_input_name = conversation.dig(:text_input, :type)
+            value = self.get_input_text_value(conversation.dig(:text_input))
           end
         when "zip_code_address"
           data_input_name = "zip_code_address"
@@ -286,15 +289,37 @@ class ScenarioUserResponse < ApplicationRecord
           ui_type: conversation[:type],
           message_id: params[:message][:id],
         )
-
-          built_result.push(new_record)
-        end
+        built_result.push(new_record)
+      end
 
       built_result
     end
   end
  
-  
+  def self.get_input_text_value(text_input_data)
+    case text_input_data[:type]
+    when 'text'
+      if text_input_data.dig(:text, :isSplitInput)
+        {
+          valueLeft: text_input_data.dig(:text, :valueLeft),
+          valueRight: text_input_data.dig(:text, :valueRight)
+        }.to_json
+      else
+        text_input_data.dig(:text).to_json
+      end
+    when 'urls', 'password', 'email_address', 'email_confirmation', 'password_confirmation'
+      text_input_data.dig(text_input_data.dig(:type), :value)
+    when 'phone_number'
+      type = text_input_data[:type]
+      content = text_input_data[type]
+
+      if content&.dig(:withHyphen).present?
+        [content[:value1], content[:value2], content[:value3]].join
+      else
+        content&.dig(:value)
+      end
+    end
+  end
 
   def self.get_selected_obj_for_radio_button(conversation)
     selected_id = conversation[:radio_button][:initial_selection]
