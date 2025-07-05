@@ -311,10 +311,14 @@ class ScenarioUserResponse < ApplicationRecord
       text_input_data.dig(text_input_data.dig(:type), :value)
     when 'phone_number'
       type = text_input_data[:type]
-      content = text_input_data[type]
+      content = text_input_data.dig(type)
 
       if content&.dig(:withHyphen).present?
-        [content[:value1], content[:value2], content[:value3]].join
+        {
+          value1: content.dig(:value1),
+          value2: content.dig(:value2),
+          value3: content.dig(:value3),
+        }.to_json
       else
         content&.dig(:value)
       end
