@@ -26,7 +26,26 @@ class Api::V1::Managements::ChatLogController < ApplicationController
       if(params[:end_date].present?)
         scenario_user_responses = scenario_user_responses.where('DATE(created_at) <= ? ',params[:end_date].to_date)
       end
-      render json: { code: 1, scenarios: cloned_scenarios, chats: scenario_user_responses }
+
+      grouped_responses = scenario_user_responses
+      .group_by { |r| [r.scenario_id, r.user_input_id] }
+      .map do |(scenario_id, user_input_id), group|
+        status_record = ScenarioUserResponseStatus.find_by(
+          scenario_id: scenario_id,
+          user_input_id: user_input_id
+        )
+
+        is_done = status_record&.status&.to_sym == :finished
+
+        {
+          scenario_id: scenario_id,
+          user_input_id: user_input_id,
+          newest: group.first.newest,
+          is_done: is_done
+        }
+      end
+
+      render json: { code: 1, scenarios: cloned_scenarios, chats: grouped_responses }
     rescue Exception => e
       return render json: { code: 2, message: e }
     end
@@ -50,5 +69,40 @@ class Api::V1::Managements::ChatLogController < ApplicationController
     rescue Exception => e
       return render json: { code: 2, message: e }
     end
+  end
+
+  def statistic
+    scenario_id = params[:sc_id]
+    return render json: { code: 2, message: 'Missing scenario_id', statistic: [] } if scenario_id.blank?
+
+    date_start = parse_date(params[:start_date])&.beginning_of_day
+    date_end   = parse_date(params[:end_date])&.end_of_day
+
+    logs = ScenarioUserResponse.where(scenario_id: scenario_id)
+    logs = logs.where(created_at: date_start..date_end) if date_start && date_end
+    logs = logs.where('created_at >= ?', date_start)   if date_start && !date_end
+    logs = logs.where('created_at <= ?', date_end)     if date_end && !date_start
+
+    access_counts = logs.group(:message_id).count
+    pass_counts = logs.select(:message_id, :user_input_id).distinct.group(:message_id).count
+
+    result = access_counts.map do |msg_id, access_count|
+      {
+        msg_id: msg_id,
+        access_count: access_count,
+        pass_count: pass_counts[msg_id] || 0
+      }
+    end
+
+    render json: { code: 1, statistic: result }
+
+  rescue => e
+    render json: { code: 2, message: e.message, statistic: [] }
+  end
+
+  private
+
+  def parse_date(date_str)
+    Date.parse(date_str) rescue nil
   end
 end
