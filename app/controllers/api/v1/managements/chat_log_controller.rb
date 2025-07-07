@@ -27,23 +27,7 @@ class Api::V1::Managements::ChatLogController < ApplicationController
         scenario_user_responses = scenario_user_responses.where('DATE(created_at) <= ? ',params[:end_date].to_date)
       end
 
-      grouped_responses = scenario_user_responses
-      .group_by { |r| [r.scenario_id, r.user_input_id] }
-      .map do |(scenario_id, user_input_id), group|
-        status_record = ScenarioUserResponseStatus.find_by(
-          scenario_id: scenario_id,
-          user_input_id: user_input_id
-        )
-
-        is_done = status_record&.status&.to_sym == :finished
-
-        {
-          scenario_id: scenario_id,
-          user_input_id: user_input_id,
-          newest: group.first.newest,
-          is_done: is_done
-        }
-      end
+      grouped_responses = ChatLog.new(scenario_user_responses).get_grouped_response
 
       render json: { code: 1, scenarios: cloned_scenarios, chats: grouped_responses }
     rescue Exception => e
