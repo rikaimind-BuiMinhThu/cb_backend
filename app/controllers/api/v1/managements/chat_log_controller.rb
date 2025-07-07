@@ -59,26 +59,13 @@ class Api::V1::Managements::ChatLogController < ApplicationController
     scenario_id = params[:sc_id]
     return render json: { code: 2, message: 'Missing scenario_id', statistic: [] } if scenario_id.blank?
 
-    date_start = parse_date(params[:start_date])&.beginning_of_day
-    date_end   = parse_date(params[:end_date])&.end_of_day
+    statistics = ScenarioUserResponses::Statistic.new(
+      scenario_id: params[:sc_id],
+      start_date: params[:start_date],
+      end_date: params[:end_date]
+    ).call
 
-    logs = ScenarioUserResponse.where(scenario_id: scenario_id)
-    logs = logs.where(created_at: date_start..date_end) if date_start && date_end
-    logs = logs.where('created_at >= ?', date_start)   if date_start && !date_end
-    logs = logs.where('created_at <= ?', date_end)     if date_end && !date_start
-
-    access_counts = logs.group(:message_id).count
-    pass_counts = logs.select(:message_id, :user_input_id).distinct.group(:message_id).count
-
-    result = access_counts.map do |msg_id, access_count|
-      {
-        msg_id: msg_id,
-        access_count: access_count,
-        pass_count: pass_counts[msg_id] || 0
-      }
-    end
-
-    render json: { code: 1, statistic: result }
+    render json: { code: 1, statistic: statistics }
 
   rescue => e
     render json: { code: 2, message: e.message, statistic: [] }
