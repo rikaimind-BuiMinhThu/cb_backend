@@ -118,7 +118,11 @@ Rails.application.routes.draw do
           end
         end
         resources :conversions, only: [:create]
-        post 'save_status', to: 'scenario_user_responses_status#save_status'
+        resources :scenario_user_responses_status, only: [:create] do
+          collection do
+            patch :update
+          end
+        end
       end
       get '/shopify/product_variants', to: 'shopify#product_variants'
       get '/shopify/product_variant', to: 'shopify#product_variant'
