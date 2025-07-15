@@ -26,10 +26,7 @@ class Api::V1::Managements::ChatLogController < ApplicationController
       if(params[:end_date].present?)
         scenario_user_responses = scenario_user_responses.where('DATE(created_at) <= ? ',params[:end_date].to_date)
       end
-
-      grouped_responses = ChatLog.new(scenario_user_responses).get_grouped_response
-
-      render json: { code: 1, scenarios: cloned_scenarios, chats: grouped_responses }
+      render json: { code: 1, scenarios: cloned_scenarios, chats: scenario_user_responses }
     rescue Exception => e
       return render json: { code: 2, message: e }
     end
@@ -53,27 +50,5 @@ class Api::V1::Managements::ChatLogController < ApplicationController
     rescue Exception => e
       return render json: { code: 2, message: e }
     end
-  end
-
-  def statistic
-    scenario_id = params[:sc_id]
-    return render json: { code: 2, message: 'Missing scenario_id', statistic: [] } if scenario_id.blank?
-
-    statistics = ScenarioUserResponses::Statistic.new(
-      scenario_id: params[:sc_id],
-      start_date: params[:start_date],
-      end_date: params[:end_date]
-    ).call
-
-    render json: { code: 1, statistic: statistics }
-
-  rescue => e
-    render json: { code: 2, message: e.message, statistic: [] }
-  end
-
-  private
-
-  def parse_date(date_str)
-    Date.parse(date_str) rescue nil
   end
 end
