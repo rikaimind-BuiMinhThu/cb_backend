@@ -33,7 +33,6 @@ Rails.application.routes.draw do
         get "chatbots/:id/design_settings", :to => 'chatbots#get_design_settings'
         post "chatbots/:id/design_settings", :to => 'chatbots#update_design_settings'
         get "chatbots/:id/sdk", :to => 'chatbots#webchat_sdk'
-        get "chat_log/statistic", :to => 'chat_log#statistic'
         get "chat_log/:bot_id/list", :to => 'chat_log#index'
         get "chat_log/:sc_id/:user_id", :to => 'chat_log#show'
         get "get_list_chatbot_by_client", :to => 'chatbots#get_list_chatbot_by_client'
@@ -118,11 +117,6 @@ Rails.application.routes.draw do
           end
         end
         resources :conversions, only: [:create]
-        resources :scenario_user_responses_status, only: [:create] do
-          collection do
-            patch :update
-          end
-        end
       end
       get '/shopify/product_variants', to: 'shopify#product_variants'
       get '/shopify/product_variant', to: 'shopify#product_variant'
