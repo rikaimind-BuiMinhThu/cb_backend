@@ -57,6 +57,7 @@ RUN apt-get update -qq && apt-get install -y \
   mecab \
   libmecab-dev \
   mecab-ipadic-utf8 \
+  nkf \
   build-essential \
   pkg-config \
   libffi-dev
