@@ -99,7 +99,6 @@ Rails.application.routes.draw do
       get "cities", :to => 'prefectures#get_cities'
       get "towns", :to => 'prefectures#get_towns'
       get "get_address_from_zip_code", :to => 'prefectures#get_address_from_zip_code'
-      post "jp_convert", :to => 'jp_convert#convert'
       namespace :payment_managements do
         resources :payment_gateways, except: [:new, :edit]
         resources :payment_managements, only: :show
