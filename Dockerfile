@@ -52,18 +52,6 @@ RUN apt install -y tor
 # RUN apt update
 # RUN apt install firefox -y
 
-# ✅ MeCab + dictionary for natto
-RUN apt-get update -qq && apt-get install -y \
-  mecab \
-  libmecab-dev \
-  mecab-ipadic-utf8 \
-  nkf \
-  build-essential \
-  pkg-config \
-  libffi-dev
-
-# ✅ Set MECABRC environment path to avoid missing config errors
-ENV MECABRC=/etc/mecabrc
 
 RUN mkdir /myapp
 
