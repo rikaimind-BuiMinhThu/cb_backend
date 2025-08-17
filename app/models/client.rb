@@ -20,6 +20,18 @@ class Client < ApplicationRecord
     repeat_plus: 5
   }
 
+  def self.get_cart_system_by_user_id(user_id)
+    user = User.find_by(id: user_id)
+
+
+    if user.present? && user.client_id.present?
+      client = Client.find_by(id: user.client_id)
+      return client.cart_system if client.present?
+    end
+
+    return cart_system.cart_system_none
+  end
+
   def subscription_start_at_cannot_be_greater_than_subscription_end_at
     if subscription_start_at.present? && subscription_end_at.present? && subscription_start_at > subscription_end_at
       errors.add(:subscription_start_at, "can't be greater than subscription end at")
