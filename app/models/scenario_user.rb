@@ -1,12 +1,5 @@
-class Order < ApplicationRecord
-  enum bot_type: {instagram: 0, web: 1, line: 2, tiktok: 3}
-
-  def self.pgs_cv_count(scenario_id:, start_date: nil, end_date: nil) 
-    between(start_date, end_date)
-      .where(scenario_id: scenario_id)
-      .distinct
-      .count(:user_input_id)
-  end
+class ScenarioUser < ApplicationRecord
+  belongs_to :scenario
 
   scope :between, ->(start_date, end_date) do
     return all unless start_date || end_date
@@ -18,5 +11,11 @@ class Order < ApplicationRecord
     else
       where('created_at <= ?', end_date)
     end
+  end
+
+  def self.entry_count(scenario_id:, start_date: nil, end_date: nil)
+    between(start_date, end_date)
+      .where(scenario_id: scenario_id)
+      .sum(:entry_count)
   end
 end

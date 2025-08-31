@@ -288,6 +288,8 @@ class ScenarioUserResponse < ApplicationRecord
           value: value,
           ui_type: conversation[:type],
           message_id: params[:message][:id],
+          submit_type: params[:submit_type],
+          message_child_id: conversation[:id],
         )
         built_result.push(new_record)
       end
@@ -341,6 +343,25 @@ class ScenarioUserResponse < ApplicationRecord
     return selected[:value] if selected.present?
   end
 
+  def self.entry_count_for(scenario_id:, start_date: nil, end_date: nil)
+    between(start_date, end_date)
+      .where(scenario_id: scenario_id)
+      .distinct
+      .count(:user_input_id)
+  end
+
+  scope :between, ->(start_date, end_date) do
+    return all unless start_date || end_date
+
+    if start_date && end_date
+      where(created_at: start_date..end_date)
+    elsif start_date
+      where('created_at >= ?', start_date)
+    else
+      where('created_at <= ?', end_date)
+    end
+  end
+
   text :data_name, is_encrypt: false
   text :zip_code_address, is_encrypt: false
   string :phone_number, is_encrypt: false
@@ -362,4 +383,5 @@ class ScenarioUserResponse < ApplicationRecord
   text :paidy_payment, is_encrypt: false
   string :pin_code, is_encrypt: false
   text :text_with_thumbnail_image, is_encrypt: false
+  enum submit_type: {error: 0, add: 1, upd: 2}
 end

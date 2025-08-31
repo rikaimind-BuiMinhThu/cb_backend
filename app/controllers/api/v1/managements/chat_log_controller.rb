@@ -57,18 +57,21 @@ class Api::V1::Managements::ChatLogController < ApplicationController
 
   def statistic
     scenario_id = params[:sc_id]
-    return render json: { code: 2, message: 'Missing scenario_id', statistic: [] } if scenario_id.blank?
+    return render json: { code: 2, message: 'Missing scenario_id', statistic: [], overall: {} } if scenario_id.blank?
 
-    statistics = ScenarioUserResponses::Statistic.new(
+    statistic_instance = ScenarioUserResponses::Statistic.new(
       scenario_id: params[:sc_id],
       start_date: params[:start_date],
       end_date: params[:end_date]
-    ).call
+    )
 
-    render json: { code: 1, statistic: statistics }
+    statistics = statistic_instance.stats
+    overall = statistic_instance.overall
+
+    render json: { code: 1, statistic: statistics, overall: overall }
 
   rescue => e
-    render json: { code: 2, message: e.message, statistic: [] }
+    render json: { code: 2, message: e.message, statistic: [] , overall: {} }
   end
 
   private
