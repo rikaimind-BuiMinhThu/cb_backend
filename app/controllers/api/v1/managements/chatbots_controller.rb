@@ -227,7 +227,7 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
 
   def chatbot_params
     params.require(:chatbot).permit(:title, :subtitle, :design_type,
-      :main_color, :status, :icon, :bot_name, :main_color_other)
+      :main_color, :status, :icon, :bot_name, :main_color_other, :message_icon, :remove_message_icon)
   end
 end
 
