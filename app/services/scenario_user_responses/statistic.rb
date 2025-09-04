@@ -6,23 +6,47 @@ module ScenarioUserResponses
       @end_date = parse_date(end_date)&.end_of_day
     end
 
-    def call
-      logs = ScenarioUserResponse.where(scenario_id: @scenario_id)
-      
-      logs = logs.where(created_at: @start_date..@end_date) if @start_date && @end_date
-      logs = logs.where('created_at >= ?', @start_date) if @start_date && !@end_date
-      logs = logs.where('created_at <= ?', @end_date)   if @end_date && !@start_date
+    def stats
+      stats = ScenarioUserResponseMessage.stats_for(
+        scenario_id: @scenario_id,
+        start_date: @start_date,
+        end_date: @end_date
+      );
+    end
 
-      access_counts = logs.group(:message_id).count
-      pass_counts = logs.select(:message_id, :user_input_id).distinct.group(:message_id).count
+    def overall
+      entry_count = ScenarioUserResponse.entry_count_for(
+        scenario_id: @scenario_id,
+        start_date: @start_date,
+        end_date: @end_date
+      )
 
-      access_counts.map do |msg_id, access_count|
-        {
-          msg_id: msg_id,
-          access_count: access_count,
-          pass_count: pass_counts[msg_id] || 0
-        }
-      end
+      form_completed_count = ScenarioUserResponseStatus.completed_count(
+        scenario_id: @scenario_id,
+        start_date: @start_date,
+        end_date: @end_date
+      )
+
+      pgs_cv_count = Order.pgs_cv_count(
+        scenario_id: @scenario_id,
+        start_date: @start_date,
+        end_date: @end_date
+      )
+
+      impression_count = ScenarioUser.entry_count(
+        scenario_id: @scenario_id,
+        start_date: @start_date,
+        end_date: @end_date
+      )
+
+      {
+        entry_count: entry_count,
+        form_completed_count: form_completed_count,
+        form_completion_rate: entry_count > 0 ? ((form_completed_count.to_f / entry_count) * 100).round(2) : 0.0,
+        pgs_cv_count: pgs_cv_count,
+        pgs_cv_entry_rate: entry_count > 0 ? ((pgs_cv_count.to_f / entry_count) * 100).round(2) : 0.0,
+        impression_count: impression_count
+      }
     end
 
     private

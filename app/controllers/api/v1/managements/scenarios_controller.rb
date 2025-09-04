@@ -33,8 +33,11 @@ class Api::V1::Managements::ScenariosController < ApplicationController
                             .where(chatbot_id: scenario.chatbot_id)
 
     chatbot = Chatbot.select(:id, :main_color, :main_color_other, :icon, :title, :subtitle, :withdrawal_prevention_status,
-                             :withdrawal_prevention_link_url, :withdrawal_prevention_image_url, :design_settings)
+                             :withdrawal_prevention_link_url, :withdrawal_prevention_image_url, :design_settings, :user_id)
                      .find_by(id: scenario.chatbot_id)
+
+
+    client_cart_system = Client.get_cart_system_by_user_id(chatbot.user_id) if chatbot.user_id
 
     render json: {
       code: 1,
@@ -65,7 +68,8 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         timer_config: scenario.timer_config ? JSON.parse(scenario.timer_config) : "",
         head_custom_js_code: scenario.head_custom_js_code,
         top_body_custom_js_code: scenario.top_body_custom_js_code,
-        bottom_body_custom_js_code: scenario.bottom_body_custom_js_code
+        bottom_body_custom_js_code: scenario.bottom_body_custom_js_code,
+        client_cart_system: client_cart_system
       },
       all_variables: all_variables,
       design_settings: chatbot.design_settings ? JSON.parse(chatbot.design_settings) : ""
