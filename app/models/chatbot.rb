@@ -34,6 +34,7 @@ class Chatbot < ApplicationRecord
   enum withdrawal_prevention_status: {invalid: 0, standard_exit_popup: 1, image_popup: 2}, _prefix: true
 
   mount_base64_uploader :icon, ChatbotIconUploader
+  mount_base64_uploader :message_icon, ChatbotMessageIconUploader
 
   validates :title, presence: true
   validates :subtitle, presence: true
