@@ -15,4 +15,5 @@ json.data do
   json.timer_config JSON.parse(@scenario.timer_config) unless @scenario.timer_config.blank?
   json.tamagoLandingPageUrl @scenario.tamago_repeat_config&.tamago_landing_page_url
   json.conversation JSON.parse(@scenario.conversation) unless @scenario.conversation.blank?
+  json.is_used_message_loaded_past @scenario.is_used_message_loaded_past
 end
