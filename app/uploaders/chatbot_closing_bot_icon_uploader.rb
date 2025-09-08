@@ -1,8 +1,8 @@
-class ChatbotMessageIconUploader < CarrierWave::Uploader::Base
+class ChatbotClosingBotIconUploader < CarrierWave::Uploader::Base
   storage :file
 
   def store_dir
-    "uploads/chatbot/message_icon/#{model.id}"
+    "uploads/chatbot/closing_bot_icon/#{model.id}"
   end
 
   def extension_allowlist
