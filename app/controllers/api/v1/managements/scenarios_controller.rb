@@ -72,6 +72,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         client_cart_system: client_cart_system,
         is_used_message_loaded_past: scenario.is_used_message_loaded_past,
         message_icon: chatbot.message_icon,
+        use_fullwidth_chatbot_mobile: scenario.use_fullwidth_chatbot_mobile
       },
       all_variables: all_variables,
       design_settings: chatbot.design_settings ? JSON.parse(chatbot.design_settings) : ""
@@ -146,6 +147,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
       @scenario.bottom_body_custom_js_code = params[:bottom_body_custom_js_code]
       @scenario.timer_config = JSON.generate(params[:timer_config].as_json) if params[:timer_config].present?
       @scenario.is_used_message_loaded_past = params[:is_used_message_loaded_past]
+      @scenario.use_fullwidth_chatbot_mobile = params[:use_fullwidth_chatbot_mobile]
       @scenario.save!
     rescue StandardError => error
       Rails.logger.debug(error)
