@@ -32,7 +32,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     all_variables = Variable.select(:variable_name, :default_value)
                             .where(chatbot_id: scenario.chatbot_id)
 
-    chatbot = Chatbot.select(:id, :main_color, :main_color_other, :icon, :message_icon, :title, :subtitle, :withdrawal_prevention_status,
+    chatbot = Chatbot.select(:id, :main_color, :main_color_other, :icon, :opening_bot_icon, :closing_bot_icon, :title, :subtitle, :withdrawal_prevention_status,
                              :withdrawal_prevention_link_url, :withdrawal_prevention_image_url, :design_settings, :user_id)
                      .find_by(id: scenario.chatbot_id)
 
@@ -71,7 +71,8 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         bottom_body_custom_js_code: scenario.bottom_body_custom_js_code,
         client_cart_system: client_cart_system,
         is_used_message_loaded_past: scenario.is_used_message_loaded_past,
-        message_icon: chatbot.message_icon,
+        opening_bot_icon: chatbot.opening_bot_icon,
+        closing_bot_icon: chatbot.closing_bot_icon,
         use_fullwidth_chatbot_mobile: scenario.use_fullwidth_chatbot_mobile
       },
       all_variables: all_variables,
