@@ -34,6 +34,8 @@ class Chatbot < ApplicationRecord
   enum withdrawal_prevention_status: {invalid: 0, standard_exit_popup: 1, image_popup: 2}, _prefix: true
 
   mount_base64_uploader :icon, ChatbotIconUploader
+  mount_base64_uploader :opening_bot_icon, ChatbotOpeningBotIconUploader
+  mount_base64_uploader :closing_bot_icon, ChatbotClosingBotIconUploader
 
   validates :title, presence: true
   validates :subtitle, presence: true
@@ -46,6 +48,6 @@ class Chatbot < ApplicationRecord
   validates :withdrawal_prevention_image_url, presence: true, if: -> {withdrawal_prevention_status_image_popup?}
 
   def self.ransackable_attributes(auth_object = nil)
-    ["bot_name", "calculate_one_yen", "can_specify_payment", "created_at", "design_settings", "design_type", "icon", "id", "include_tax", "main_color", "need_np_deferred_payment", "need_paid_settlement_fee", "need_paid_shipping_fee", "np_invoice_included", "np_maximum_amount", "sale_tax_rate", "scenario_selected", "settlement_fee_variable_id", "shipping_fee_variable_id", "specify_payment_variable_id", "status", "subtitle", "title", "updated_at", "user_id", "withdrawal_prevention_image_url", "withdrawal_prevention_link_url", "withdrawal_prevention_status"]
+    ["bot_name", "calculate_one_yen", "can_specify_payment", "created_at", "design_settings", "design_type", "icon", "opening_bot_icon", "closing_bot_icon", "id", "include_tax", "main_color", "need_np_deferred_payment", "need_paid_settlement_fee", "need_paid_shipping_fee", "np_invoice_included", "np_maximum_amount", "sale_tax_rate", "scenario_selected", "settlement_fee_variable_id", "shipping_fee_variable_id", "specify_payment_variable_id", "status", "subtitle", "title", "updated_at", "user_id", "withdrawal_prevention_image_url", "withdrawal_prevention_link_url", "withdrawal_prevention_status"]
   end
 end

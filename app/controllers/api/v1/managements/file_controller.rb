@@ -11,7 +11,7 @@ class Api::V1::Managements::FileController < ApplicationController
 
   def create
     file_type = ''
-    if ['png', 'jpg', 'jpeg'].include?(user_file_params[:file_type])
+    if ['png', 'jpg', 'jpeg', 'gif'].include?(user_file_params[:file_type])
       file_type = 'image'
     elsif ['mp4'].include?(user_file_params[:file_type])
       file_type = 'mp4'

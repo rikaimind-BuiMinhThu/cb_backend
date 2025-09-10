@@ -124,6 +124,8 @@ Rails.application.routes.draw do
             patch :update
           end
         end
+        resources :scenario_user_responses_message, only: [:create]
+        post "entry", to: "scenario_users#entry"
       end
       get '/shopify/product_variants', to: 'shopify#product_variants'
       get '/shopify/product_variant', to: 'shopify#product_variant'
