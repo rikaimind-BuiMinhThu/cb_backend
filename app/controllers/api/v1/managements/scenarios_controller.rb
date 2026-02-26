@@ -15,7 +15,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
   def show
     scenario = Scenario.find_by(id: params[:id])
     return render json: {code: 2, message: "Scenario not found"} if scenario.blank?
-    render json: {code: 1, data: scenario}
+    render json: {code: 1, data: scenario.as_json.merge(scenario_type: scenario.scenario_type || 'payment')}
   end
 
   def preview
@@ -45,6 +45,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         id: scenario.id,
         name: scenario.name,
         chatbot_id: scenario.chatbot_id,
+        scenario_type: scenario.scenario_type || 'payment',
         conversation: scenario_conversation ? JSON.parse(scenario_conversation) : "",
         created_at: scenario.created_at,
         updated_at: scenario.updated_at
@@ -83,6 +84,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
   def create
     scenario = Scenario.new(scenario_params)
     scenario.chatbot_id = params[:chatbot_id]
+    scenario.scenario_type = params[:scenario_type] || 'payment' if scenario.scenario_type.blank?
     ActiveRecord::Base.transaction do
       scenario.save!
     rescue StandardError => error
@@ -136,6 +138,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
       end
       @scenario.conversation = JSON.generate(params[:conversation].as_json) if params[:conversation].present?
       @scenario.name = params[:scenario_name]
+      @scenario.scenario_type = params[:scenario_type] if params[:scenario_type].present?
       @scenario.is_use_only_regular_order = params[:is_use_only_regular_order]
       @scenario.is_used_fukushashiki = params[:is_used_fukushashiki]
       @scenario.is_used_custom_css = params[:is_used_custom_css]
@@ -198,6 +201,12 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     render json: { code: 1, data: scenario, cart_system: bot.user&.client&.cart_system }
   end
 
+  def list_common_scenarios
+    common_scenarios = Scenario.select(:id, :name, :scenario_type)
+                              .where(chatbot_id: params[:chatbot_id], scenario_type: 'common')
+    render json: {code: 1, data: common_scenarios}
+  end
+
   def get_list_scenario_by_client
     return render json: {code: 2, message: "No permission"} unless current_user.admin_deel?
     user_ids = User.admin_client.where(client_id: params[:client_id]).pluck(:id)
@@ -211,7 +220,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
   private
 
   def scenario_params
-    params.require(:scenario).permit(:name)
+    params.require(:scenario).permit(:name, :scenario_type)
   end
 
   def build_tamago_repeat_config
