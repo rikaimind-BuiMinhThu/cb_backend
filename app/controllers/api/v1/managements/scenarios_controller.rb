@@ -201,12 +201,6 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     render json: { code: 1, data: scenario, cart_system: bot.user&.client&.cart_system }
   end
 
-  def list_common_scenarios
-    common_scenarios = Scenario.select(:id, :name, :scenario_type)
-                              .where(chatbot_id: params[:chatbot_id], scenario_type: 'common')
-    render json: {code: 1, data: common_scenarios}
-  end
-
   def get_list_scenario_by_client
     return render json: {code: 2, message: "No permission"} unless current_user.admin_deel?
     user_ids = User.admin_client.where(client_id: params[:client_id]).pluck(:id)
