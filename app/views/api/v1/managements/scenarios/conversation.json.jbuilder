@@ -2,6 +2,7 @@ json.code 1
 json.message "Success"
 json.data do
   json.scenario_name @scenario.name
+  json.scenario_type @scenario.scenario_type || 'payment'
   json.isUseOnlyRegularOrder @scenario.is_use_only_regular_order
   json.isUseFukushashiki @scenario.is_used_fukushashiki
   json.custom_css_content @scenario.custom_css_content
