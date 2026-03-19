@@ -69,17 +69,17 @@ class Api::V1::ShopifyController < ApplicationController
   end
 
   def cart_create
-    uuid = params['uuid'] || ''
-    email = params['email'] || ''
-    phone = params['phone'] || ''
-    first_name = params['first_name'] || ''
-    last_name = params['last_name'] || ''
+    uuid = (params['uuid'] || '').strip
+    email = (params['email'] || '').strip
+    phone = (params['phone'] || '').strip
+    first_name = (params['first_name'] || '').strip
+    last_name = (params['last_name'] || '').strip
     lines = params['lines'] || []
-    zip = params['zip'] || ""
-    province = params['province'] || ''
-    city = params['city'] || ''
-    address1 = params['address1'] || ''
-    address2 = params['address2'] || ''
+    zip = (params['zip'] || "").strip
+    province = (params['province'] || '').strip
+    city = (params['city'] || '').strip
+    address1 = (params['address1'] || '').strip
+    address2 = (params['address2'] || '').strip
 
     query = <<~GRAPHQL
       mutation cartCreate($cartInput: CartInput!) {
@@ -151,11 +151,12 @@ class Api::V1::ShopifyController < ApplicationController
 
     response = @client.query(query:, variables: {
       cartInput: {
-        lines: lines,
-        buyerIdentity: {
-          email: email,
-          countryCode: "JP",
-          deliveryAddressPreferences: {
+      lines: lines,
+      buyerIdentity: {
+        email: email,
+        countryCode: "JP",
+        deliveryAddressPreferences: [
+          {
             deliveryAddress: {
               country: "JP",
               firstName: first_name,
@@ -168,8 +169,9 @@ class Api::V1::ShopifyController < ApplicationController
               phone: phone
             }
           }
-        }
+        ]
       }
+    }
     })
 
     if response.code == 200 && response.body['data'] && response.body['data']['cartCreate'] && response.body['data']['cartCreate']["cart"] && response.body['data']['cartCreate']["cart"]['id']
@@ -301,10 +303,18 @@ class Api::V1::ShopifyController < ApplicationController
     render json: { message: 'Received Shopify webhook' }, status: :ok
   end
 
+  @@admin_access_token = nil
+  @@storefront_tokens = nil
+
   def set_admin_client
-    user = User.find(current_user.id)
-    shopify_api_key = user.shopify_api_key
-    shop_name = user.shop_name
+    @user = User.find(current_user.id)
+    client = Client.find(@user.client_id)
+    shop_name = client.shop_url
+    access_token = @@admin_access_token
+
+    if access_token.blank? && client.client_id.present? && client.client_secret.present?
+      access_token = fetch_admin_access_token(client)
+    end
 
     #  Rikai Shopify
     # session = ShopifyAPI::Auth::Session.new(
@@ -318,10 +328,15 @@ class Api::V1::ShopifyController < ApplicationController
     #   access_token: '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'
     # )
 
-    # Playland Shopify
+    # Original version with secrets:
+    # session = ShopifyAPI::Auth::Session.new(
+    #   shop: Rails.application.secrets.shop_name,
+    #   access_token: Rails.application.secrets.access_token
+    # )
+
     session = ShopifyAPI::Auth::Session.new(
-      shop: Rails.application.secrets.shop_name,
-      access_token: Rails.application.secrets.access_token
+      shop: shop_name,
+      access_token: access_token
     )
     @client = ShopifyAPI::Clients::Graphql::Admin.new(
       session:
@@ -331,8 +346,17 @@ class Api::V1::ShopifyController < ApplicationController
   def set_storefront_client
     @scenario = Scenario.find_by_id(params[:scenario_id])
     @user = @scenario.chatbot&.user
-    shop_name = @user.shop_name
-    storefront_access_token = @user.storefront_access_token
+    client = Client.find(@user.client_id)
+    shop_name = client.shop_url
+
+    if @@admin_access_token.blank? && client.client_id.present? && client.client_secret.present?
+      fetch_admin_access_token(client)
+    end
+
+    storefront_access_token = @@storefront_tokens
+    if storefront_access_token.blank? && @@admin_access_token.present?
+      storefront_access_token = create_storefront_access_token(client)
+    end
 
     # Rikai Shopify
     # shop = 'deel-ja-store.myshopify.com'
@@ -344,15 +368,14 @@ class Api::V1::ShopifyController < ApplicationController
     # storefront_access_token = '7fe4560ee50e5773276d45ed209ecb76'
     # api_version = 'unstable'
 
-    # Playland Shopify
-    shop = Rails.application.secrets.shop_name
-    storefront_access_token = Rails.application.secrets.storefront_access_token
-    api_version = 'unstable'
+    # Original version with secrets:
+    # shop = Rails.application.secrets.shop_name
+    # storefront_access_token = Rails.application.secrets.storefront_access_token
+    # api_version = 'unstable'
 
     @client = ShopifyAPI::Clients::Graphql::Storefront.new(
-      shop,
-      storefront_access_token,
-      api_version:
+      shop_name,
+      public_token: storefront_access_token
     )
   end
 
@@ -368,14 +391,60 @@ class Api::V1::ShopifyController < ApplicationController
   end
 
   private
-  def detect_device(user_agent)    
+  def fetch_admin_access_token(client)
+    uri = URI("https://#{client.shop_url}/admin/oauth/access_token")
+    res = Net::HTTP.post_form(uri, {
+      'client_id' => client.client_id,
+      'client_secret' => client.client_secret,
+      'grant_type' => 'client_credentials'
+    })
+
+    if res.code == '200'
+      data = JSON.parse(res.body)
+      token = data['access_token']
+      @@admin_access_token = token
+      token
+    end
+  end
+
+  def create_storefront_access_token(client)
+    admin_token = @@admin_access_token
+    session = ShopifyAPI::Auth::Session.new(
+      shop: client.shop_url,
+      access_token: admin_token
+    )
+    client_shopify = ShopifyAPI::Clients::Graphql::Admin.new(session: session)
+    query = <<~GQL
+      mutation {
+        storefrontAccessTokenCreate(input: { title: "Chatbot-Token" }) {
+          storefrontAccessToken {
+            accessToken
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    GQL
+    response = client_shopify.query(query: query)
+    if response.code == 200
+      token = response.body.dig('data', 'storefrontAccessTokenCreate', 'storefrontAccessToken', 'accessToken')
+      if token
+        @@storefront_tokens = token
+      end
+      token
+    end
+  end
+
+  def detect_device(user_agent)
     case user_agent
     when /Mobile|Android|iPhone|iPod/i
-        "smartphone_conversion"
+      "smartphone_conversion"
     when /iPad|Tablet/i
-        "tablet_conversion"
+      "tablet_conversion"
     else
-        "pc_conversion"
-    end   
+      "pc_conversion"
+    end
   end
 end
