@@ -151,27 +151,27 @@ class Api::V1::ShopifyController < ApplicationController
 
     response = @client.query(query:, variables: {
       cartInput: {
-      lines: lines,
-      buyerIdentity: {
-        email: email,
-        countryCode: "JP",
-        deliveryAddressPreferences: [
-          {
-            deliveryAddress: {
-              country: "JP",
-              firstName: first_name,
-              lastName: last_name,
-              zip: zip,
-              province: province,
-              city: city,
-              address1: address1,
-              address2: address2,
-              phone: phone
+        lines: lines,
+        buyerIdentity: {
+          email: email,
+          countryCode: "JP",
+          deliveryAddressPreferences: [
+            {
+              deliveryAddress: {
+                country: "JP",
+                firstName: first_name,
+                lastName: last_name,
+                zip: zip,
+                province: province,
+                city: city,
+                address1: address1,
+                address2: address2,
+                phone: phone
+              }
             }
-          }
-        ]
+          ]
+        }
       }
-    }
     })
 
     if response.code == 200 && response.body['data'] && response.body['data']['cartCreate'] && response.body['data']['cartCreate']["cart"] && response.body['data']['cartCreate']["cart"]['id']
@@ -328,6 +328,7 @@ class Api::V1::ShopifyController < ApplicationController
     #   access_token: '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'
     # )
 
+    # Playland Shopify
     # Original version with secrets:
     # session = ShopifyAPI::Auth::Session.new(
     #   shop: Rails.application.secrets.shop_name,
@@ -391,6 +392,7 @@ class Api::V1::ShopifyController < ApplicationController
   end
 
   private
+  
   def fetch_admin_access_token(client)
     uri = URI("https://#{client.shop_url}/admin/oauth/access_token")
     res = Net::HTTP.post_form(uri, {
