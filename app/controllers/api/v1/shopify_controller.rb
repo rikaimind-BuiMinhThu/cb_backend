@@ -302,7 +302,7 @@ class Api::V1::ShopifyController < ApplicationController
 
     render json: { message: 'Received Shopify webhook' }, status: :ok
   end
-
+  
   @@admin_access_token = nil
   @@storefront_tokens = nil
 
@@ -310,11 +310,7 @@ class Api::V1::ShopifyController < ApplicationController
     @user = User.find(current_user.id)
     client = Client.find(@user.client_id)
     shop_name = client.shop_url
-    access_token = @@admin_access_token
-
-    if access_token.blank? && client.client_id.present? && client.client_secret.present?
-      access_token = fetch_admin_access_token(client)
-    end
+    access_token = Shopify::AuthService.fetch_access_token(client)
 
     #  Rikai Shopify
     # session = ShopifyAPI::Auth::Session.new(
@@ -339,9 +335,7 @@ class Api::V1::ShopifyController < ApplicationController
       shop: shop_name,
       access_token: access_token
     )
-    @client = ShopifyAPI::Clients::Graphql::Admin.new(
-      session:
-    )
+    @client = ShopifyAPI::Clients::Graphql::Admin.new(session: session)
   end
 
   def set_storefront_client
@@ -350,14 +344,7 @@ class Api::V1::ShopifyController < ApplicationController
     client = Client.find(@user.client_id)
     shop_name = client.shop_url
 
-    if @@admin_access_token.blank? && client.client_id.present? && client.client_secret.present?
-      fetch_admin_access_token(client)
-    end
-
-    storefront_access_token = @@storefront_tokens
-    if storefront_access_token.blank? && @@admin_access_token.present?
-      storefront_access_token = create_storefront_access_token(client)
-    end
+    storefront_access_token = Shopify::AuthService.fetch_storefront_token(client)
 
     # Rikai Shopify
     # shop = 'deel-ja-store.myshopify.com'
@@ -394,50 +381,13 @@ class Api::V1::ShopifyController < ApplicationController
   private
   
   def fetch_admin_access_token(client)
-    uri = URI("https://#{client.shop_url}/admin/oauth/access_token")
-    res = Net::HTTP.post_form(uri, {
-      'client_id' => client.client_id,
-      'client_secret' => client.client_secret,
-      'grant_type' => 'client_credentials'
-    })
-
-    if res.code == '200'
-      data = JSON.parse(res.body)
-      token = data['access_token']
-      @@admin_access_token = token
-      token
-    end
+    Shopify::AuthService.fetch_access_token(client)
   end
 
   def create_storefront_access_token(client)
-    admin_token = @@admin_access_token
-    session = ShopifyAPI::Auth::Session.new(
-      shop: client.shop_url,
-      access_token: admin_token
-    )
-    client_shopify = ShopifyAPI::Clients::Graphql::Admin.new(session: session)
-    query = <<~GQL
-      mutation {
-        storefrontAccessTokenCreate(input: { title: "Chatbot-Token" }) {
-          storefrontAccessToken {
-            accessToken
-          }
-          userErrors {
-            field
-            message
-          }
-        }
-      }
-    GQL
-    response = client_shopify.query(query: query)
-    if response.code == 200
-      token = response.body.dig('data', 'storefrontAccessTokenCreate', 'storefrontAccessToken', 'accessToken')
-      if token
-        @@storefront_tokens = token
-      end
-      token
-    end
+    Shopify::AuthService.fetch_storefront_token(client)
   end
+
 
   def detect_device(user_agent)
     case user_agent
