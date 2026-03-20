@@ -55,7 +55,7 @@ module Shopify
         if resp_admin.success?
           data = JSON.parse(resp_admin.body)
           admin_token = data["access_token"]
-          expires_in = data["expires_in"] || 86399 
+          expires_in = data["expires_in"]
 
           storefront_token = fetch_storefront_token_from_shopify(admin_token)
 
@@ -118,8 +118,8 @@ module Shopify
       end
 
       conn.post('/admin/oauth/access_token') do |req|
-        req.options.timeout = 10
-        req.options.open_timeout = 5
+        req.options.timeout = 5
+        req.options.open_timeout = 2
         req.body = {
           "client_id"     => @client.client_id,
           "client_secret" => @client.client_secret,
