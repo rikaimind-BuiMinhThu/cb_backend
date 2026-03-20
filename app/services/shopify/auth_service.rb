@@ -32,9 +32,13 @@ module Shopify
       @token_record.valid_tokens? ? @token_record.storefront_token : nil
     end
 
+    def self.shopify_logger
+      @shopify_logger ||= ActiveSupport::Logger.new(Rails.root.join('log', 'shopify.log'))
+    end
+
     def refresh_tokens
       retries = 0
-      max_retries = 10
+      max_retries = 3
 
       begin
         resp_admin = perform_admin_request
@@ -58,35 +62,36 @@ module Shopify
           
           if @token_record.save!
             action = @token_record.previously_new_record? ? "Created" : "Updated"
-            Rails.logger.info "[ShopifyAuth] SUCCESS: #{action} access tokens for client_id: #{@client.id}"
+            self.class.shopify_logger.info "[ShopifyAuth] SUCCESS: #{action} access tokens for client_id: #{@client.id}"
           end
           
           @token_record.reload
         else
-          Rails.logger.error "[ShopifyAuth] ERROR: Admin token request failed! Status: #{resp_admin.status}. Body: #{resp_admin.body}"
+          self.class.shopify_logger.error "[ShopifyAuth] ERROR: Admin token failed. Status: #{resp_admin.status}"
           raise AuthError, "Shopify returned non-success status: #{resp_admin.status}"
         end
       rescue Faraday::ConnectionFailed, Faraday::TimeoutError => e
-        Rails.logger.warn "[ShopifyAuth] NETWORK ERROR: Connection failed/timed out. Message: #{e.message}"
+        self.class.shopify_logger.warn "[ShopifyAuth] NETWORK ERROR: Connection failed/timed out. Message: #{e.message}"
         if retries < max_retries
           retries += 1
-          wait_time = retries * 2 # Incremental wait time
-          Rails.logger.warn "[ShopifyAuth] RETRY: Attempt ##{retries}/#{max_retries}. Waiting #{wait_time}s before next try..."
+          wait_time = retries * 1
+          self.class.shopify_logger.warn "[ShopifyAuth] RETRY: Attempt ##{retries}/#{max_retries}. Waiting #{wait_time}s..."
           sleep(wait_time)
           retry
         end
+        self.class.shopify_logger.fatal "[ShopifyAuth] FATAL: Connection failed after #{max_retries} attempts."
         raise AuthError, "FATAL: Connection failed after #{max_retries} attempts."
       rescue StandardError => e
         if retries < max_retries
           retries += 1
-          wait_time = retries # Simple incremental wait
-          Rails.logger.error "[ShopifyAuth] LOGIC ERROR: ##{retries}/#{max_retries}. Error: #{e.message}"
-          Rails.logger.warn "[ShopifyAuth] RETRY: Waiting #{wait_time}s..."
+          wait_time = retries
+          self.class.shopify_logger.error "[ShopifyAuth] LOGIC ERROR: ##{retries}/#{max_retries}. Error: #{e.message}"
+          self.class.shopify_logger.warn "[ShopifyAuth] RETRY: Waiting #{wait_time}s..."
           sleep(wait_time)
           retry
         end
-        Rails.logger.error "[ShopifyAuth] FATAL FAILURE: All #{max_retries} retry attempts exhausted. Final Error: #{e.message}"
-        nil 
+        self.class.shopify_logger.fatal "[ShopifyAuth] FATAL FAILURE: All #{max_retries} retry attempts exhausted. Final Error: #{e.message}"
+        raise AuthError, "Failed after #{max_retries} attempts: #{e.message}"
       end
     end
 
@@ -95,7 +100,7 @@ module Shopify
     def perform_admin_request
       conn = Faraday.new(url: "https://#{@client.shop_url}") do |f|
         f.request :url_encoded
-        f.request :retry, max: 3, interval: 0.5, backoff_factor: 2, exceptions: [Faraday::ConnectionFailed, Faraday::TimeoutError]
+        f.request :retry, max: 2, interval: 0.5, backoff_factor: 2, exceptions: [Faraday::ConnectionFailed, Faraday::TimeoutError]
         f.adapter Faraday.default_adapter
       end
 
@@ -136,11 +141,11 @@ module Shopify
         return token if token.present?
         
         errors = response.body.dig('data', 'storefrontAccessTokenCreate', 'userErrors')
-        Rails.logger.error "[ShopifyStorefrontToken] UserErrors: #{errors}"
+        self.class.shopify_logger.error "[ShopifyStorefrontToken] UserErrors: #{errors}"
         raise AuthError, "Shopify Storefront error: #{errors.first['message']}" if errors.any?
         nil
       else
-        Rails.logger.error "[ShopifyStorefrontToken] Failed: #{response.code} - #{response.body}"
+        self.class.shopify_logger.error "[ShopifyStorefrontToken] Failed. Status: #{response.code}"
         raise AuthError, "Storefront token request failed with status #{response.code}"
       end
     end

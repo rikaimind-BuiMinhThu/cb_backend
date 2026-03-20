@@ -177,10 +177,20 @@ class Api::V1::ShopifyController < ApplicationController
     if response.code == 200 && response.body['data'] && response.body['data']['cartCreate'] && response.body['data']['cartCreate']["cart"] && response.body['data']['cartCreate']["cart"]['id']
       cart_id = response.body['data']['cartCreate']["cart"]['id']
       cart_system = CartSystem.new(cart_token: cart_id, uid: uuid, user_id: @user.id)
-      cart_system.save
+      if cart_system.save
+        shopify_logger.info "[CartCreate] SUCCESS: #{cart_id}"
+      end
+    else
+      shopify_logger.error "[CartCreate] FAILED. Status: #{response.code}"
     end
 
     handle_response(response)
+    rescue ShopifyAPI::Errors::HttpResponseError => e
+      shopify_logger.error "[CartCreate] FATAL. Status: #{e.code}, Msg: #{e.message}"
+      render json: { success: false, error: e.message }, status: e.code || 500
+    rescue => e
+      shopify_logger.error "[CartCreate] ERROR. Msg: #{e.message}"
+      render json: { success: false, error: e.message }, status: 500
   end
 
   def cart_lines_add
@@ -302,15 +312,17 @@ class Api::V1::ShopifyController < ApplicationController
 
     render json: { message: 'Received Shopify webhook' }, status: :ok
   end
-  
-  @@admin_access_token = nil
-  @@storefront_tokens = nil
 
   def set_admin_client
     @user = User.find(current_user.id)
     client = Client.find(@user.client_id)
     shop_name = client.shop_url
-    access_token = Shopify::AuthService.fetch_access_token(client)
+    begin
+      access_token = Shopify::AuthService.fetch_access_token(client)
+    rescue => e
+      shopify_logger.error "[AdminClient] FATAL. Msg: #{e.message}"
+      return render json: { success: false, error: e.message }, status: :unauthorized
+    end
 
     #  Rikai Shopify
     # session = ShopifyAPI::Auth::Session.new(
@@ -344,7 +356,12 @@ class Api::V1::ShopifyController < ApplicationController
     client = Client.find(@user.client_id)
     shop_name = client.shop_url
 
-    storefront_access_token = Shopify::AuthService.fetch_storefront_token(client)
+    begin
+      storefront_access_token = Shopify::AuthService.fetch_storefront_token(client)
+    rescue => e
+      shopify_logger.error "[StorefrontClient] FATAL. Msg: #{e.message}"
+      return render json: { success: false, error: e.message }, status: :unauthorized
+    end
 
     # Rikai Shopify
     # shop = 'deel-ja-store.myshopify.com'
@@ -380,6 +397,9 @@ class Api::V1::ShopifyController < ApplicationController
 
   private
   
+  def shopify_logger
+    Shopify::AuthService.shopify_logger
+  end
   def fetch_admin_access_token(client)
     Shopify::AuthService.fetch_access_token(client)
   end
@@ -387,7 +407,6 @@ class Api::V1::ShopifyController < ApplicationController
   def create_storefront_access_token(client)
     Shopify::AuthService.fetch_storefront_token(client)
   end
-
 
   def detect_device(user_agent)
     case user_agent
