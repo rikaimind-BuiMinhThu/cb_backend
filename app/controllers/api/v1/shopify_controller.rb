@@ -69,17 +69,17 @@ class Api::V1::ShopifyController < ApplicationController
   end
 
   def cart_create
-    uuid = (params['uuid'] || '').strip
-    email = (params['email'] || '').strip
-    phone = (params['phone'] || '').strip
-    first_name = (params['first_name'] || '').strip
-    last_name = (params['last_name'] || '').strip
-    lines = params['lines'] || []
-    zip = (params['zip'] || "").strip
-    province = (params['province'] || '').strip
-    city = (params['city'] || '').strip
-    address1 = (params['address1'] || '').strip
-    address2 = (params['address2'] || '').strip
+    uuid = (params["uuid"] || "").strip
+    email = (params["email"] || "").strip
+    phone = (params["phone"] || "").strip
+    first_name = (params["first_name"] || "").strip
+    last_name = (params["last_name"] || "").strip
+    lines = params["lines"] || []
+    zip = (params["zip"] || "").strip
+    province = (params["province"] || "").strip
+    city = (params["city"] || "").strip
+    address1 = (params["address1"] || "").strip
+    address2 = (params["address2"] || "").strip
 
     query = <<~GRAPHQL
       mutation cartCreate($cartInput: CartInput!) {
@@ -155,8 +155,7 @@ class Api::V1::ShopifyController < ApplicationController
         buyerIdentity: {
           email: email,
           countryCode: "JP",
-          deliveryAddressPreferences: [
-            {
+          deliveryAddressPreferences: {
               deliveryAddress: {
                 country: "JP",
                 firstName: first_name,
@@ -169,13 +168,12 @@ class Api::V1::ShopifyController < ApplicationController
                 phone: phone
               }
             }
-          ]
         }
       }
     })
 
-    if response.code == 200 && response.body['data'] && response.body['data']['cartCreate'] && response.body['data']['cartCreate']["cart"] && response.body['data']['cartCreate']["cart"]['id']
-      cart_id = response.body['data']['cartCreate']["cart"]['id']
+    if response.code == 200 && response.body["data"] && response.body["data"]["cartCreate"] && response.body["data"]["cartCreate"]["cart"] && response.body["data"]["cartCreate"]["cart"]["id"]
+      cart_id = response.body["data"]["cartCreate"]["cart"]["id"]
       cart_system = CartSystem.new(cart_token: cart_id, uid: uuid, user_id: @user.id)
       if cart_system.save
         shopify_logger.info "[CartCreate] SUCCESS: #{cart_id}"
@@ -185,17 +183,17 @@ class Api::V1::ShopifyController < ApplicationController
     end
 
     handle_response(response)
-    rescue ShopifyAPI::Errors::HttpResponseError => e
-      shopify_logger.error "[CartCreate] FATAL. Status: #{e.code}, Msg: #{e.message}"
-      render json: { success: false, error: e.message }, status: e.code || 500
-    rescue => e
-      shopify_logger.error "[CartCreate] ERROR. Msg: #{e.message}"
-      render json: { success: false, error: e.message }, status: 500
+  rescue ShopifyAPI::Errors::HttpResponseError => e
+    shopify_logger.error "[CartCreate] FATAL. Status: #{e.code}, Msg: #{e.message}"
+    render json: { success: false, error: e.message }, status: e.code || 500
+  rescue => e
+    shopify_logger.error "[CartCreate] ERROR. Msg: #{e.message}"
+    render json: { success: false, error: e.message }, status: 500
   end
 
   def cart_lines_add
-    cart_id = params['cart_id'] || ''
-    lines = params['lines'] || []
+    cart_id = params["cart_id"] || ""
+    lines = params["lines"] || []
 
     cart_system = CartSystem.new(cart_token: cart_id, uid: params[:uuid], user_id: @user.id)
     cart_system.save
@@ -316,7 +314,7 @@ class Api::V1::ShopifyController < ApplicationController
   def set_admin_client
     @user = User.find(current_user.id)
     client = Client.find(@user.client_id)
-    shop_name = client.shop_url
+    shop_name = client.shop_url.presence || Rails.application.secrets.shop_name
     begin
       access_token = Shopify::AuthService.fetch_access_token(client)
     rescue => e
@@ -354,7 +352,7 @@ class Api::V1::ShopifyController < ApplicationController
     @scenario = Scenario.find_by_id(params[:scenario_id])
     @user = @scenario.chatbot&.user
     client = Client.find(@user.client_id)
-    shop_name = client.shop_url
+    shop_name = client.shop_url.presence || Rails.application.secrets.shop_name
 
     begin
       storefront_access_token = Shopify::AuthService.fetch_storefront_token(client)

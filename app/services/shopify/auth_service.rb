@@ -1,5 +1,5 @@
-require 'faraday'
-require 'faraday/retry'
+require "faraday"
+require "faraday/retry"
 
 module Shopify
   class AuthService
@@ -23,13 +23,22 @@ module Shopify
     end
 
     def admin_token
-      refresh_tokens if !@token_record.valid_tokens?
-      @token_record.valid_tokens? ? @token_record.admin_token : nil
+      begin
+        refresh_tokens if !@token_record.valid_tokens?
+      rescue => e
+        self.class.shopify_logger.warn "[ShopifyAuth] DB refresh failed (#{shop_url}). Using secrets.yml fallback. Error: #{e.message}"
+      end
+
+      @token_record.valid_tokens? ? @token_record.admin_token : Rails.application.secrets.access_token
     end
 
     def storefront_token
-      refresh_tokens if !@token_record.valid_tokens?
-      @token_record.valid_tokens? ? @token_record.storefront_token : nil
+      begin
+        refresh_tokens if !@token_record.valid_tokens?
+      rescue => e
+      end
+
+      @token_record.valid_tokens? ? @token_record.storefront_token : Rails.application.secrets.storefront_access_token
     end
 
     def self.shopify_logger
@@ -45,8 +54,8 @@ module Shopify
         
         if resp_admin.success?
           data = JSON.parse(resp_admin.body)
-          admin_token = data['access_token']
-          expires_in = data['expires_in'] || 86399 
+          admin_token = data["access_token"]
+          expires_in = data["expires_in"] || 86399 
 
           storefront_token = fetch_storefront_token_from_shopify(admin_token)
 
@@ -97,8 +106,12 @@ module Shopify
 
     private
 
+    def shop_url
+      @client.shop_url.presence || Rails.application.secrets.shop_name
+    end
+
     def perform_admin_request
-      conn = Faraday.new(url: "https://#{@client.shop_url}") do |f|
+      conn = Faraday.new(url: "https://#{shop_url}") do |f|
         f.request :url_encoded
         f.request :retry, max: 2, interval: 0.5, backoff_factor: 2, exceptions: [Faraday::ConnectionFailed, Faraday::TimeoutError]
         f.adapter Faraday.default_adapter
@@ -108,16 +121,16 @@ module Shopify
         req.options.timeout = 10
         req.options.open_timeout = 5
         req.body = {
-          'client_id'     => @client.client_id,
-          'client_secret' => @client.client_secret,
-          'grant_type'    => 'client_credentials'
+          "client_id"     => @client.client_id,
+          "client_secret" => @client.client_secret,
+          "grant_type"    => "client_credentials"
         }
       end
     end
 
     def fetch_storefront_token_from_shopify(admin_token)
       session = ShopifyAPI::Auth::Session.new(
-        shop: @client.shop_url,
+        shop: shop_url,
         access_token: admin_token
       )
       client_shopify = ShopifyAPI::Clients::Graphql::Admin.new(session: session)
@@ -137,12 +150,12 @@ module Shopify
       
       response = client_shopify.query(query: query)
       if response.code == 200
-        token = response.body.dig('data', 'storefrontAccessTokenCreate', 'storefrontAccessToken', 'accessToken')
+        token = response.body.dig("data", "storefrontAccessTokenCreate", "storefrontAccessToken", "accessToken")
         return token if token.present?
         
-        errors = response.body.dig('data', 'storefrontAccessTokenCreate', 'userErrors')
+        errors = response.body.dig("data", "storefrontAccessTokenCreate", "userErrors")
         self.class.shopify_logger.error "[ShopifyStorefrontToken] UserErrors: #{errors}"
-        raise AuthError, "Shopify Storefront error: #{errors.first['message']}" if errors.any?
+        raise AuthError, "Shopify Storefront error: #{errors.first["message"]}" if errors.any?
         nil
       else
         self.class.shopify_logger.error "[ShopifyStorefrontToken] Failed. Status: #{response.code}"
