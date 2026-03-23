@@ -332,26 +332,7 @@ class Api::V1::ShopifyController < ApplicationController
 
     render json: { message: 'Received Shopify webhook' }, status: :ok
   end
-  
-  #  Rikai Shopify
-  # session = ShopifyAPI::Auth::Session.new(
-  #   shop: 'deel-ja-store.myshopify.com',
-  #   access_token: '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'
-  # )
-  
-  # # AKS Shopify
-  # session = ShopifyAPI::Auth::Session.new(
-  #   shop: 'aks-teletherapy.myshopify.com',
-  #   access_token: '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'
-  # )
 
-  # Playland Shopify
-  # Original version with secrets:
-  # session = ShopifyAPI::Auth::Session.new(
-  #   shop: Rails.application.secrets.shop_name,
-  #   access_token: Rails.application.secrets.access_token
-  # )
-  
   def set_admin_client(force_refresh: false)
     @user = current_user
     if @user.nil?
@@ -372,7 +353,7 @@ class Api::V1::ShopifyController < ApplicationController
       Rails.logger.error "[Shopify][AdminClient] FATAL: Shop URL is not configured for Client ID: #{client.id} (Name: #{client.name})"
       return render json: { success: false, error: "Shopify store URL is not configured for this client." }, status: :internal_server_error
     end
-
+    
     begin
       access_token = auth_service.admin_token(force_refresh: force_refresh)
       if access_token.blank?
@@ -384,27 +365,31 @@ class Api::V1::ShopifyController < ApplicationController
       return render json: { success: false, error: "Shopify Auth Error: #{e.message}" }, status: :unauthorized
     end
 
+    #  Rikai Shopify
+    # session = ShopifyAPI::Auth::Session.new(
+    #   shop: 'deel-ja-store.myshopify.com',
+    #   access_token: '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'
+    # )
+    
+    # # AKS Shopify
+    # session = ShopifyAPI::Auth::Session.new(
+    #   shop: 'aks-teletherapy.myshopify.com',
+    #   access_token: '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'
+    # )
+
+    # Playland Shopify
+    # Original version with secrets:
+    # session = ShopifyAPI::Auth::Session.new(
+    #   shop: Rails.application.secrets.shop_name,
+    #   access_token: Rails.application.secrets.access_token
+    # )
+
     session = ShopifyAPI::Auth::Session.new(
       shop: shop_name,
       access_token: access_token
     )
     @client = ShopifyAPI::Clients::Graphql::Admin.new(session: session)
   end
-
-  # Rikai Shopify
-  # shop = 'deel-ja-store.myshopify.com'
-  # storefront_access_token = '20788c67b5dcd406a24e6a19f063a013'
-  # api_version = 'unstable'
-
-  # AKS Shopify
-  # shop = 'aks-teletherapy.myshopify.com'
-  # storefront_access_token = '7fe4560ee50e5773276d45ed209ecb76'
-  # api_version = 'unstable'
-
-  # Original version with secrets:
-  # shop = Rails.application.secrets.shop_name
-  # storefront_access_token = Rails.application.secrets.storefront_access_token
-  # api_version = 'unstable'
 
   def set_storefront_client
     @scenario = Scenario.find_by_id(params[:scenario_id])
@@ -443,6 +428,21 @@ class Api::V1::ShopifyController < ApplicationController
       Rails.logger.error "[Shopify][StorefrontClient] FATAL for #{shop_name}. Msg: #{e.message}"
       return render json: { success: false, error: "Storefront Token Error: #{e.message}" }, status: :unauthorized
     end
+
+    # Rikai Shopify
+    # shop = 'deel-ja-store.myshopify.com'
+    # storefront_access_token = '20788c67b5dcd406a24e6a19f063a013'
+    # api_version = 'unstable'
+
+    # AKS Shopify
+    # shop = 'aks-teletherapy.myshopify.com'
+    # storefront_access_token = '7fe4560ee50e5773276d45ed209ecb76'
+    # api_version = 'unstable'
+
+    # Original version with secrets:
+    # shop = Rails.application.secrets.shop_name
+    # storefront_access_token = Rails.application.secrets.storefront_access_token
+    # api_version = 'unstable'
 
     @client = ShopifyAPI::Clients::Graphql::Storefront.new(
       shop_name,
