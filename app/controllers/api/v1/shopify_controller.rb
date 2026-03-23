@@ -33,11 +33,21 @@ class Api::V1::ShopifyController < ApplicationController
       }
     QUERY
 
-    response = @client.query(query:, variables: {
-      numProducts: num_products,
-      cursor: cursor,
-    })
-    handle_response(response)
+    begin
+      with_shopify_retry do
+        response = @client.query(query:, variables: {
+          numProducts: num_products,
+          cursor: cursor,
+        })
+        handle_response(response)
+      end
+    rescue ShopifyAPI::Errors::HttpResponseError => e
+      Rails.logger.error "[Shopify][ProductVariants] API Error. Status: #{e.code}, Msg: #{e.message}"
+      render json: { success: false, error: "Shopify API Error: #{e.message}" }, status: e.code || :bad_gateway
+    rescue => e
+      Rails.logger.fatal "[Shopify][ProductVariants] Internal Error. Msg: #{e.message}"
+      render json: { success: false, error: e.message }, status: :internal_server_error
+    end
   end
 
   def product_variant
@@ -61,8 +71,18 @@ class Api::V1::ShopifyController < ApplicationController
         }
       QUERY
 
-      response = @client.query(query:)
-      handle_response(response)
+      begin
+        with_shopify_retry do
+          response = @client.query(query:)
+          handle_response(response)
+        end
+      rescue ShopifyAPI::Errors::HttpResponseError => e
+        Rails.logger.error "[Shopify][ProductVariant] API Error. Status: #{e.code}, Msg: #{e.message}"
+        render json: { success: false, error: "Shopify API Error: #{e.message}" }, status: e.code || :bad_gateway
+      rescue => e
+        Rails.logger.fatal "[Shopify][ProductVariant] Internal Error. Msg: #{e.message}"
+        render json: { success: false, error: e.message }, status: :internal_server_error
+      end
     else
       render json: { success: false, error: 'Missing parameter: id' }, status: :unprocessable_entity
     end
@@ -149,46 +169,48 @@ class Api::V1::ShopifyController < ApplicationController
       }
     GRAPHQL
 
-    response = @client.query(query:, variables: {
-      cartInput: {
-        lines: lines,
-        buyerIdentity: {
-          email: email,
-          countryCode: "JP",
-          deliveryAddressPreferences: {
-              deliveryAddress: {
-                country: "JP",
-                firstName: first_name,
-                lastName: last_name,
-                zip: zip,
-                province: province,
-                city: city,
-                address1: address1,
-                address2: address2,
-                phone: phone
+    begin
+      response = @client.query(query:, variables: {
+        cartInput: {
+          lines: lines,
+          buyerIdentity: {
+            email: email,
+            countryCode: "JP",
+            deliveryAddressPreferences: {
+                deliveryAddress: {
+                  country: "JP",
+                  firstName: first_name,
+                  lastName: last_name,
+                  zip: zip,
+                  province: province,
+                  city: city,
+                  address1: address1,
+                  address2: address2,
+                  phone: phone
+                }
               }
-            }
+          }
         }
-      }
-    })
+      })
 
     if response.code == 200 && response.body["data"] && response.body["data"]["cartCreate"] && response.body["data"]["cartCreate"]["cart"] && response.body["data"]["cartCreate"]["cart"]["id"]
       cart_id = response.body["data"]["cartCreate"]["cart"]["id"]
       cart_system = CartSystem.new(cart_token: cart_id, uid: uuid, user_id: @user.id)
       if cart_system.save
-        shopify_logger.info "[CartCreate] SUCCESS: #{cart_id}"
+        Rails.logger.info "[Shopify][CartCreate] SUCCESS: #{cart_id}"
       end
     else
-      shopify_logger.error "[CartCreate] FAILED. Status: #{response.code}"
+      Rails.logger.error "[Shopify][CartCreate] FAILED. Status: #{response.code}"
     end
 
     handle_response(response)
   rescue ShopifyAPI::Errors::HttpResponseError => e
-    shopify_logger.error "[CartCreate] FATAL. Status: #{e.code}, Msg: #{e.message}"
+    Rails.logger.fatal "[Shopify][CartCreate] FATAL. Status: #{e.code}, Msg: #{e.message}"
     render json: { success: false, error: e.message }, status: e.code || 500
   rescue => e
-    shopify_logger.error "[CartCreate] ERROR. Msg: #{e.message}"
+    Rails.logger.error "[Shopify][CartCreate] ERROR. Msg: #{e.message}"
     render json: { success: false, error: e.message }, status: 500
+    end
   end
 
   def cart_lines_add
@@ -310,36 +332,57 @@ class Api::V1::ShopifyController < ApplicationController
 
     render json: { message: 'Received Shopify webhook' }, status: :ok
   end
+  
+  #  Rikai Shopify
+  # session = ShopifyAPI::Auth::Session.new(
+  #   shop: 'deel-ja-store.myshopify.com',
+  #   access_token: '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'
+  # )
+  
+  # # AKS Shopify
+  # session = ShopifyAPI::Auth::Session.new(
+  #   shop: 'aks-teletherapy.myshopify.com',
+  #   access_token: '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'
+  # )
 
-  def set_admin_client
-    @user = User.find(current_user.id)
-    client = Client.find(@user.client_id)
-    shop_name = client.shop_url.presence || Rails.application.secrets.shop_name
-    begin
-      access_token = Shopify::AuthService.fetch_access_token(client)
-    rescue => e
-      shopify_logger.error "[AdminClient] FATAL. Msg: #{e.message}"
-      return render json: { success: false, error: e.message }, status: :unauthorized
+  # Playland Shopify
+  # Original version with secrets:
+  # session = ShopifyAPI::Auth::Session.new(
+  #   shop: Rails.application.secrets.shop_name,
+  #   access_token: Rails.application.secrets.access_token
+  # )
+  
+  def set_admin_client(force_refresh: false)
+    @user = current_user
+    if @user.nil?
+      Rails.logger.error "[Shopify][AdminClient] FATAL: current_user is nil"
+      return render json: { success: false, error: "Authentication required" }, status: :unauthorized
     end
 
-    #  Rikai Shopify
-    # session = ShopifyAPI::Auth::Session.new(
-    #   shop: 'deel-ja-store.myshopify.com',
-    #   access_token: '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'
-    # )
+    client = Client.find_by_id(@user.client_id)
+    if client.nil?
+      Rails.logger.error "[Shopify][AdminClient] User ID:#{@user.id} has no valid client (client_id:#{@user.client_id})"
+      return render json: { success: false, error: "Client not found or user has no client" }, status: :unauthorized
+    end
+    
+    auth_service = Shopify::AuthService.new(client)
+    shop_name = auth_service.shop_url 
 
-    # # AKS Shopify
-    # session = ShopifyAPI::Auth::Session.new(
-    #   shop: 'aks-teletherapy.myshopify.com',
-    #   access_token: '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'
-    # )
+    if shop_name.blank?
+      Rails.logger.error "[Shopify][AdminClient] FATAL: Shop URL is not configured for Client ID: #{client.id} (Name: #{client.name})"
+      return render json: { success: false, error: "Shopify store URL is not configured for this client." }, status: :internal_server_error
+    end
 
-    # Playland Shopify
-    # Original version with secrets:
-    # session = ShopifyAPI::Auth::Session.new(
-    #   shop: Rails.application.secrets.shop_name,
-    #   access_token: Rails.application.secrets.access_token
-    # )
+    begin
+      access_token = auth_service.admin_token(force_refresh: force_refresh)
+      if access_token.blank?
+        Rails.logger.error "[Shopify][AdminClient] FATAL: Access token is blank for #{shop_name}. Ensure client_id and client_secret are set in DB for Client ID: #{client.id}"
+        return render json: { success: false, error: "Shopify access token is missing for #{shop_name}" }, status: :unauthorized
+      end
+    rescue => e
+      Rails.logger.error "[Shopify][AdminClient] FATAL while getting token for #{shop_name}. Msg: #{e.message}"
+      return render json: { success: false, error: "Shopify Auth Error: #{e.message}" }, status: :unauthorized
+    end
 
     session = ShopifyAPI::Auth::Session.new(
       shop: shop_name,
@@ -348,33 +391,58 @@ class Api::V1::ShopifyController < ApplicationController
     @client = ShopifyAPI::Clients::Graphql::Admin.new(session: session)
   end
 
+  # Rikai Shopify
+  # shop = 'deel-ja-store.myshopify.com'
+  # storefront_access_token = '20788c67b5dcd406a24e6a19f063a013'
+  # api_version = 'unstable'
+
+  # AKS Shopify
+  # shop = 'aks-teletherapy.myshopify.com'
+  # storefront_access_token = '7fe4560ee50e5773276d45ed209ecb76'
+  # api_version = 'unstable'
+
+  # Original version with secrets:
+  # shop = Rails.application.secrets.shop_name
+  # storefront_access_token = Rails.application.secrets.storefront_access_token
+  # api_version = 'unstable'
+
   def set_storefront_client
     @scenario = Scenario.find_by_id(params[:scenario_id])
-    @user = @scenario.chatbot&.user
-    client = Client.find(@user.client_id)
-    shop_name = client.shop_url.presence || Rails.application.secrets.shop_name
-
-    begin
-      storefront_access_token = Shopify::AuthService.fetch_storefront_token(client)
-    rescue => e
-      shopify_logger.error "[StorefrontClient] FATAL. Msg: #{e.message}"
-      return render json: { success: false, error: e.message }, status: :unauthorized
+    if @scenario.nil?
+      Rails.logger.error "[Shopify][StorefrontClient] FATAL: Scenario not found for ID: #{params[:scenario_id]}"
+      return render json: { success: false, error: "Scenario not found" }, status: :not_found
     end
 
-    # Rikai Shopify
-    # shop = 'deel-ja-store.myshopify.com'
-    # storefront_access_token = '20788c67b5dcd406a24e6a19f063a013'
-    # api_version = 'unstable'
+    @user = @scenario.chatbot&.user
+    if @user.nil?
+      Rails.logger.error "[Shopify][StorefrontClient] Scenario #{@scenario.id} has no associated user"
+      return render json: { success: false, error: "User not found for scenario" }, status: :unauthorized
+    end
 
-    # AKS Shopify
-    # shop = 'aks-teletherapy.myshopify.com'
-    # storefront_access_token = '7fe4560ee50e5773276d45ed209ecb76'
-    # api_version = 'unstable'
+    client = Client.find_by_id(@user.client_id)
+    if client.nil?
+      Rails.logger.error "[Shopify][StorefrontClient] User ID:#{@user.id} has no valid client (client_id:#{@user.client_id})"
+      return render json: { success: false, error: "Client not found" }, status: :unauthorized
+    end
+    
+    auth_service = Shopify::AuthService.new(client)
+    shop_name = auth_service.shop_url
 
-    # Original version with secrets:
-    # shop = Rails.application.secrets.shop_name
-    # storefront_access_token = Rails.application.secrets.storefront_access_token
-    # api_version = 'unstable'
+    if shop_name.blank?
+      Rails.logger.error "[Shopify][StorefrontClient] FATAL: Shop URL is not configured for Client ID: #{client.id} (Name: #{client.name})"
+      return render json: { success: false, error: "Shopify store URL is not configured for this client." }, status: :internal_server_error
+    end
+
+    begin
+      storefront_access_token = auth_service.storefront_token
+      if storefront_access_token.blank?
+        Rails.logger.error "[Shopify][StorefrontClient] FATAL: Storefront token is blank for #{shop_name}"
+        return render json: { success: false, error: "Shopify storefront token is missing for #{shop_name}" }, status: :unauthorized
+      end
+    rescue => e
+      Rails.logger.error "[Shopify][StorefrontClient] FATAL for #{shop_name}. Msg: #{e.message}"
+      return render json: { success: false, error: "Storefront Token Error: #{e.message}" }, status: :unauthorized
+    end
 
     @client = ShopifyAPI::Clients::Graphql::Storefront.new(
       shop_name,
@@ -384,26 +452,31 @@ class Api::V1::ShopifyController < ApplicationController
 
   def handle_response(response)
     if response.code == 200
-      return render json: { success: true, message: 'Successfully',
-                            data: response.body['data'] } if response.body['data']
-
-      render json: { success: false, message: 'Error', data: response.body['errors'] }
+      if response.body['data']
+        return render json: { success: true, message: 'Successfully', data: response.body['data'] }
+      end
+      render json: { success: false, message: 'Error', data: response.body['errors'] }, status: :bad_request
     else
-      render json: { success: false, message: 'Failed' }
+      render json: { success: false, message: "Shopify API returned status #{response.code}" }, status: response.code || :bad_gateway
     end
   end
 
   private
-  
-  def shopify_logger
-    Shopify::AuthService.shopify_logger
-  end
-  def fetch_admin_access_token(client)
-    Shopify::AuthService.fetch_access_token(client)
-  end
 
-  def create_storefront_access_token(client)
-    Shopify::AuthService.fetch_storefront_token(client)
+  def with_shopify_retry
+    retry_count = 0
+    begin
+      yield
+    rescue ShopifyAPI::Errors::HttpResponseError => e
+      if e.code == 401 && retry_count < 1
+        retry_count += 1
+        Rails.logger.warn "[Shopify] 401 Unauthorized detected. Force refreshing tokens..."
+        set_admin_client(force_refresh: true)
+        retry
+      else
+        raise e
+      end
+    end
   end
 
   def detect_device(user_agent)

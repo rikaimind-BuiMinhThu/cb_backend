@@ -22,32 +22,53 @@ module Shopify
       @token_record = ShopifyAccessToken.find_or_initialize_by(client_id: client.id)
     end
 
-    def admin_token
+    def admin_token(force_refresh: false)
       begin
-        refresh_tokens if !@token_record.valid_tokens?
+        refresh_tokens if force_refresh || !@token_record.valid_tokens?
       rescue => e
-        self.class.shopify_logger.warn "[ShopifyAuth] DB refresh failed (#{shop_url}). Using secrets.yml fallback. Error: #{e.message}"
+        log_warn "DB refresh failed (#{shop_url}). Error: #{e.message}"
       end
 
-      @token_record.valid_tokens? ? @token_record.admin_token : Rails.application.secrets.access_token
+      if @token_record.valid_tokens?
+        @token_record.admin_token
+      elsif @client.shop_url.blank? || @client.shop_url == Rails.application.secrets.shop_name
+        log_info "Using secrets.yml fallback for admin_token (#{shop_url})"
+        Rails.application.secrets.access_token
+      else
+        log_error "No valid token for specific shop: #{shop_url} and refresh failed. Ensure client_id and client_secret are set in the database."
+        nil
+      end
     end
 
-    def storefront_token
+    def storefront_token(force_refresh: false)
       begin
-        refresh_tokens if !@token_record.valid_tokens?
+        refresh_tokens if force_refresh || !@token_record.valid_tokens?
       rescue => e
+        log_warn "DB refresh failed for storefront (#{shop_url}). Error: #{e.message}"
       end
 
-      @token_record.valid_tokens? ? @token_record.storefront_token : Rails.application.secrets.storefront_access_token
+      if @token_record.valid_tokens?
+        @token_record.storefront_token
+      elsif @client.shop_url.blank? || @client.shop_url == Rails.application.secrets.shop_name
+        log_info "Using secrets.yml fallback for storefront_token (#{shop_url})"
+        Rails.application.secrets.storefront_access_token
+      else
+        nil
+      end
     end
 
     def self.shopify_logger
-      @shopify_logger ||= ActiveSupport::Logger.new(Rails.root.join('log', 'shopify.log'))
+      Rails.logger
     end
 
     def refresh_tokens
       retries = 0
       max_retries = 3
+
+      if @client.client_id.blank? || @client.client_secret.blank?
+        log_warn "Missing client_id/client_secret in DB for client_id: #{@client.id} (#{shop_url}). Skipping token refresh. If you want to use the database for token storage, please fill in these fields."
+        return
+      end
 
       begin
         resp_admin = perform_admin_request
@@ -67,48 +88,56 @@ module Shopify
           @token_record.storefront_token = storefront_token
           @token_record.expires_in = expires_in
           @token_record.issued_at = Time.current
-          @token_record.expires_at = Time.current + expires_in.seconds
+          @token_record.expires_at = Time.current + expires_in.to_i.seconds
           
           if @token_record.save!
             action = @token_record.previously_new_record? ? "Created" : "Updated"
-            self.class.shopify_logger.info "[ShopifyAuth] SUCCESS: #{action} access tokens for client_id: #{@client.id}"
+            log_info "SUCCESS: #{action} access tokens in DB for client_id: #{@client.id}"
           end
           
           @token_record.reload
         else
-          self.class.shopify_logger.error "[ShopifyAuth] ERROR: Admin token failed. Status: #{resp_admin.status}"
+          log_error "Admin token request failed. Status: #{resp_admin.status}."
           raise AuthError, "Shopify returned non-success status: #{resp_admin.status}"
         end
       rescue Faraday::ConnectionFailed, Faraday::TimeoutError => e
-        self.class.shopify_logger.warn "[ShopifyAuth] NETWORK ERROR: Connection failed/timed out. Message: #{e.message}"
+        log_warn "NETWORK ERROR: #{e.message}"
         if retries < max_retries
           retries += 1
-          wait_time = retries * 1
-          self.class.shopify_logger.warn "[ShopifyAuth] RETRY: Attempt ##{retries}/#{max_retries}. Waiting #{wait_time}s..."
-          sleep(wait_time)
+          sleep(retries)
           retry
         end
-        self.class.shopify_logger.fatal "[ShopifyAuth] FATAL: Connection failed after #{max_retries} attempts."
-        raise AuthError, "FATAL: Connection failed after #{max_retries} attempts."
+        log_fatal "Connection failed after #{max_retries} attempts."
+        raise AuthError, "Connection failed after #{max_retries} attempts."
       rescue StandardError => e
         if retries < max_retries
           retries += 1
-          wait_time = retries
-          self.class.shopify_logger.error "[ShopifyAuth] LOGIC ERROR: ##{retries}/#{max_retries}. Error: #{e.message}"
-          self.class.shopify_logger.warn "[ShopifyAuth] RETRY: Waiting #{wait_time}s..."
-          sleep(wait_time)
+          log_error "LOGIC ERROR (Attempt #{retries}/#{max_retries}): #{e.message}"
+          sleep(retries * 0.5)
           retry
         end
-        self.class.shopify_logger.fatal "[ShopifyAuth] FATAL FAILURE: All #{max_retries} retry attempts exhausted. Final Error: #{e.message}"
+        log_fatal "All #{max_retries} retry attempts exhausted. Final Error: #{e.message}"
         raise AuthError, "Failed after #{max_retries} attempts: #{e.message}"
+      end
+    end
+
+    def shop_url
+      @shop_url ||= begin
+        url = @client.shop_url.presence || Rails.application.secrets.shop_name
+        if url.present? && !url.to_s.include?(".")
+          "#{url}.myshopify.com"
+        else
+          url.to_s
+        end
       end
     end
 
     private
 
-    def shop_url
-      @client.shop_url.presence || Rails.application.secrets.shop_name
-    end
+    def log_info(msg);  Rails.logger.info  "[Shopify] #{msg}"; end
+    def log_warn(msg);  Rails.logger.warn  "[Shopify] #{msg}"; end
+    def log_error(msg); Rails.logger.error "[Shopify] #{msg}"; end
+    def log_fatal(msg); Rails.logger.fatal "[Shopify] #{msg}"; end
 
     def perform_admin_request
       conn = Faraday.new(url: "https://#{shop_url}") do |f|
@@ -154,11 +183,11 @@ module Shopify
         return token if token.present?
         
         errors = response.body.dig("data", "storefrontAccessTokenCreate", "userErrors")
-        self.class.shopify_logger.error "[ShopifyStorefrontToken] UserErrors: #{errors}"
+        log_error "[ShopifyStorefrontToken] UserErrors: #{errors}"
         raise AuthError, "Shopify Storefront error: #{errors.first["message"]}" if errors.any?
         nil
       else
-        self.class.shopify_logger.error "[ShopifyStorefrontToken] Failed. Status: #{response.code}"
+        log_error "[ShopifyStorefrontToken] Failed. Status: #{response.code}"
         raise AuthError, "Storefront token request failed with status #{response.code}"
       end
     end
