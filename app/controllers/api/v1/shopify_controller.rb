@@ -33,11 +33,11 @@ class Api::V1::ShopifyController < ApplicationController
       }
     QUERY
     with_shopify_retry do
-    response = @client.query(query:, variables: {
-      numProducts: num_products,
-      cursor: cursor,
-    })
-    handle_response(response)
+      response = @client.query(query:, variables: {
+        numProducts: num_products,
+        cursor: cursor,
+      })
+      handle_response(response)
     end
   end
 
@@ -63,8 +63,8 @@ class Api::V1::ShopifyController < ApplicationController
       QUERY
 
       with_shopify_retry do
-      response = @client.query(query:)
-      handle_response(response)
+        response = @client.query(query:)
+        handle_response(response)
       end
     else
       render json: { success: false, error: 'Missing parameter: id' }, status: :unprocessable_entity
@@ -153,40 +153,40 @@ class Api::V1::ShopifyController < ApplicationController
     GRAPHQL
 
     with_shopify_retry do
-    response = @client.query(query:, variables: {
-      cartInput: {
-        lines: lines,
-        buyerIdentity: {
-          email: email,
-          countryCode: "JP",
-          deliveryAddressPreferences: {
-              deliveryAddress: {
-                country: "JP",
-                firstName: first_name,
-                lastName: last_name,
-                zip: zip,
-                province: province,
-                city: city,
-                address1: address1,
-                address2: address2,
-                phone: phone
+      response = @client.query(query:, variables: {
+        cartInput: {
+          lines: lines,
+          buyerIdentity: {
+            email: email,
+            countryCode: "JP",
+            deliveryAddressPreferences: {
+                deliveryAddress: {
+                  country: "JP",
+                  firstName: first_name,
+                  lastName: last_name,
+                  zip: zip,
+                  province: province,
+                  city: city,
+                  address1: address1,
+                  address2: address2,
+                  phone: phone
+                }
               }
-            }
+          }
         }
-      }
-    })
+      })
 
-    if response.code == 200 && response.body["data"] && response.body["data"]["cartCreate"] && response.body["data"]["cartCreate"]["cart"] && response.body["data"]["cartCreate"]["cart"]["id"]
-      cart_id = response.body["data"]["cartCreate"]["cart"]["id"]
-      cart_system = CartSystem.new(cart_token: cart_id, uid: uuid, user_id: @user.id)
-      if cart_system.save
-        shopify_logger.info "[CartCreate] SUCCESS: #{cart_id}"
+      if response.code == 200 && response.body["data"] && response.body["data"]["cartCreate"] && response.body["data"]["cartCreate"]["cart"] && response.body["data"]["cartCreate"]["cart"]["id"]
+        cart_id = response.body["data"]["cartCreate"]["cart"]["id"]
+        cart_system = CartSystem.new(cart_token: cart_id, uid: uuid, user_id: @user.id)
+        if cart_system.save
+          shopify_logger.info "[CartCreate] SUCCESS: #{cart_id}"
+        end
+      else
+        shopify_logger.error "[CartCreate] FAILED. Status: #{response.code}"
       end
-    else
-      shopify_logger.error "[CartCreate] FAILED. Status: #{response.code}"
-    end
 
-    handle_response(response)
+      handle_response(response)
     end
   rescue ShopifyAPI::Errors::HttpResponseError => e
     shopify_logger.error "[CartCreate] FATAL. Status: #{e.code}, Msg: #{e.message}"
@@ -269,11 +269,11 @@ class Api::V1::ShopifyController < ApplicationController
     GRAPHQL
 
     with_shopify_retry do
-    response = @client.query(query:, variables: {
-      cartId: cart_id,
-      lines: lines
-    })
-    handle_response(response)
+      response = @client.query(query:, variables: {
+        cartId: cart_id,
+        lines: lines
+      })
+      handle_response(response)
     end
   end
 
