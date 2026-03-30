@@ -76,7 +76,7 @@ class Api::V1::ShopifyController < ApplicationController
     last_name = (params["last_name"] || "").strip
     lines = params["lines"] || []
     zip = (params["zip"] || "").strip
-    province = (params["province"] || "").strip
+    province = params["province"] || ""
     city = (params["city"] || "").strip
     address1 = (params["address1"] || "").strip
     address2 = (params["address2"] || "").strip
