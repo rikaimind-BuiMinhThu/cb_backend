@@ -69,17 +69,17 @@ class Api::V1::ShopifyController < ApplicationController
   end
 
   def cart_create
-    uuid = (params["uuid"] || "").strip
-    email = (params["email"] || "").strip
-    phone = (params["phone"] || "").strip
-    first_name = (params["first_name"] || "").strip
-    last_name = (params["last_name"] || "").strip
+    uuid = params["uuid"] || ""
+    email = params["email"] || ""
+    phone = params["phone"] || ""
+    first_name = params["first_name"] || ""
+    last_name = params["last_name"] || ""
     lines = params["lines"] || []
-    zip = (params["zip"] || "").strip
+    zip = params["zip"] || ""
     province = params["province"] || ""
-    city = (params["city"] || "").strip
-    address1 = (params["address1"] || "").strip
-    address2 = (params["address2"] || "").strip
+    city = params["city"] || ""
+    address1 = params["address1"] || ""
+    address2 = params["address2"] || ""
 
     query = <<~GRAPHQL
       mutation cartCreate($cartInput: CartInput!) {
