@@ -16,7 +16,7 @@ json.data do
   json.bottom_body_custom_js_code @scenario.bottom_body_custom_js_code
   json.timer_config JSON.parse(@scenario.timer_config) unless @scenario.timer_config.blank?
   json.tamagoLandingPageUrl @landing_page_product_url
-  json.merchanse_id @scenario.merchanse_id_for_api
+  json.merchandise_id @scenario.merchandise_id_for_api
   json.conversation JSON.parse(@scenario.conversation) unless @scenario.conversation.blank?
   json.is_used_message_loaded_past @scenario.is_used_message_loaded_past
   json.use_fullwidth_chatbot_mobile @scenario.use_fullwidth_chatbot_mobile
