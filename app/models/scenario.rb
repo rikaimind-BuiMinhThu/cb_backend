@@ -8,4 +8,16 @@ class Scenario < ApplicationRecord
 
   validates :name, presence: true, uniqueness: { scope: :chatbot }
   validates :scenario_type, inclusion: { in: %w[payment faq] }, allow_nil: false
+
+  def shopify_payment_merchanse_context?
+    uid = chatbot&.user_id
+    return false unless uid
+    return false unless (scenario_type.presence || "payment").to_s == "payment"
+    Client.get_cart_system_by_user_id(uid).to_s == "shopify"
+  end
+
+  def merchanse_id_for_api
+    return nil unless shopify_payment_merchanse_context?
+    merchanse_id
+  end
 end
