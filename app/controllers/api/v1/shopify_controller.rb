@@ -69,17 +69,17 @@ class Api::V1::ShopifyController < ApplicationController
   end
 
   def cart_create
-    uuid = params['uuid'] || ''
-    email = params['email'] || ''
-    phone = params['phone'] || ''
-    first_name = params['first_name'] || ''
-    last_name = params['last_name'] || ''
-    lines = params['lines'] || []
-    zip = params['zip'] || ""
-    province = params['province'] || ''
-    city = params['city'] || ''
-    address1 = params['address1'] || ''
-    address2 = params['address2'] || ''
+    uuid = params["uuid"] || ""
+    email = params["email"] || ""
+    phone = params["phone"] || ""
+    first_name = params["first_name"] || ""
+    last_name = params["last_name"] || ""
+    lines = params["lines"] || []
+    zip = params["zip"] || ""
+    province = params["province"] || ""
+    city = params["city"] || ""
+    address1 = params["address1"] || ""
+    address2 = params["address2"] || ""
 
     query = <<~GRAPHQL
       mutation cartCreate($cartInput: CartInput!) {
@@ -156,34 +156,44 @@ class Api::V1::ShopifyController < ApplicationController
           email: email,
           countryCode: "JP",
           deliveryAddressPreferences: {
-            deliveryAddress: {
-              country: "JP",
-              firstName: first_name,
-              lastName: last_name,
-              zip: zip,
-              province: province,
-              city: city,
-              address1: address1,
-              address2: address2,
-              phone: phone
+              deliveryAddress: {
+                country: "JP",
+                firstName: first_name,
+                lastName: last_name,
+                zip: zip,
+                province: province,
+                city: city,
+                address1: address1,
+                address2: address2,
+                phone: phone
+              }
             }
-          }
         }
       }
     })
 
-    if response.code == 200 && response.body['data'] && response.body['data']['cartCreate'] && response.body['data']['cartCreate']["cart"] && response.body['data']['cartCreate']["cart"]['id']
-      cart_id = response.body['data']['cartCreate']["cart"]['id']
+    if response.code == 200 && response.body["data"] && response.body["data"]["cartCreate"] && response.body["data"]["cartCreate"]["cart"] && response.body["data"]["cartCreate"]["cart"]["id"]
+      cart_id = response.body["data"]["cartCreate"]["cart"]["id"]
       cart_system = CartSystem.new(cart_token: cart_id, uid: uuid, user_id: @user.id)
-      cart_system.save
+      if cart_system.save
+        shopify_logger.info "[CartCreate] SUCCESS: #{cart_id}"
+      end
+    else
+      shopify_logger.error "[CartCreate] FAILED. Status: #{response.code}"
     end
 
     handle_response(response)
+  rescue ShopifyAPI::Errors::HttpResponseError => e
+    shopify_logger.error "[CartCreate] FATAL. Status: #{e.code}, Msg: #{e.message}"
+    render json: { success: false, error: e.message }, status: e.code || 500
+  rescue => e
+    shopify_logger.error "[CartCreate] ERROR. Msg: #{e.message}"
+    render json: { success: false, error: e.message }, status: 500
   end
 
   def cart_lines_add
-    cart_id = params['cart_id'] || ''
-    lines = params['lines'] || []
+    cart_id = params["cart_id"] || ""
+    lines = params["lines"] || []
 
     cart_system = CartSystem.new(cart_token: cart_id, uid: params[:uuid], user_id: @user.id)
     cart_system.save
@@ -302,9 +312,15 @@ class Api::V1::ShopifyController < ApplicationController
   end
 
   def set_admin_client
-    user = User.find(current_user.id)
-    shopify_api_key = user.shopify_api_key
-    shop_name = user.shop_name
+    @user = User.find(current_user.id)
+    client = Client.find(@user.client_id)
+    shop_name = client.shop_url.presence || Rails.application.secrets.shop_name
+    begin
+      access_token = Shopify::AuthService.fetch_access_token(client)
+    rescue => e
+      shopify_logger.error "[AdminClient] FATAL. Msg: #{e.message}"
+      return render json: { success: false, error: e.message }, status: :unauthorized
+    end
 
     #  Rikai Shopify
     # session = ShopifyAPI::Auth::Session.new(
@@ -319,20 +335,31 @@ class Api::V1::ShopifyController < ApplicationController
     # )
 
     # Playland Shopify
+    # Original version with secrets:
+    # session = ShopifyAPI::Auth::Session.new(
+    #   shop: Rails.application.secrets.shop_name,
+    #   access_token: Rails.application.secrets.access_token
+    # )
+
     session = ShopifyAPI::Auth::Session.new(
-      shop: Rails.application.secrets.shop_name,
-      access_token: Rails.application.secrets.access_token
+      shop: shop_name,
+      access_token: access_token
     )
-    @client = ShopifyAPI::Clients::Graphql::Admin.new(
-      session:
-    )
+    @client = ShopifyAPI::Clients::Graphql::Admin.new(session: session)
   end
 
   def set_storefront_client
     @scenario = Scenario.find_by_id(params[:scenario_id])
     @user = @scenario.chatbot&.user
-    shop_name = @user.shop_name
-    storefront_access_token = @user.storefront_access_token
+    client = Client.find(@user.client_id)
+    shop_name = client.shop_url.presence || Rails.application.secrets.shop_name
+
+    begin
+      storefront_access_token = Shopify::AuthService.fetch_storefront_token(client)
+    rescue => e
+      shopify_logger.error "[StorefrontClient] FATAL. Msg: #{e.message}"
+      return render json: { success: false, error: e.message }, status: :unauthorized
+    end
 
     # Rikai Shopify
     # shop = 'deel-ja-store.myshopify.com'
@@ -344,15 +371,14 @@ class Api::V1::ShopifyController < ApplicationController
     # storefront_access_token = '7fe4560ee50e5773276d45ed209ecb76'
     # api_version = 'unstable'
 
-    # Playland Shopify
-    shop = Rails.application.secrets.shop_name
-    storefront_access_token = Rails.application.secrets.storefront_access_token
-    api_version = 'unstable'
+    # Original version with secrets:
+    # shop = Rails.application.secrets.shop_name
+    # storefront_access_token = Rails.application.secrets.storefront_access_token
+    # api_version = 'unstable'
 
     @client = ShopifyAPI::Clients::Graphql::Storefront.new(
-      shop,
-      storefront_access_token,
-      api_version:
+      shop_name,
+      public_token: storefront_access_token
     )
   end
 
@@ -368,14 +394,26 @@ class Api::V1::ShopifyController < ApplicationController
   end
 
   private
-  def detect_device(user_agent)    
+  
+  def shopify_logger
+    Shopify::AuthService.shopify_logger
+  end
+  def fetch_admin_access_token(client)
+    Shopify::AuthService.fetch_access_token(client)
+  end
+
+  def create_storefront_access_token(client)
+    Shopify::AuthService.fetch_storefront_token(client)
+  end
+
+  def detect_device(user_agent)
     case user_agent
     when /Mobile|Android|iPhone|iPod/i
-        "smartphone_conversion"
+      "smartphone_conversion"
     when /iPad|Tablet/i
-        "tablet_conversion"
+      "tablet_conversion"
     else
-        "pc_conversion"
-    end   
+      "pc_conversion"
+    end
   end
 end

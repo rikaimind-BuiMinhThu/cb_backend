@@ -91,7 +91,8 @@ class Api::V1::Managements::ClientsController < ApplicationController
       :is_tiktok, :is_web, :note, :enterprise_type, :enterprise_type_2, :department_name,
       :title, :responsible_person, :logo_url, :url, :zip_code, :prefecture,
       :municipality, :building_name, :email, :name_katakana, :responsible_person_katakana,
-      :unit_price_instagram, :unit_price_web, :unit_price_line, :unit_price_tiktok, :cart_system)
+      :unit_price_instagram, :unit_price_web, :unit_price_line, :unit_price_tiktok, :cart_system,
+      :shop_url, :client_id, :client_secret)
   end
 
   def user_params

@@ -37,6 +37,8 @@ gem 'whenever'
 gem "sidekiq-scheduler"
 gem 'rubocop', require: false
 gem 'shopify_api'
+gem "faraday"
+gem "faraday-retry"
 gem 'natto'
 
 group :development, :test do

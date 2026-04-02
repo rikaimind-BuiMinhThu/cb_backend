@@ -43,7 +43,7 @@ class Client < ApplicationRecord
   end
     
   def self.ransackable_attributes(auth_object = nil)
-    ["address", "building_name", "cart_system", "created_at", "deleted_at", "department_name", "email", "enterprise_type", "enterprise_type_2", "id", "is_instagram", "is_line", "is_tiktok", "is_web", "logo_url", "municipality", "name", "name_katakana", "note", "phone_number", "plan", "prefecture", "price", "responsible_person", "responsible_person_katakana", "status", "subscription_end_at", "subscription_start_at", "title", "unit_price_instagram", "unit_price_line", "unit_price_tiktok", "unit_price_web", "updated_at", "url", "zip_code"]
+    ["address", "building_name", "cart_system", "created_at", "deleted_at", "department_name", "email", "enterprise_type", "enterprise_type_2", "id", "is_instagram", "is_line", "is_tiktok", "is_web", "logo_url", "municipality", "name", "name_katakana", "note", "phone_number", "plan", "prefecture", "price", "responsible_person", "responsible_person_katakana", "status", "subscription_end_at", "subscription_start_at", "title", "unit_price_instagram", "unit_price_line", "unit_price_tiktok", "unit_price_web", "updated_at", "url", "zip_code", "shop_url", "client_id", "client_secret"]
   end
     
 end
