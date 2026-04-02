@@ -46,6 +46,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         name: scenario.name,
         chatbot_id: scenario.chatbot_id,
         scenario_type: scenario.scenario_type || 'payment',
+        merchanse_id: scenario.merchanse_id,
         conversation: scenario_conversation ? JSON.parse(scenario_conversation) : "",
         created_at: scenario.created_at,
         updated_at: scenario.updated_at
@@ -138,6 +139,17 @@ class Api::V1::Managements::ScenariosController < ApplicationController
       end
       @scenario.conversation = JSON.generate(params[:conversation].as_json) if params[:conversation].present?
       @scenario.name = params[:scenario_name]
+      if params.key?(:merchanse_id) || params.key?("merchanse_id")
+        merchanse_id_param = params[:merchanse_id].to_s.strip
+        @scenario.merchanse_id =
+          if merchanse_id_param.blank?
+            nil
+          elsif merchanse_id_param.start_with?("gid://shopify/ProductVariant/")
+            merchanse_id_param
+          else
+            "gid://shopify/ProductVariant/#{merchanse_id_param}"
+          end
+      end
       @scenario.scenario_type = params[:scenario_type] if params[:scenario_type].present?
       @scenario.is_use_only_regular_order = params[:is_use_only_regular_order]
       @scenario.is_used_fukushashiki = params[:is_used_fukushashiki]
