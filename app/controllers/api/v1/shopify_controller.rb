@@ -78,6 +78,17 @@ class Api::V1::ShopifyController < ApplicationController
     first_name = params["first_name"] || ""
     last_name = params["last_name"] || ""
     lines = params["lines"] || []
+    raw_attributes = params["attributes"]
+    cart_attributes = []
+    if raw_attributes.is_a?(Array)
+      raw_attributes.each do |a|
+        next unless a.respond_to?(:[])
+        k = a["key"] || a[:key]
+        v = a["value"] || a[:value]
+        next if k.blank?
+        cart_attributes << { key: k.to_s, value: v.to_s }
+      end
+    end
     zip = params["zip"] || ""
     province = params["province"] || ""
     city = params["city"] || ""
@@ -152,28 +163,31 @@ class Api::V1::ShopifyController < ApplicationController
       }
     GRAPHQL
 
-    with_shopify_retry do
-      response = @client.query(query:, variables: {
-        cartInput: {
-          lines: lines,
-          buyerIdentity: {
-            email: email,
-            countryCode: "JP",
-            deliveryAddressPreferences: {
-                deliveryAddress: {
-                  country: "JP",
-                  firstName: first_name,
-                  lastName: last_name,
-                  zip: zip,
-                  province: province,
-                  city: city,
-                  address1: address1,
-                  address2: address2,
-                  phone: phone
-                }
-              }
+    cart_input = {
+      lines: lines,
+      buyerIdentity: {
+        email: email,
+        countryCode: "JP",
+        deliveryAddressPreferences: {
+          deliveryAddress: {
+            country: "JP",
+            firstName: first_name,
+            lastName: last_name,
+            zip: zip,
+            province: province,
+            city: city,
+            address1: address1,
+            address2: address2,
+            phone: phone
           }
         }
+      }
+    }
+    cart_input[:attributes] = cart_attributes if cart_attributes.present?
+
+    with_shopify_retry do
+      response = @client.query(query:, variables: {
+        cartInput: cart_input
       })
 
       if response.code == 200 && response.body["data"] && response.body["data"]["cartCreate"] && response.body["data"]["cartCreate"]["cart"] && response.body["data"]["cartCreate"]["cart"]["id"]
