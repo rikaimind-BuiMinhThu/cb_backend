@@ -215,6 +215,18 @@ class ScenarioUserResponse < ApplicationRecord
             selected = get_selected_obj_for_radio_button(conversation)
             value = selected[:value]
             data_input_name = "is_use_coupon"
+          when "option_variant"
+            data_input_name = "option_variant"
+            rb = conversation[:radio_button] || conversation["radio_button"]
+            value =
+              if rb.present? && (rb[:type] || rb["type"]).to_s == "radio_button_img" &&
+                  (imgs = rb[:radio_button_img] || rb["radio_button_img"]).present?
+                sel = (rb[:initial_selection] || rb["initial_selection"]).to_s
+                Array(imgs).find { |x| (x[:value] || x["value"]).to_s == sel }
+                  .then { |o| (o && (o[:text] || o["text"] || o[:value] || o["value"]).presence) || sel }
+              else
+                get_selected_obj_for_radio_button(conversation)&.[](:value)
+              end
           end
         when "card_payment_radio_button"
           selected = get_selected_obj_for_card_payment_radio_button(conversation)
