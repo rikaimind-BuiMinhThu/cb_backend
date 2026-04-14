@@ -164,6 +164,12 @@ class ScenarioUserResponse < ApplicationRecord
           when "quantity"
             data_input_name = "quantity"
             value = conversation.dig(:text_input, :text, :value)
+            if value.nil? || value.to_s.strip == ""
+              ti = conversation[:text_input]
+              tx = ti && ti[:text]
+              raw = tx && tx[:value]
+              value = (Integer(raw.to_s) rescue nil) if raw != nil && raw.to_s.strip != ""
+            end
           when "last_name"
             data_input_name = "last_name"
             value = conversation.dig(:text_input, :text, :value)
@@ -226,6 +232,29 @@ class ScenarioUserResponse < ApplicationRecord
                   .then { |o| (o && (o[:text] || o["text"] || o[:value] || o["value"]).presence) || sel }
               else
                 get_selected_obj_for_radio_button(conversation)&.[](:value)
+              end
+          when "cross_sell_option"
+            data_input_name = "cross_sell_option"
+            rb = conversation[:radio_button] || conversation["radio_button"]
+            value =
+              if rb.present? && (rb[:type] || rb["type"]).to_s == "radio_button_img" &&
+                  (imgs = rb[:radio_button_img] || rb["radio_button_img"]).present?
+                sel = (rb[:initial_selection] || rb["initial_selection"]).to_s
+                Array(imgs).find { |x| (x[:value] || x["value"]).to_s == sel }
+                  .then { |o| (o && (o[:text] || o["text"] || o[:value] || o["value"]).presence) || sel }
+              else
+                v = get_selected_obj_for_radio_button(conversation)&.[](:value)
+                if v.nil? && rb.present?
+                  sel = (rb[:initial_selection] || rb["initial_selection"]).to_s
+                  hit = Array(rb[:default] || rb["default"]).find do |obj|
+                    o_id = obj[:id] || obj["id"]
+                    o_val = obj[:value] || obj["value"]
+                    o_id.to_s == sel || o_val.to_s == sel
+                  end
+                  v = (hit[:value] || hit["value"]) if hit
+                  v = (hit[:id] || hit["id"]) if hit && v.nil?
+                end
+                v
               end
           end
         when "card_payment_radio_button"
@@ -394,6 +423,7 @@ class ScenarioUserResponse < ApplicationRecord
   text :paypal_payment, is_encrypt: true
   text :paidy_payment, is_encrypt: false
   string :pin_code, is_encrypt: false
+  string :cross_sell_option, is_encrypt: false
   text :text_with_thumbnail_image, is_encrypt: false
   enum submit_type: {error: 0, add: 1, upd: 2}
 end

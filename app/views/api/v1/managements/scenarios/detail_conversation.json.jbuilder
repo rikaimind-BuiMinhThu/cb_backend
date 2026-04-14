@@ -21,4 +21,6 @@ json.data do
   json.is_used_message_loaded_past @scenario.is_used_message_loaded_past
   json.use_fullwidth_chatbot_mobile @scenario.use_fullwidth_chatbot_mobile
   json.is_clear_landing_page_session @scenario.is_clear_landing_page_session
+  json.is_used_crosssell @scenario.is_used_crosssell
+  json.product_id_cross_sell @scenario.product_id_cross_sell_for_api
 end
