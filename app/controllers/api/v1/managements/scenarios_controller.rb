@@ -155,8 +155,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
               "gid://shopify/ProductVariant/#{merch_param}"
             end
         end
-        @scenario.is_used_crosssell =
-          !!ActiveModel::Type::Boolean.new.cast(params.fetch(:is_used_crosssell, false))
+        @scenario.is_used_crosssell = params[:is_used_crosssell]
         if @scenario.is_used_crosssell && (params.key?(:product_id_cross_sell) || params.key?("product_id_cross_sell"))
           cross_param = params[:product_id_cross_sell].to_s.strip
           @scenario.product_id_cross_sell =
