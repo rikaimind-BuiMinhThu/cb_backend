@@ -221,6 +221,18 @@ class ScenarioUserResponse < ApplicationRecord
             selected = get_selected_obj_for_radio_button(conversation)
             value = selected[:value]
             data_input_name = "is_use_coupon"
+          when "skip_delivery_datetime"
+            data_input_name = "skip_delivery_datetime"
+            rb = conversation[:radio_button] || conversation["radio_button"]
+            sel = (rb[:initial_selection] || rb["initial_selection"]).to_s
+            opts = Array(rb[:default] || rb["default"]) + Array(rb[:radio_button_img] || rb["radio_button_img"])
+            hit = opts.find do |o|
+              [o[:id], o["id"], o[:value], o["value"]].compact.map(&:to_s).include?(sel)
+            end
+            raw = hit && (hit[:value] || hit["value"])
+            raw = (hit && (hit[:id] || hit["id"])) if raw.nil? && hit
+            v = raw.to_s.strip
+            value = %w[1 2].include?(v) ? v : "2"
           when "option_variant"
             data_input_name = "option_variant"
             rb = conversation[:radio_button] || conversation["radio_button"]
@@ -435,6 +447,7 @@ class ScenarioUserResponse < ApplicationRecord
   string :cash_on_delivery_payment, is_encrypt: false
   string :np_delivery_payment, is_encrypt: false
   boolean :is_regular_order
+  string :skip_delivery_datetime
   string :delivery_frequency, is_encrypt: false
   integer :quantity, is_encrypt: false
   integer :delivery_method, is_encrypt: false
