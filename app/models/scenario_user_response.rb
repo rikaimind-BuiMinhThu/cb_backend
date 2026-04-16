@@ -318,6 +318,27 @@ class ScenarioUserResponse < ApplicationRecord
             data_input_name = "text_with_thumbnail_image"
             value = conversation[:product_purchase_select_option].to_json
           end
+        when "calendar"
+          calendar = conversation[:calendar] || conversation["calendar"]
+          next if calendar.blank?
+          is_save = calendar[:is_save_input_content] == true || calendar["is_save_input_content"] == true
+          next unless is_save
+          data_input_name = (calendar[:save_input_content] || calendar["save_input_content"]).to_s.presence
+          next unless data_input_name
+          calendar_type = (calendar[:type] || calendar["type"]).to_s
+          value = case calendar_type
+                  when "start_end_date"
+                    s = calendar[:start_date_select] || calendar["start_date_select"]
+                    e = calendar[:end_date_select] || calendar["end_date_select"]
+                    if s.blank? && e.blank?
+                      nil
+                    else
+                      "#{s.presence || 'start date'} ~ #{e.presence || 'end date'}"
+                    end
+                  else
+                    calendar[:date_select] || calendar["date_select"]
+                  end
+          next if value.blank?
         end
         puts "=============================="
         puts "data_input_name: #{data_input_name}"
