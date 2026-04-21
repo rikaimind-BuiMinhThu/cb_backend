@@ -20,4 +20,5 @@ json.data do
   json.conversation JSON.parse(@scenario.conversation) unless @scenario.conversation.blank?
   json.is_used_message_loaded_past @scenario.is_used_message_loaded_past
   json.use_fullwidth_chatbot_mobile @scenario.use_fullwidth_chatbot_mobile
+  json.is_clear_landing_page_session @scenario.is_clear_landing_page_session
 end
