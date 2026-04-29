@@ -47,6 +47,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         chatbot_id: scenario.chatbot_id,
         scenario_type: scenario.scenario_type || 'payment',
         merchandise_id: scenario.merchandise_id_for_api,
+        is_clear_landing_page_session: scenario.is_clear_landing_page_session,
         conversation: scenario_conversation ? JSON.parse(scenario_conversation) : "",
         created_at: scenario.created_at,
         updated_at: scenario.updated_at
@@ -168,6 +169,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
       @scenario.timer_config = JSON.generate(params[:timer_config].as_json) if params[:timer_config].present?
       @scenario.is_used_message_loaded_past = params[:is_used_message_loaded_past]
       @scenario.use_fullwidth_chatbot_mobile = params[:use_fullwidth_chatbot_mobile]
+      @scenario.is_clear_landing_page_session = params[:is_clear_landing_page_session]
       @scenario.save!
     rescue StandardError => error
       Rails.logger.debug(error)
@@ -210,7 +212,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
   def get_scenario_selected
     bot = Chatbot.find_by(id: params[:chatbot_id])     
     return render json: { code: 2, message: "Chatbot not found" } if bot.blank?  
-    scenario = Scenario.select(:id, :name).find_by(id: bot.scenario_selected)  
+    scenario = Scenario.select(:id, :name, :is_clear_landing_page_session).find_by(id: bot.scenario_selected)   
     if scenario.blank?
       return render json: { code: 2, message: "Scenario not found" }
     end  
