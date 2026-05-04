@@ -32,12 +32,13 @@ class Api::V1::ShopifyController < ApplicationController
         }
       }
     QUERY
-
-    response = @client.query(query:, variables: {
-      numProducts: num_products,
-      cursor: cursor,
-    })
-    handle_response(response)
+    with_shopify_retry do
+      response = @client.query(query:, variables: {
+        numProducts: num_products,
+        cursor: cursor,
+      })
+      handle_response(response)
+    end
   end
 
   def product_variant
@@ -61,8 +62,10 @@ class Api::V1::ShopifyController < ApplicationController
         }
       QUERY
 
-      response = @client.query(query:)
-      handle_response(response)
+      with_shopify_retry do
+        response = @client.query(query:)
+        handle_response(response)
+      end
     else
       render json: { success: false, error: 'Missing parameter: id' }, status: :unprocessable_entity
     end
@@ -75,6 +78,7 @@ class Api::V1::ShopifyController < ApplicationController
     first_name = params["first_name"] || ""
     last_name = params["last_name"] || ""
     lines = params["lines"] || []
+    attributes = params["attributes"] || []
     zip = params["zip"] || ""
     province = params["province"] || ""
     city = params["city"] || ""
@@ -149,40 +153,43 @@ class Api::V1::ShopifyController < ApplicationController
       }
     GRAPHQL
 
-    response = @client.query(query:, variables: {
-      cartInput: {
-        lines: lines,
-        buyerIdentity: {
-          email: email,
-          countryCode: "JP",
-          deliveryAddressPreferences: {
-              deliveryAddress: {
-                country: "JP",
-                firstName: first_name,
-                lastName: last_name,
-                zip: zip,
-                province: province,
-                city: city,
-                address1: address1,
-                address2: address2,
-                phone: phone
+    with_shopify_retry do
+      response = @client.query(query:, variables: {
+        cartInput: {
+          lines: lines,
+          attributes: attributes,
+          buyerIdentity: {
+            email: email,
+            countryCode: "JP",
+            deliveryAddressPreferences: {
+                deliveryAddress: {
+                  country: "JP",
+                  firstName: first_name,
+                  lastName: last_name,
+                  zip: zip,
+                  province: province,
+                  city: city,
+                  address1: address1,
+                  address2: address2,
+                  phone: phone
+                }
               }
-            }
+          }
         }
-      }
-    })
+      })
 
-    if response.code == 200 && response.body["data"] && response.body["data"]["cartCreate"] && response.body["data"]["cartCreate"]["cart"] && response.body["data"]["cartCreate"]["cart"]["id"]
-      cart_id = response.body["data"]["cartCreate"]["cart"]["id"]
-      cart_system = CartSystem.new(cart_token: cart_id, uid: uuid, user_id: @user.id)
-      if cart_system.save
-        shopify_logger.info "[CartCreate] SUCCESS: #{cart_id}"
+      if response.code == 200 && response.body["data"] && response.body["data"]["cartCreate"] && response.body["data"]["cartCreate"]["cart"] && response.body["data"]["cartCreate"]["cart"]["id"]
+        cart_id = response.body["data"]["cartCreate"]["cart"]["id"]
+        cart_system = CartSystem.new(cart_token: cart_id, uid: uuid, user_id: @user.id)
+        if cart_system.save
+          shopify_logger.info "[CartCreate] SUCCESS: #{cart_id}"
+        end
+      else
+        shopify_logger.error "[CartCreate] FAILED. Status: #{response.code}"
       end
-    else
-      shopify_logger.error "[CartCreate] FAILED. Status: #{response.code}"
-    end
 
-    handle_response(response)
+      handle_response(response)
+    end
   rescue ShopifyAPI::Errors::HttpResponseError => e
     shopify_logger.error "[CartCreate] FATAL. Status: #{e.code}, Msg: #{e.message}"
     render json: { success: false, error: e.message }, status: e.code || 500
@@ -263,11 +270,13 @@ class Api::V1::ShopifyController < ApplicationController
       }
     GRAPHQL
 
-    response = @client.query(query:, variables: {
-      cartId: cart_id,
-      lines: lines
-    })
-    handle_response(response)
+    with_shopify_retry do
+      response = @client.query(query:, variables: {
+        cartId: cart_id,
+        lines: lines
+      })
+      handle_response(response)
+    end
   end
 
   def webhook
@@ -311,12 +320,12 @@ class Api::V1::ShopifyController < ApplicationController
     render json: { message: 'Received Shopify webhook' }, status: :ok
   end
 
-  def set_admin_client
+  def set_admin_client(force_refresh: false)
     @user = User.find(current_user.id)
     client = Client.find(@user.client_id)
     shop_name = client.shop_url.presence || Rails.application.secrets.shop_name
     begin
-      access_token = Shopify::AuthService.fetch_access_token(client)
+      access_token = Shopify::AuthService.fetch_access_token(client, force_refresh: force_refresh)
     rescue => e
       shopify_logger.error "[AdminClient] FATAL. Msg: #{e.message}"
       return render json: { success: false, error: e.message }, status: :unauthorized
@@ -348,14 +357,14 @@ class Api::V1::ShopifyController < ApplicationController
     @client = ShopifyAPI::Clients::Graphql::Admin.new(session: session)
   end
 
-  def set_storefront_client
+  def set_storefront_client(force_refresh: false)
     @scenario = Scenario.find_by_id(params[:scenario_id])
     @user = @scenario.chatbot&.user
     client = Client.find(@user.client_id)
     shop_name = client.shop_url.presence || Rails.application.secrets.shop_name
 
     begin
-      storefront_access_token = Shopify::AuthService.fetch_storefront_token(client)
+      storefront_access_token = Shopify::AuthService.fetch_storefront_token(client, force_refresh: force_refresh)
     rescue => e
       shopify_logger.error "[StorefrontClient] FATAL. Msg: #{e.message}"
       return render json: { success: false, error: e.message }, status: :unauthorized
@@ -398,13 +407,6 @@ class Api::V1::ShopifyController < ApplicationController
   def shopify_logger
     Shopify::AuthService.shopify_logger
   end
-  def fetch_admin_access_token(client)
-    Shopify::AuthService.fetch_access_token(client)
-  end
-
-  def create_storefront_access_token(client)
-    Shopify::AuthService.fetch_storefront_token(client)
-  end
 
   def detect_device(user_agent)
     case user_agent
@@ -414,6 +416,22 @@ class Api::V1::ShopifyController < ApplicationController
       "tablet_conversion"
     else
       "pc_conversion"
+    end
+  end
+
+  def with_shopify_retry
+    retry_count = 0
+    begin
+      yield
+    rescue ShopifyAPI::Errors::HttpResponseError => e
+      if e.code == 401 && retry_count < 1
+        retry_count += 1
+        shopify_logger.warn "[Shopify] 401 Detected. Force refreshing token..."
+        set_admin_client(force_refresh: true)
+        retry
+      else
+        raise e
+      end
     end
   end
 end

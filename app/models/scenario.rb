@@ -20,4 +20,10 @@ class Scenario < ApplicationRecord
     return nil unless shopify_payment_merchandise_context?
     merchandise_id
   end
+
+  def product_id_cross_sell_for_api
+    return nil unless shopify_payment_merchandise_context?
+    return nil unless is_used_crosssell
+    product_id_cross_sell
+  end
 end

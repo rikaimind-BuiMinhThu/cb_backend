@@ -164,6 +164,12 @@ class ScenarioUserResponse < ApplicationRecord
           when "quantity"
             data_input_name = "quantity"
             value = conversation.dig(:text_input, :text, :value)
+            if value.nil? || value.to_s.strip == ""
+              ti = conversation[:text_input]
+              tx = ti && ti[:text]
+              raw = tx && tx[:value]
+              value = (Integer(raw.to_s) rescue nil) if raw != nil && raw.to_s.strip != ""
+            end
           when "last_name"
             data_input_name = "last_name"
             value = conversation.dig(:text_input, :text, :value)
@@ -215,6 +221,53 @@ class ScenarioUserResponse < ApplicationRecord
             selected = get_selected_obj_for_radio_button(conversation)
             value = selected[:value]
             data_input_name = "is_use_coupon"
+          when "skip_delivery_datetime"
+            data_input_name = "skip_delivery_datetime"
+            rb = conversation[:radio_button] || conversation["radio_button"]
+            sel = (rb[:initial_selection] || rb["initial_selection"]).to_s
+            opts = Array(rb[:default] || rb["default"]) + Array(rb[:radio_button_img] || rb["radio_button_img"])
+            hit = opts.find do |o|
+              [o[:id], o["id"], o[:value], o["value"]].compact.map(&:to_s).include?(sel)
+            end
+            raw = hit && (hit[:value] || hit["value"])
+            raw = (hit && (hit[:id] || hit["id"])) if raw.nil? && hit
+            v = raw.to_s.strip
+            value = %w[1 2].include?(v) ? v : "2"
+          when "option_variant"
+            data_input_name = "option_variant"
+            rb = conversation[:radio_button] || conversation["radio_button"]
+            value =
+              if rb.present? && (rb[:type] || rb["type"]).to_s == "radio_button_img" &&
+                  (imgs = rb[:radio_button_img] || rb["radio_button_img"]).present?
+                sel = (rb[:initial_selection] || rb["initial_selection"]).to_s
+                Array(imgs).find { |x| (x[:value] || x["value"]).to_s == sel }
+                  .then { |o| (o && (o[:text] || o["text"] || o[:value] || o["value"]).presence) || sel }
+              else
+                get_selected_obj_for_radio_button(conversation)&.[](:value)
+              end
+          when "cross_sell_option"
+            data_input_name = "cross_sell_option"
+            rb = conversation[:radio_button] || conversation["radio_button"]
+            value =
+              if rb.present? && (rb[:type] || rb["type"]).to_s == "radio_button_img" &&
+                  (imgs = rb[:radio_button_img] || rb["radio_button_img"]).present?
+                sel = (rb[:initial_selection] || rb["initial_selection"]).to_s
+                Array(imgs).find { |x| (x[:value] || x["value"]).to_s == sel }
+                  .then { |o| (o && (o[:text] || o["text"] || o[:value] || o["value"]).presence) || sel }
+              else
+                v = get_selected_obj_for_radio_button(conversation)&.[](:value)
+                if v.nil? && rb.present?
+                  sel = (rb[:initial_selection] || rb["initial_selection"]).to_s
+                  hit = Array(rb[:default] || rb["default"]).find do |obj|
+                    o_id = obj[:id] || obj["id"]
+                    o_val = obj[:value] || obj["value"]
+                    o_id.to_s == sel || o_val.to_s == sel
+                  end
+                  v = (hit[:value] || hit["value"]) if hit
+                  v = (hit[:id] || hit["id"]) if hit && v.nil?
+                end
+                v
+              end
           end
         when "card_payment_radio_button"
           selected = get_selected_obj_for_card_payment_radio_button(conversation)
@@ -277,6 +330,27 @@ class ScenarioUserResponse < ApplicationRecord
             data_input_name = "text_with_thumbnail_image"
             value = conversation[:product_purchase_select_option].to_json
           end
+        when "calendar"
+          calendar = conversation[:calendar] || conversation["calendar"]
+          next if calendar.blank?
+          is_save = calendar[:is_save_input_content] == true || calendar["is_save_input_content"] == true
+          next unless is_save
+          data_input_name = (calendar[:save_input_content] || calendar["save_input_content"]).to_s.presence
+          next unless data_input_name
+          calendar_type = (calendar[:type] || calendar["type"]).to_s
+          value = case calendar_type
+                  when "start_end_date"
+                    s = calendar[:start_date_select] || calendar["start_date_select"]
+                    e = calendar[:end_date_select] || calendar["end_date_select"]
+                    if s.blank? && e.blank?
+                      nil
+                    else
+                      "#{s.presence || 'start date'} ~ #{e.presence || 'end date'}"
+                    end
+                  else
+                    calendar[:date_select] || calendar["date_select"]
+                  end
+          next if value.blank?
         end
         puts "=============================="
         puts "data_input_name: #{data_input_name}"
@@ -373,6 +447,7 @@ class ScenarioUserResponse < ApplicationRecord
   string :cash_on_delivery_payment, is_encrypt: false
   string :np_delivery_payment, is_encrypt: false
   boolean :is_regular_order
+  string :skip_delivery_datetime
   string :delivery_frequency, is_encrypt: false
   integer :quantity, is_encrypt: false
   integer :delivery_method, is_encrypt: false
@@ -382,6 +457,7 @@ class ScenarioUserResponse < ApplicationRecord
   text :paypal_payment, is_encrypt: true
   text :paidy_payment, is_encrypt: false
   string :pin_code, is_encrypt: false
+  string :cross_sell_option, is_encrypt: false
   text :text_with_thumbnail_image, is_encrypt: false
   enum submit_type: {error: 0, add: 1, upd: 2}
 end

@@ -47,6 +47,8 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         chatbot_id: scenario.chatbot_id,
         scenario_type: scenario.scenario_type || 'payment',
         merchandise_id: scenario.merchandise_id_for_api,
+        is_used_crosssell: scenario.is_used_crosssell,
+        product_id_cross_sell: scenario.product_id_cross_sell_for_api,
         is_clear_landing_page_session: scenario.is_clear_landing_page_session,
         conversation: scenario_conversation ? JSON.parse(scenario_conversation) : "",
         created_at: scenario.created_at,
@@ -153,8 +155,24 @@ class Api::V1::Managements::ScenariosController < ApplicationController
               "gid://shopify/ProductVariant/#{merch_param}"
             end
         end
+        @scenario.is_used_crosssell = params[:is_used_crosssell]
+        if @scenario.is_used_crosssell && (params.key?(:product_id_cross_sell) || params.key?("product_id_cross_sell"))
+          cross_param = params[:product_id_cross_sell].to_s.strip
+          @scenario.product_id_cross_sell =
+            if cross_param.blank?
+              nil
+            elsif cross_param.start_with?("gid://shopify/ProductVariant/")
+              cross_param
+            else
+              "gid://shopify/ProductVariant/#{cross_param}"
+            end
+        else
+          @scenario.product_id_cross_sell = nil
+        end
       else
         @scenario.merchandise_id = nil
+        @scenario.is_used_crosssell = false
+        @scenario.product_id_cross_sell = nil
       end
       @scenario.is_use_only_regular_order = params[:is_use_only_regular_order]
       @scenario.is_used_fukushashiki = params[:is_used_fukushashiki]

@@ -5,12 +5,12 @@ module Shopify
   class AuthService
     class AuthError < StandardError; end
 
-    def self.fetch_access_token(client)
-      new(client).admin_token
+    def self.fetch_access_token(client, force_refresh: false)
+      new(client).admin_token(force_refresh: force_refresh)
     end
 
-    def self.fetch_storefront_token(client)
-      new(client).storefront_token
+    def self.fetch_storefront_token(client, force_refresh: false)
+      new(client).storefront_token(force_refresh: force_refresh)
     end
 
     def self.refresh!(client)
@@ -22,9 +22,9 @@ module Shopify
       @token_record = ShopifyAccessToken.find_or_initialize_by(client_id: client.id)
     end
 
-    def admin_token
+    def admin_token(force_refresh: false)
       begin
-        refresh_tokens if !@token_record.valid_tokens?
+        refresh_tokens if force_refresh || !@token_record.valid_tokens?
       rescue => e
         self.class.shopify_logger.warn "[ShopifyAuth] DB refresh failed (#{shop_url}). Using secrets.yml fallback. Error: #{e.message}"
       end
@@ -32,9 +32,9 @@ module Shopify
       @token_record.valid_tokens? ? @token_record.admin_token : Rails.application.secrets.access_token
     end
 
-    def storefront_token
+    def storefront_token(force_refresh: false)
       begin
-        refresh_tokens if !@token_record.valid_tokens?
+        refresh_tokens if force_refresh || !@token_record.valid_tokens?
       rescue => e
       end
 
