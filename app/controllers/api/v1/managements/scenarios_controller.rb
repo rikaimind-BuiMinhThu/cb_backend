@@ -69,6 +69,10 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         custom_css_content: scenario.custom_css_content,
         is_used_err_msg_by_js: scenario.is_used_err_msg_by_js,
         err_msg_js_code: scenario.err_msg_js_code,
+        err_msg_setting_mode: scenario.err_msg_setting_mode,
+        err_msg_field_selectors: scenario.err_msg_field_selectors,
+        err_msg_form_selectors: scenario.err_msg_form_selectors,
+        launch_button_selectors: scenario.launch_button_selectors,
         is_used_custom_js_code: scenario.is_used_custom_js_code,
         timer_config: scenario.timer_config ? JSON.parse(scenario.timer_config) : "",
         head_custom_js_code: scenario.head_custom_js_code,
@@ -180,6 +184,10 @@ class Api::V1::Managements::ScenariosController < ApplicationController
       @scenario.custom_css_content = params[:custom_css_content]
       @scenario.is_used_err_msg_by_js = params[:is_used_err_msg_by_js]
       @scenario.err_msg_js_code = params[:err_msg_js_code]
+      @scenario.err_msg_setting_mode = params[:err_msg_setting_mode] if params.key?(:err_msg_setting_mode)
+      @scenario.err_msg_field_selectors = params[:err_msg_field_selectors]
+      @scenario.err_msg_form_selectors = params[:err_msg_form_selectors]
+      @scenario.launch_button_selectors = params[:launch_button_selectors]
       @scenario.is_used_custom_js_code = params[:is_used_custom_js_code]
       @scenario.head_custom_js_code = params[:head_custom_js_code]
       @scenario.top_body_custom_js_code = params[:top_body_custom_js_code]

@@ -10,6 +10,10 @@ json.data do
   json.is_used_custom_css @scenario.is_used_custom_css
   json.is_used_err_msg_by_js @scenario.is_used_err_msg_by_js
   json.err_msg_js_code @scenario.err_msg_js_code
+  json.err_msg_setting_mode @scenario.err_msg_setting_mode
+  json.err_msg_field_selectors @scenario.err_msg_field_selectors
+  json.err_msg_form_selectors @scenario.err_msg_form_selectors
+  json.launch_button_selectors @scenario.launch_button_selectors
   json.is_used_custom_js_code @scenario.is_used_custom_js_code
   json.head_custom_js_code @scenario.head_custom_js_code
   json.top_body_custom_js_code @scenario.top_body_custom_js_code
