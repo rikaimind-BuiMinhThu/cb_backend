@@ -85,7 +85,11 @@ Rails.application.routes.draw do
         resources :conversions, only: [:index, :create, :show]
         resources :supporting_users, only: :destroy
       end
-      resources :instagram_settings, only: [:index, :show, :update, :destroy]
+      resources :instagram_settings, only: [:index, :show, :update, :destroy] do
+        collection do
+          get :profile
+        end
+      end
       get "webhook", :to => 'chatbots#webhook'
       post "webhook", :to => 'chatbots#webhook_callback'
       post "instagram_connect", :to => 'instagram_settings#connect'

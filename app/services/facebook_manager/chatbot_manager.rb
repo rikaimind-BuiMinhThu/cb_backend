@@ -27,10 +27,15 @@ module FacebookManager
 
     private
 
-    def send_message_to_user page_access_token
+    def graph_client(page_access_token)
+      GraphApiClient.new(page_access_token)
+    end
+
+    def send_message_to_user(page_access_token)
       return if @message&.message_type == "past_post"
       return if @message&.message_value.blank?
-      text_sent_to_user =  @message.message_value
+
+      text_sent_to_user = @message.message_value
 
       if @message.message_buttons.present?
         buttons = []
@@ -73,30 +78,17 @@ module FacebookManager
         }
       end
 
-      if ['comments', 'live_comments'].include?(@message_type)
-        request_body = {
-          "recipient": {
-            "comment_id": @sender_psid
-          },
-          "message": response
-        }
-      else
-        request_body = {
-          "recipient": {
-            "id": @sender_psid
-          },
-          "message": response
-        }
-      end
+      request_body = build_message_request_body(response)
       Rails.logger.debug(request_body)
-      message_response = HttpManager.new("https://graph.facebook.com/v2.6/me/messages?access_token=#{page_access_token}", request_body).post_request
+      message_response = post_message(page_access_token, request_body)
       Rails.logger.debug(message_response)
       usage_type = @message_type.split("bag")[0] + "sent"
-      create_instagram_log(@sender_psid, usage_type, text_sent_to_user, @instagram_account, nil, nil) if message_response["recipient_id"].present?
+      create_instagram_log(@sender_psid, usage_type, text_sent_to_user, @instagram_account, nil, nil) if message_response.dig(:data, "recipient_id").present?
     end
 
-    def send_image_to_user page_access_token
+    def send_image_to_user(page_access_token)
       return if @message&.img_value&.url.blank?
+
       response = {
         "attachment":{
           "type": "IMAGE",
@@ -106,30 +98,17 @@ module FacebookManager
           }
         }
       }
-      if ['comments', 'live_comments'].include?(@message_type)
-        request_body = {
-          "recipient": {
-            "comment_id": @sender_psid
-          },
-          "message": response
-        }
-      else
-        request_body = {
-          "recipient": {
-            "id": @sender_psid
-          },
-          "message": response
-        }
-      end
+      request_body = build_message_request_body(response)
       Rails.logger.debug(request_body)
-      message_response = HttpManager.new("https://graph.facebook.com/v2.6/me/messages?access_token=#{page_access_token}", request_body).post_request
+      message_response = post_message(page_access_token, request_body)
       Rails.logger.debug(message_response)
       usage_type = @message_type.split("bag")[0] + "sent"
-      create_instagram_log(@sender_psid, usage_type, Settings.chatbot_domain + @message.img_value.url, @instagram_account, nil, nil) if message_response["recipient_id"].present?
+      create_instagram_log(@sender_psid, usage_type, Settings.chatbot_domain + @message.img_value.url, @instagram_account, nil, nil) if message_response.dig(:data, "recipient_id").present?
     end
 
-    def send_payload_to_user page_access_token
+    def send_payload_to_user(page_access_token)
       return if @payload.blank?
+
       response = {
         "text": @payload
       }
@@ -140,14 +119,14 @@ module FacebookManager
         "message": response
       }
       Rails.logger.debug(request_body)
-      message_response = HttpManager.new("https://graph.facebook.com/v2.6/me/messages?access_token=#{page_access_token}", request_body).post_request
+      message_response = post_message(page_access_token, request_body)
       Rails.logger.debug(message_response)
-      create_instagram_log(@sender_psid, "dm_sent", @payload, @instagram_account, nil, nil) if message_response["recipient_id"].present?
-      # ChatbotUsage.create(sender_id: @sender_psid, instagram_account: @instagram_account) if message_response["recipient_id"].present?
+      create_instagram_log(@sender_psid, "dm_sent", @payload, @instagram_account, nil, nil) if message_response.dig(:data, "recipient_id").present?
     end
 
-    def share_post_to_user page_access_token
+    def share_post_to_user(page_access_token)
       return if @message&.message_value.blank? || @message.message_type != "past_post"
+
       request_body = {
         "recipient": {
           "id": @sender_psid
@@ -160,21 +139,57 @@ module FacebookManager
         }
       }
       Rails.logger.debug(request_body)
-      message_response = HttpManager.new("https://graph.facebook.com/v14.0/me/messages?access_token=#{page_access_token}", request_body).post_request
+      message_response = post_message(page_access_token, request_body)
       Rails.logger.debug(message_response)
-      create_instagram_log(@sender_psid, "dm_sent", @message.message_value, @instagram_account, nil, nil) if message_response["recipient_id"].present?
+      create_instagram_log(@sender_psid, "dm_sent", @message.message_value, @instagram_account, nil, nil) if message_response.dig(:data, "recipient_id").present?
     end
 
-    def create_instagram_log sender_psid, usage_type, content, instagram_account, media_id, message_button_id
+    def build_message_request_body(response)
+      if ['comments', 'live_comments'].include?(@message_type)
+        {
+          "recipient": {
+            "comment_id": @sender_psid
+          },
+          "message": response
+        }
+      else
+        {
+          "recipient": {
+            "id": @sender_psid
+          },
+          "message": response
+        }
+      end
+    end
+
+    def post_message(page_access_token, request_body)
+      graph_client(page_access_token).post('me/messages', request_body)
+    end
+
+    def create_instagram_log(sender_psid, usage_type, content, instagram_account, media_id, message_button_id)
       ActiveRecord::Base.transaction do
         instagram_user = InstagramUser.find_or_create_by!(instagram_id: sender_psid, instagram_account: instagram_account)
-        instagram_user_query = HttpManager.new("https://graph.facebook.com/v14.0/#{sender_psid}?fields=name,username,follower_count,is_user_follow_business,is_business_follow_user&access_token=#{instagram_account.page_access_token}").get_request
-        instagram_user.update!(username: instagram_user_query["username"], full_name: instagram_user_query["name"], follower_count: instagram_user_query["follower_count"], is_verified_user: instagram_user_query["is_verified_user"], is_user_follow_business: instagram_user_query["is_user_follow_business"], is_business_follow_user: instagram_user_query["is_business_follow_user"], instagram_account: instagram_account)
+        profile_result = graph_client(instagram_account.page_access_token).get(
+          sender_psid.to_s,
+          fields: 'name,username,follower_count,is_user_follow_business,is_business_follow_user'
+        )
+        if profile_result[:success]
+          instagram_user_query = profile_result[:data]
+          instagram_user.update!(
+            username: instagram_user_query["username"],
+            full_name: instagram_user_query["name"],
+            follower_count: instagram_user_query["follower_count"],
+            is_verified_user: instagram_user_query["is_verified_user"],
+            is_user_follow_business: instagram_user_query["is_user_follow_business"],
+            is_business_follow_user: instagram_user_query["is_business_follow_user"],
+            instagram_account: instagram_account
+          )
+        end
 
         chatbot_usage = ChatbotUsage.new(instagram_user: instagram_user, usage_type: usage_type, content: content, media_id: media_id, instagram_account: instagram_account)
-        if ChatbotUsage.where(media_id: media_id).where.not(media_start_at: nil).blank?
-          media_query = HttpManager.new("https://graph.facebook.com/#{media_id}?fields=id,timestamp&access_token=#{instagram_account.page_access_token}").get_request
-          chatbot_usage.media_start_at = media_query["timestamp"].to_datetime if media_query["timestamp"].present?
+        if ChatbotUsage.where(media_id: media_id).where.not(media_start_at: nil).blank? && media_id.present?
+          media_result = graph_client(instagram_account.page_access_token).get(media_id.to_s, fields: 'id,timestamp')
+          chatbot_usage.media_start_at = media_result.dig(:data, "timestamp").to_datetime if media_result.dig(:data, "timestamp").present?
         end
         chatbot_usage.save!
         ChatbotUsageGroup.create(chatbot_usage: chatbot_usage, message_bag: @message.message_bag, message_group: @message.message_bag.message_group)
@@ -183,7 +198,7 @@ module FacebookManager
       end
     end
 
-    def add_params_to_url content, instagram_user, message
+    def add_params_to_url(content, instagram_user, message)
       content = content.include?('?') ? content + "&instagram_user=" + instagram_user.id.to_s : content + "?instagram_user=" + instagram_user.id.to_s
       content += "&message_bag_id=" + message.message_bag.id.to_s
     end

@@ -5,7 +5,6 @@ class Api::V1::MessageManagements::IceBreakersController < ApplicationController
   def index
     @ice_breakers = IceBreaker.where(instagram_account_id: current_user.instagram_account.id)
                               .includes(:message_bag)
-    # render json: {code: 1, data: ice_breakers}
   end
 
   def create
@@ -46,43 +45,33 @@ class Api::V1::MessageManagements::IceBreakersController < ApplicationController
   end
 
   def status
-    return render json: {code: 2, message: "User can't permission"} if current_user.instagram_account.ig_id != params[:ig_id]
-    ig_access_token = InstagramAccount.find_by(ig_id: params[:ig_id]).page_access_token
-    instagram_ice_breakers = HttpManager.new("https://graph.facebook.com/v11.0/me/messenger_profile?fields=ice_breakers&platform=instagram&access_token=#{ig_access_token}")
-      .get_request
-    render json: {code: 1, instagram_ice_breakers: instagram_ice_breakers}
+    return render json: {code: 2, message: "User can't permission"} unless authorized_for_ig?(params[:ig_id])
+
+    result = messenger_profile_service(params[:ig_id]).ice_breakers_status
+    return render_meta_error(result) unless result[:success]
+
+    render json: {code: 1, instagram_ice_breakers: result[:data]}
   end
 
   def turn_on
-    return render json: {code: 2, message: "User can't permission"} if current_user.instagram_account.ig_id != params[:ig_id]
-    ig_access_token = InstagramAccount.find_by(ig_id: params[:ig_id]).page_access_token
-    call_to_actions = []
-    IceBreaker.where(instagram_account: current_user.instagram_account).each do |ice_breaker|
-      payload_hash = {message_bag_id: ice_breaker.message_bag_id}
-      call_to_actions.push({"question": ice_breaker.question, "payload": payload_hash.to_json})
-    end
+    return render json: {code: 2, message: "User can't permission"} unless authorized_for_ig?(params[:ig_id])
+
+    call_to_actions = build_ice_breaker_actions
     return render json: {code: 2, instagram_persistent_menu: "ice_breaker is blank"} if call_to_actions.blank?
-    instagram_ice_breaker = HttpManager.new(
-      "https://graph.facebook.com/v11.0/me/messenger_profile?platform=instagram&access_token=#{ig_access_token}",
-      {
-        "platform": "instagram",
-        "ice_breakers": [
-          {
-          "call_to_actions": call_to_actions,
-          "locale": "default"
-        }]
-      }
-    ).post_request
-    render json: {code: 1, instagram_ice_breaker: instagram_ice_breaker}
+
+    result = messenger_profile_service(params[:ig_id]).publish_ice_breakers(call_to_actions)
+    return render_meta_error(result) unless result[:success]
+
+    render json: {code: 1, instagram_ice_breaker: result[:data]}
   end
 
   def turn_off
-    return render json: {code: 2, message: "User can't permission"} if current_user.instagram_account.ig_id != params[:ig_id]
-    ig_access_token = InstagramAccount.find_by(ig_id: params[:ig_id]).page_access_token
-    instagram_ice_breaker = HttpManager.new(
-      "https://graph.facebook.com/v11.0/me/messenger_profile?fields=%5B'ice_breakers'%5D&platform=instagram&access_token=#{ig_access_token}"
-    ).delete_request
-    render json: {code: 1, instagram_ice_breaker: instagram_ice_breaker}
+    return render json: {code: 2, message: "User can't permission"} unless authorized_for_ig?(params[:ig_id])
+
+    result = messenger_profile_service(params[:ig_id]).remove_ice_breakers
+    return render_meta_error(result) unless result[:success]
+
+    render json: {code: 1, instagram_ice_breaker: result[:data]}
   end
 
   private
@@ -93,5 +82,29 @@ class Api::V1::MessageManagements::IceBreakersController < ApplicationController
 
   def check_instagram_connect
     return render json: {code: 2, message: "You need connect instagram account first"} if current_user.instagram_account.blank?
+  end
+
+  def authorized_for_ig?(ig_id)
+    current_user.instagram_account.ig_id == ig_id
+  end
+
+  def messenger_profile_service(ig_id)
+    access_token = InstagramAccount.find_by(ig_id: ig_id).page_access_token
+    FacebookManager::MessengerProfileService.new(access_token)
+  end
+
+  def build_ice_breaker_actions
+    IceBreaker.where(instagram_account: current_user.instagram_account).map do |ice_breaker|
+      payload_hash = { message_bag_id: ice_breaker.message_bag_id }
+      { question: ice_breaker.question, payload: payload_hash.to_json }
+    end
+  end
+
+  def render_meta_error(result)
+    render json: {
+      code: 2,
+      message: result.dig(:error, :message) || 'Meta API request failed',
+      meta_error: result[:error]
+    }
   end
 end

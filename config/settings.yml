@@ -11,7 +11,7 @@ webhook:
 facebook:
   sdk:
     url: https://graph.facebook.com/
-    version: v14.0
+    version: v25.0
   meta_app:
     # app_id: 540442430955429
     # app_secret: 32bda995fb95260d62f8c96b902052c6

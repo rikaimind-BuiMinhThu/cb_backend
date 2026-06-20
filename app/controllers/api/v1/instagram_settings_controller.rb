@@ -7,6 +7,20 @@ class Api::V1::InstagramSettingsController < ApplicationController
     # render json: {code: 1, data: instagram_accounts}
   end
 
+  def profile
+    instagram_account = current_user.instagram_account
+    return render json: { code: 2, message: 'You need connect instagram account first' } if instagram_account.blank?
+    return render json: { code: 2, message: 'Missing page access token' } if instagram_account.page_access_token.blank?
+
+    result = FacebookManager::GraphApiClient.new(instagram_account.page_access_token).get(
+      instagram_account.ig_id.to_s,
+      fields: 'id,username,ig_id,name,profile_picture_url'
+    )
+    return render json: { code: 2, message: result.dig(:error, :message), meta_error: result[:error] } unless result[:success]
+
+    render json: { code: 1, data: result[:data] }
+  end
+
   def show
     instagram_account = InstagramAccount.find_by(id: params[:id])
     return render json: {code: 2, message: "Cannot find instagram setting"} if instagram_account.blank?
