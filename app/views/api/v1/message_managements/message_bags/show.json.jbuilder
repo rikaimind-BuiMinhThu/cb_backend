@@ -2,7 +2,14 @@ json.code 1
 json.data do
   json.message_bag @message_bag
   json.messages @messages.each do |message|
-    json.merge! message.as_json
+    json.merge! message.as_json.except('img_value')
+    if message.img_value.present? && message.img_value.url.present?
+      json.img_value do
+        json.url message.img_value.url
+      end
+    else
+      json.img_value nil
+    end
     json.message_buttons message.message_buttons do |message_button|
       json.merge! message_button.as_json
       if message_button.message_bag_id.present?
