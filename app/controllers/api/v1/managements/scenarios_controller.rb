@@ -93,6 +93,14 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     scenario = Scenario.new(scenario_params)
     scenario.chatbot_id = params[:chatbot_id]
     scenario.scenario_type = params[:scenario_type] || 'payment' if scenario.scenario_type.blank?
+
+    if params[:template_id].present?
+      template = ScenarioTemplate.find_by(id: params[:template_id])
+      return render json: { code: 2, message: "Template not found" } if template.blank?
+
+      template.apply_to!(scenario)
+    end
+
     ActiveRecord::Base.transaction do
       scenario.save!
     rescue StandardError => error

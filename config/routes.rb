@@ -53,6 +53,9 @@ Rails.application.routes.draw do
         resources :sms_templates, only: [:index, :create, :show, :update, :destroy]
         resources :plans, only: [:index, :show, :update, :create, :destroy]
         resources :payment_histories, only: [:show, :update, :create, :destroy]
+        resources :scenario_templates, only: [:index, :show, :create, :destroy]
+        get "scenario_templates/:id/conversation", :to => "scenario_templates#detail_conversation"
+        post "scenario_templates/:id/conversation", :to => "scenario_templates#conversation"
       end
       namespace :message_managements do
         get "message_groups/data_analyst", :to => 'message_groups#data_analyst'
