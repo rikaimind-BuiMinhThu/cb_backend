@@ -69,7 +69,13 @@ class Api::V1::InstagramSettingsController < ApplicationController
   end
 
   def connect
-    result = FacebookManager::InstagramSetting.new(params[:fb_AuthResponse], params[:page_id], params[:ig_id], current_user.id).connect
+    result = FacebookManager::InstagramSetting.new(
+      params[:fb_AuthResponse],
+      params[:page_id],
+      params[:ig_id],
+      current_user.id,
+      page_access_token: params[:page_access_token]
+    ).connect
     return render json: {code: 2, message: result.to_s} if result != 1
     render json: {code: 1, message: "Success!"}
   end
