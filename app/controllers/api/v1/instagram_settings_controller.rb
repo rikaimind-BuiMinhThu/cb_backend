@@ -69,6 +69,8 @@ class Api::V1::InstagramSettingsController < ApplicationController
   end
 
   def connect
+    return render json: { code: 2, message: 'Unauthorized' }, status: 401 if current_user.blank?
+
     result = FacebookManager::InstagramSetting.new(
       params[:fb_AuthResponse],
       params[:page_id],
@@ -76,8 +78,15 @@ class Api::V1::InstagramSettingsController < ApplicationController
       current_user.id,
       page_access_token: params[:page_access_token]
     ).connect
-    return render json: {code: 2, message: result.to_s} if result != 1
-    render json: {code: 1, message: "Success!"}
+
+    return render json: { code: 2, message: result.to_s } if result != 1
+    render json: { code: 1, message: 'Success!' }
+  rescue ActiveRecord::ActiveRecordError => e
+    Rails.logger.error("[instagram_connect] #{e.class}: #{e.message}")
+    render json: { code: 2, message: "Database error: #{e.message}" }, status: 200
+  rescue StandardError => e
+    Rails.logger.error("[instagram_connect] #{e.class}: #{e.message}")
+    render json: { code: 2, message: "Connect failed: #{e.message}" }, status: 200
   end
 
   def destroy
