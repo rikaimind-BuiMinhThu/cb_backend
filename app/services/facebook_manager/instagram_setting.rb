@@ -29,7 +29,9 @@ module FacebookManager
 
       return ig_account.errors.full_messages.join(', ') unless ig_account.save
 
-      subscribe_webhooks(page_token)
+      subscription_error = subscribe_webhooks(page_token)
+      return subscription_error if subscription_error
+
       1
     end
 
@@ -96,13 +98,19 @@ module FacebookManager
     end
 
     def subscribe_webhooks(page_access_token)
-      GraphApiClient.new(page_access_token).post(
+      result = GraphApiClient.new(page_access_token).post(
         "#{@page_id}/subscribed_apps",
         {},
         subscribed_fields: 'messages,messaging_postbacks,comments,live_comments'
       )
+      return nil if result[:success]
+
+      message = result.dig(:error, :message) || 'Webhook subscription failed'
+      Rails.logger.warn("[instagram_connect] Webhook subscription failed: #{message}")
+      message
     rescue StandardError => e
       Rails.logger.warn("[instagram_connect] Webhook subscription failed: #{e.message}")
+      e.message
     end
   end
 end
