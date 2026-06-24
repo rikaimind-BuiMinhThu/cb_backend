@@ -101,7 +101,8 @@ module FacebookManager
       result = GraphApiClient.new(page_access_token).post(
         "#{@page_id}/subscribed_apps",
         {},
-        subscribed_fields: 'messages,messaging_postbacks,comments,live_comments'
+        # Page subscribed_apps only accepts Page fields (not Instagram comments/live_comments).
+        subscribed_fields: 'messages,messaging_postbacks'
       )
       return nil if result[:success]
 
