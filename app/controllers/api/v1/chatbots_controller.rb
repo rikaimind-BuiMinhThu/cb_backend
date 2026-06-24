@@ -20,6 +20,11 @@ class Api::V1::ChatbotsController < ApplicationController
   def webhook_callback
     return head 404 unless ['page', 'instagram'].include? params[:object]
 
+    Rails.logger.info(
+      "[webhook] object=#{params[:object]} entries=#{params[:entry]&.size} " \
+      "fields=#{params[:entry]&.flat_map { |e| e[:changes]&.map { |c| c[:field] } }&.compact}"
+    )
+
     params[:entry].each do |entry|
       if entry[:messaging].present?
         webhook_event = entry[:messaging][0]

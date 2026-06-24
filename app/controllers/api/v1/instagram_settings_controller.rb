@@ -71,6 +71,12 @@ class Api::V1::InstagramSettingsController < ApplicationController
   def connect
     return render json: { code: 2, message: 'Unauthorized' }, status: 401 if current_user.blank?
 
+    granted_scopes = extract_granted_scopes(params[:fb_AuthResponse])
+    Rails.logger.info(
+      "[instagram_connect] user_id=#{current_user.id} ig_id=#{params[:ig_id]} " \
+      "page_id=#{params[:page_id]} grantedScopes=#{granted_scopes}"
+    )
+
     result = FacebookManager::InstagramSetting.new(
       params[:fb_AuthResponse],
       params[:page_id],
@@ -79,14 +85,26 @@ class Api::V1::InstagramSettingsController < ApplicationController
       page_access_token: params[:page_access_token]
     ).connect
 
-    return render json: { code: 2, message: result.to_s } if result != 1
-    render json: { code: 1, message: 'Success!' }
+    if result != 1
+      Rails.logger.warn("[instagram_connect] failed: #{result} grantedScopes=#{granted_scopes}")
+      return render json: { code: 2, message: result.to_s, granted_scopes: granted_scopes }
+    end
+
+    render json: { code: 1, message: 'Success!', granted_scopes: granted_scopes }
   rescue ActiveRecord::ActiveRecordError => e
     Rails.logger.error("[instagram_connect] #{e.class}: #{e.message}")
     render json: { code: 2, message: "Database error: #{e.message}" }, status: 200
   rescue StandardError => e
     Rails.logger.error("[instagram_connect] #{e.class}: #{e.message}")
     render json: { code: 2, message: "Connect failed: #{e.message}" }, status: 200
+  end
+
+  def extract_granted_scopes(fb_auth_response)
+    return nil if fb_auth_response.blank?
+
+    raw = fb_auth_response.respond_to?(:to_unsafe_h) ? fb_auth_response.to_unsafe_h : fb_auth_response
+    raw = raw.with_indifferent_access if raw.respond_to?(:with_indifferent_access)
+    raw[:grantedScopes] || raw['grantedScopes']
   end
 
   def destroy

@@ -104,7 +104,13 @@ module FacebookManager
         # Page subscribed_apps only accepts Page fields (not Instagram comments/live_comments).
         subscribed_fields: 'messages,messaging_postbacks'
       )
-      return nil if result[:success]
+      if result[:success]
+        Rails.logger.info(
+          "[instagram_connect] Page webhook subscription succeeded for page_id=#{@page_id} " \
+          "fields=messages,messaging_postbacks"
+        )
+        return nil
+      end
 
       message = result.dig(:error, :message) || 'Webhook subscription failed'
       Rails.logger.warn("[instagram_connect] Webhook subscription failed: #{message}")
