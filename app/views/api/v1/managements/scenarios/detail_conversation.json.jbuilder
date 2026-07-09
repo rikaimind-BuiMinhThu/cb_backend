@@ -1,6 +1,8 @@
 json.code 1
 json.message "Success"
 json.data do
+  extra = @scenario.extra_config_hash
+
   json.cart_system @client&.cart_system
   json.scenario_name @scenario.name
   json.scenario_type @scenario.scenario_type || 'payment'
@@ -27,4 +29,9 @@ json.data do
   json.is_clear_landing_page_session @scenario.is_clear_landing_page_session
   json.is_used_crosssell @scenario.is_used_crosssell
   json.product_id_cross_sell @scenario.product_id_cross_sell_for_api
+  json.auto_logout extra["auto_logout"]
+  json.is_use_amazon_pay extra["is_use_amazon_pay"]
+  json.allowed_lp_domains extra["allowed_lp_domains"]
+  json.lp_integration_mode extra["lp_integration_mode"]
+  json.amazon_pay_config extra["amazon_pay_config"]
 end

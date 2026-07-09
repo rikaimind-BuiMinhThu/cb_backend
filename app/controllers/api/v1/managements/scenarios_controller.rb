@@ -204,6 +204,14 @@ class Api::V1::Managements::ScenariosController < ApplicationController
       @scenario.is_used_message_loaded_past = params[:is_used_message_loaded_past]
       @scenario.use_fullwidth_chatbot_mobile = params[:use_fullwidth_chatbot_mobile]
       @scenario.is_clear_landing_page_session = params[:is_clear_landing_page_session]
+      extra = {
+        auto_logout: params[:auto_logout],
+        is_use_amazon_pay: params[:is_use_amazon_pay],
+        allowed_lp_domains: params[:allowed_lp_domains],
+        lp_integration_mode: params[:lp_integration_mode],
+        amazon_pay_config: params[:amazon_pay_config],
+      }.compact
+      @scenario.extra_config = extra.present? ? JSON.generate(extra.as_json) : nil
       @scenario.save!
     rescue StandardError => error
       Rails.logger.debug(error)
