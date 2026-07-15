@@ -44,6 +44,7 @@ Rails.application.routes.draw do
         post "/emails/:id/duplicate" => "emails#duplicate"
         get "/get_list_emails_by_chatbot" => "emails#get_list_emails_by_chatbot"
         post "/emails/:id/send_email" => "emails#send_email"
+        post "/contact_forms/send" => "contact_forms#send_inquiry"
         resources :client_emails, only: [:index, :create, :update, :destroy]
         resources :file, only: [:index, :create, :destroy]
         post "/file/upload" => "file#presinged_aws"

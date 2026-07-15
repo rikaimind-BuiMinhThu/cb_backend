@@ -351,6 +351,21 @@ class ScenarioUserResponse < ApplicationRecord
                     calendar[:date_select] || calendar["date_select"]
                   end
           next if value.blank?
+        when "contact_form"
+          contact_form = conversation[:contact_form] || conversation["contact_form"]
+          next if contact_form.blank?
+          fields = contact_form[:fields] || contact_form["fields"] || {}
+          data_input_name = "contact_form"
+          value = {
+            form_template: contact_form[:form_template] || contact_form["form_template"],
+            name: fields[:name] || fields["name"],
+            email: fields[:email] || fields["email"],
+            phone: fields[:phone] || fields["phone"],
+            inquiry_type: fields[:inquiry_type] || fields["inquiry_type"],
+            order_number: fields[:order_number] || fields["order_number"],
+            product_name: fields[:product_name] || fields["product_name"],
+            content: fields[:content] || fields["content"]
+          }.to_json
         end
         puts "=============================="
         puts "data_input_name: #{data_input_name}"
