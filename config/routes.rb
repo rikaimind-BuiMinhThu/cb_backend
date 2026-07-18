@@ -32,6 +32,7 @@ Rails.application.routes.draw do
         get "chatbots/:chatbot_id/get_scenario_selected", :to => 'scenarios#get_scenario_selected'
         get "chatbots/:id/design_settings", :to => 'chatbots#get_design_settings'
         post "chatbots/:id/design_settings", :to => 'chatbots#update_design_settings'
+        get "chatbots/:id/chat_body_version", :to => 'chatbots#chat_body_version'
         get "chatbots/:id/sdk", :to => 'chatbots#webchat_sdk'
         get "chat_log/statistic", :to => 'chat_log#statistic'
         get "chat_log/:bot_id/list", :to => 'chat_log#index'
