@@ -22,6 +22,20 @@ class EmailMailer < ApplicationMailer
     effective_reply_to = reply_to.presence || @email.reply_to
     mail_options[:reply_to] = replace_var(effective_reply_to) if effective_reply_to.present?
 
+    Rails.logger.info({
+      event: "email_mailer.send_email",
+      email_id: @email.id,
+      email_template_name: @email.email_template_name,
+      chatbot_id: @email.chatbot_id,
+      to: mail_options[:to],
+      bcc: mail_options[:bcc],
+      subject: mail_options[:subject],
+      reply_to: mail_options[:reply_to],
+      content: @content,
+      variables: @variables,
+      smtp_user: client_email&.email
+    }.to_json)
+
     mail(mail_options)
   end
 
