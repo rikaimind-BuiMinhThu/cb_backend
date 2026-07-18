@@ -14,11 +14,12 @@ class Api::V1::Managements::ContactFormsController < ApplicationController
 
     return render json: { code: 2, message: "Email settings are disabled" } if !send_to_user && !send_to_staff
 
-    if fields[:name].blank? || fields[:email].blank? || fields[:content].blank?
+    email = fields[:email].to_s.strip
+    if send_to_user && email.blank?
       return render json: { code: 2, message: "Required fields are missing" }
     end
 
-    unless EMAIL_REGEX.match?(fields[:email].to_s)
+    if email.present? && !EMAIL_REGEX.match?(email)
       return render json: { code: 2, message: "Invalid user email" }
     end
 
