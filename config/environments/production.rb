@@ -75,6 +75,12 @@ Rails.application.configure do
     :enable_starttls_auto => true
   }
 
+  # Active Record encryption (required for Client#reply_smtp_gmail_app_password, ClientEmail#password).
+  # Set these to the same values as config/environments/development.rb for ciphertext compatibility.
+  config.active_record.encryption.primary_key = ENV['ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY']
+  config.active_record.encryption.deterministic_key = ENV['ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY']
+  config.active_record.encryption.key_derivation_salt = ENV['ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT']
+
   # Ignore bad email addresses and do not raise email delivery errors.
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
   # config.action_mailer.raise_delivery_errors = false
