@@ -59,6 +59,6 @@ class ContactFormMailJob
     chatbot = Chatbot.find_by(id: chatbot_id)
     return nil if chatbot.blank?
 
-    chatbot.user&.client&.client_email
+    chatbot.user&.client&.reply_smtp_credentials
   end
 end

@@ -10,7 +10,7 @@ class Api::V1::Managements::ClientsController < ApplicationController
     begin
       Client.transaction do
         User.transaction do
-          @client = Client.new(client_params)
+          @client = Client.new(client_create_params)
           if @client.save!
             @user = User.new(email: client_params[:email],
                             password: user_params[:password],
@@ -20,6 +20,8 @@ class Api::V1::Managements::ClientsController < ApplicationController
           end
         end
       end
+    rescue ActiveRecord::RecordInvalid => e
+      return render json: {code: 2, message: e.record.errors.full_messages}
     rescue Exception => e
       return render json: {code: 2, message: e}
     end
@@ -56,7 +58,13 @@ class Api::V1::Managements::ClientsController < ApplicationController
   def show
     client = Client.find_by(id: params[:id])
     return render json: {code: 2, message: "Not have permission"} unless current_user.admin_deel? || (current_user.admin_client? && client.id == current_user.client_id)
-    return render json: {code: 1, data: client} if client.present?
+    if client.present?
+      data = client.as_json.except("reply_smtp_gmail_app_password").merge(
+        reply_smtp_gmail: client.reply_smtp_gmail,
+        has_reply_smtp_password: client.reply_smtp_gmail_app_password.present?
+      )
+      return render json: { code: 1, data: data }
+    end
     render json: {code: 2, message: "Not found"}
   end
 
@@ -66,8 +74,8 @@ class Api::V1::Managements::ClientsController < ApplicationController
     return render json: {code: 2, message: "Data not found"} if client.blank?
     params[:client][:subscription_start_at] = params[:client][:subscription_start_at].to_time if params[:client][:subscription_start_at].present?
     params[:client][:subscription_end_at] = params[:client][:subscription_end_at].to_time if params[:client][:subscription_end_at].present?
-    return render json: {code: 1, message: "Success"} if client.update client_params
-    render json: {code: 2, message: "Fail"}
+    return render json: {code: 1, message: "Success"} if client.update(client_update_params)
+    render json: {code: 2, message: client.errors.full_messages.presence || "Fail"}
   end
 
   def destroy
@@ -92,7 +100,23 @@ class Api::V1::Managements::ClientsController < ApplicationController
       :title, :responsible_person, :logo_url, :url, :zip_code, :prefecture,
       :municipality, :building_name, :email, :name_katakana, :responsible_person_katakana,
       :unit_price_instagram, :unit_price_web, :unit_price_line, :unit_price_tiktok, :cart_system,
-      :shop_url, :client_id, :client_secret)
+      :shop_url, :client_id, :client_secret,
+      :reply_smtp_gmail, :reply_smtp_gmail_app_password)
+  end
+
+  def client_create_params
+    strip_blank_reply_smtp_password(client_params)
+  end
+
+  def client_update_params
+    strip_blank_reply_smtp_password(client_params)
+  end
+
+  def strip_blank_reply_smtp_password(permitted)
+    if permitted[:reply_smtp_gmail_app_password].blank?
+      permitted = permitted.except(:reply_smtp_gmail_app_password)
+    end
+    permitted
   end
 
   def user_params
