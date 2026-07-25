@@ -61,13 +61,9 @@ module FacebookManager
           "attachment":{
             "type": "template",
             "payload":{
-              "template_type": "generic",
-              "elements": [
-                {
-                  "title": text_sent_to_user,
-                  "buttons": buttons
-                }
-              ]
+              "template_type": "button",
+              "text": text_sent_to_user,
+              "buttons": buttons
             }
           }
         }
