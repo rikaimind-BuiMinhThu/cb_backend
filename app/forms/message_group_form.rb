@@ -10,17 +10,38 @@ class MessageGroupForm
   end
 
   def check_delete
-    return true if @instagram_account.blank?
-    list_setting_ids = KeywordSetting.where(instagram_account_id: @instagram_account.id).pluck(:message_bag_id)
-    list_setting_ids.push(@instagram_account.post_comment_bag_id) if @instagram_account.post_comment_bag_id.present?
-    list_setting_ids.push(@instagram_account.story_comment_bag_id) if @instagram_account.story_comment_bag_id.present?
-    list_setting_ids.push(@instagram_account.live_comment_bag_id) if @instagram_account.live_comment_bag_id.present?
     list_bag_ids = @message_group.message_bags.pluck(:id)
-    if list_bag_ids.present?
-      list_bag_ids.each do |bag_id|
-        return false if list_setting_ids.include?(bag_id)
-      end
+    return true if list_bag_ids.blank?
+
+    list_bag_ids.each do |bag_id|
+      return false if globally_referenced?(bag_id)
     end
-    return true
+
+    return true if @instagram_account.blank?
+
+    referenced_ids = account_referenced_bag_ids
+    list_bag_ids.each do |bag_id|
+      return false if referenced_ids.include?(bag_id)
+    end
+
+    true
+  end
+
+  private
+
+  def globally_referenced?(bag_id)
+    PersistentMenu.where(message_bag_id: bag_id).exists? ||
+      IceBreaker.where(message_bag_id: bag_id).exists? ||
+      MessageButton.where(message_bag_id: bag_id).exists? ||
+      Conversion.where(message_bag_id: bag_id).exists?
+  end
+
+  def account_referenced_bag_ids
+    ids = KeywordSetting.where(instagram_account_id: @instagram_account.id).pluck(:message_bag_id)
+    ids << @instagram_account.post_comment_bag_id if @instagram_account.post_comment_bag_id.present?
+    ids << @instagram_account.story_comment_bag_id if @instagram_account.story_comment_bag_id.present?
+    ids << @instagram_account.live_comment_bag_id if @instagram_account.live_comment_bag_id.present?
+    ids << @instagram_account.default_reply_bag_id if @instagram_account.default_reply_bag_id.present?
+    ids.compact
   end
 end

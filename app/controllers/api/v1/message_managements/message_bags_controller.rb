@@ -26,7 +26,7 @@ class Api::V1::MessageManagements::MessageBagsController < ApplicationController
     message_bag = MessageBag.find_by(id: params[:id])
     return render json: {code: 2, message: "Cannot find message bag"} if message_bag.blank?
     return render json: {code: 2, message: "User can't permission"} if message_bag.message_group.user_id != current_user.id
-    return render json: {code: 2, message: "Cannot delete message bag"} unless MessageBagForm.new(message_bag, current_user).check_delete
+    return render json: {code: 2, message: "Cannot delete: message bag is in use"} unless MessageBagForm.new(message_bag, current_user).check_delete
     if message_bag.destroy
       render json: {code: 1, message: "Success!"}
     else

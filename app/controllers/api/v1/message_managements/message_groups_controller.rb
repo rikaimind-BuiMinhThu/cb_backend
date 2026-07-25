@@ -42,7 +42,7 @@ class Api::V1::MessageManagements::MessageGroupsController < ApplicationControll
     message_group = MessageGroup.find_by(id: params[:id])
     return render json: {code: 2, message: "Cannot find message group"} if message_group.blank?
     return render json: {code: 2, message: "User can't permission"} if message_group.user_id != current_user.id
-    return render json: {code: 2, message: "Cannot delete message group"} unless MessageGroupForm.new(message_group, current_user).check_delete
+    return render json: {code: 2, message: "Cannot delete: message group is in use"} unless MessageGroupForm.new(message_group, current_user).check_delete
     if message_group.destroy
       render json: {code: 1, message: "Success!"}
     else
