@@ -150,9 +150,7 @@ class Api::V1::Managements::EmailsController < ApplicationController
   def send_email
     email = Email.find_by(id: params[:id])
     return render json: {code: 2, message: "Cannot find email"} if email.blank?
-    client_email_id = email.chatbot.user&.client.id
-    client_email = ClientEmail.find_by(id: client_email_id)
-    return render json: {code: 2, message: "Cannot find client email"} if client_email.blank?
+    client_email = email.chatbot.user&.client&.reply_smtp_credentials
     EmailMailer.send_email(email, client_email, params[:variables]).deliver
     render json: {code: 1, message: "Success"}
   end

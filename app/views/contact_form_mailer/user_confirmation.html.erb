@@ -1,0 +1,8 @@
+<p>お問い合わせを受け付けました。</p>
+<p>以下の内容でお問い合わせを受け付けました。担当者より折り返しご連絡いたします。</p>
+<ul>
+<% @fields.each do |field| %>
+  <li><strong><%= field[:label] %></strong>: <%= field[:value] %></li>
+<% end %>
+</ul>
+<p>このメールは自動送信されています。</p>

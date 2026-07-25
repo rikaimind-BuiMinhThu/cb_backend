@@ -1,7 +1,11 @@
+require "ostruct"
+
 class Client < ApplicationRecord
   acts_as_paranoid
   has_many :users, dependent: :destroy
   has_one :client_email, dependent: :destroy
+
+  encrypts :reply_smtp_gmail_app_password, deterministic: true
 
   enum status: {active: 0, pause: 1, ended: 2, trial: 3}
 
@@ -19,6 +23,15 @@ class Client < ApplicationRecord
     ec_force: 4,
     repeat_plus: 5
   }
+
+  def reply_smtp_credentials
+    return nil if reply_smtp_gmail.blank?
+
+    OpenStruct.new(
+      email: reply_smtp_gmail,
+      password: reply_smtp_gmail_app_password
+    )
+  end
 
   def self.get_cart_system_by_user_id(user_id)
     user = User.find_by(id: user_id)
@@ -43,7 +56,7 @@ class Client < ApplicationRecord
   end
     
   def self.ransackable_attributes(auth_object = nil)
-    ["address", "building_name", "cart_system", "created_at", "deleted_at", "department_name", "email", "enterprise_type", "enterprise_type_2", "id", "is_instagram", "is_line", "is_tiktok", "is_web", "logo_url", "municipality", "name", "name_katakana", "note", "phone_number", "plan", "prefecture", "price", "responsible_person", "responsible_person_katakana", "status", "subscription_end_at", "subscription_start_at", "title", "unit_price_instagram", "unit_price_line", "unit_price_tiktok", "unit_price_web", "updated_at", "url", "zip_code", "shop_url", "client_id", "client_secret"]
+    ["address", "building_name", "cart_system", "created_at", "deleted_at", "department_name", "email", "enterprise_type", "enterprise_type_2", "id", "is_instagram", "is_line", "is_tiktok", "is_web", "logo_url", "municipality", "name", "name_katakana", "note", "phone_number", "plan", "prefecture", "price", "responsible_person", "responsible_person_katakana", "status", "subscription_end_at", "subscription_start_at", "title", "unit_price_instagram", "unit_price_line", "unit_price_tiktok", "unit_price_web", "updated_at", "url", "zip_code", "shop_url", "client_id", "client_secret", "reply_smtp_gmail"]
   end
     
 end

@@ -1,0 +1,9 @@
+FAQチャットボットよりお問い合わせがありました。
+
+<% @fields.each do |field| %>
+<%= field[:label] %>: <%= field[:value] %>
+<% end %>
+
+フォーム種類: <%= @payload[:form_template] %>
+シナリオID: <%= @payload[:scenario_id] %>
+チャットボットID: <%= @payload[:chatbot_id] %>
