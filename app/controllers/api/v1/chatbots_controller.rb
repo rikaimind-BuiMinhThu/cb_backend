@@ -83,8 +83,14 @@ class Api::V1::ChatbotsController < ApplicationController
     message_bags = MessageBag.where(id: instagram_account.default_reply_bag_id) if message_bags.blank? && instagram_account.default_reply_bag_id.present?
     message_bags.each do |message_bag|
       ChatbotUsageGroup.create(chatbot_usage: chatbot_usage, message_bag: message_bag, message_group: message_bag.message_group)
-      messages = message_bag&.messages
-      messages = messages.where("id > ?", pending_message.id) if pending_message.present?
+      messages = message_bag&.messages&.order(:order_no)
+      if pending_message.present?
+        messages = if pending_message.order_no.present?
+          messages.where("order_no > ?", pending_message.order_no)
+        else
+          messages.where("id > ?", pending_message.id)
+        end
+      end
       messages.each do |message|
         return if InstagramUser.find_by(id: instagram_user.id).pending_message.present?
         chatbot_manager.message = message
@@ -118,7 +124,7 @@ class Api::V1::ChatbotsController < ApplicationController
 
     ChatbotUsageGroup.create(chatbot_usage: chatbot_usage, message_bag: message_bag, message_group: message_bag.message_group)
 
-    messages = message_bag&.messages
+    messages = message_bag&.messages&.order(:order_no)
     messages.each do |message|
       return if InstagramUser.find_by(id: instagram_user.id).pending_message.present?
       chatbot_manager.message = message

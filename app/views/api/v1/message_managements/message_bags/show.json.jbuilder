@@ -15,6 +15,7 @@ json.data do
       if message_button.message_bag_id.present?
         json.message_bag_name message_button.message_bag&.bag_name
         json.message_group_name message_button.message_bag&.message_group&.group_name
+        json.message_group_id message_button.message_bag&.message_group_id
       end
       json.message_button_labels message_button.message_button_labels
     end

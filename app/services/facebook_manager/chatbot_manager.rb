@@ -81,7 +81,7 @@ module FacebookManager
       request_body = build_message_request_body(response)
       Rails.logger.debug(request_body)
       message_response = post_message(page_access_token, request_body)
-      Rails.logger.debug(message_response)
+      log_graph_failure('send_message_to_user', message_response)
       usage_type = @message_type.split("bag")[0] + "sent"
       create_instagram_log(@sender_psid, usage_type, text_sent_to_user, @instagram_account, nil, nil) if message_response.dig(:data, "recipient_id").present?
     end
@@ -91,7 +91,7 @@ module FacebookManager
 
       response = {
         "attachment":{
-          "type": "IMAGE",
+          "type": "image",
           "payload":{
             "url": Settings.chatbot_domain + @message.img_value.url,
             "is_reusable": true
@@ -101,7 +101,7 @@ module FacebookManager
       request_body = build_message_request_body(response)
       Rails.logger.debug(request_body)
       message_response = post_message(page_access_token, request_body)
-      Rails.logger.debug(message_response)
+      log_graph_failure('send_image_to_user', message_response)
       usage_type = @message_type.split("bag")[0] + "sent"
       create_instagram_log(@sender_psid, usage_type, Settings.chatbot_domain + @message.img_value.url, @instagram_account, nil, nil) if message_response.dig(:data, "recipient_id").present?
     end
@@ -120,7 +120,7 @@ module FacebookManager
       }
       Rails.logger.debug(request_body)
       message_response = post_message(page_access_token, request_body)
-      Rails.logger.debug(message_response)
+      log_graph_failure('send_payload_to_user', message_response)
       create_instagram_log(@sender_psid, "dm_sent", @payload, @instagram_account, nil, nil) if message_response.dig(:data, "recipient_id").present?
     end
 
@@ -140,8 +140,19 @@ module FacebookManager
       }
       Rails.logger.debug(request_body)
       message_response = post_message(page_access_token, request_body)
-      Rails.logger.debug(message_response)
+      log_graph_failure('share_post_to_user', message_response)
       create_instagram_log(@sender_psid, "dm_sent", @message.message_value, @instagram_account, nil, nil) if message_response.dig(:data, "recipient_id").present?
+    end
+
+    def log_graph_failure(action, message_response)
+      return if message_response.blank? || message_response[:success]
+
+      error = message_response[:error] || {}
+      Rails.logger.error(
+        "[ChatbotManager##{action}] Graph API failed " \
+        "code=#{error[:code]} type=#{error[:type]} message=#{error[:message]} " \
+        "message_id=#{@message&.id}"
+      )
     end
 
     def build_message_request_body(response)
