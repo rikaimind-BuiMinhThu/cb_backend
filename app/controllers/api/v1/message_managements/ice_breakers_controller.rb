@@ -8,7 +8,7 @@ class Api::V1::MessageManagements::IceBreakersController < ApplicationController
   end
 
   def create
-    ice_breaker = IceBreaker.new(ice_breaker_params)
+    ice_breaker = IceBreaker.new(normalized_ice_breaker_params)
     ice_breaker.instagram_account_id = current_user.instagram_account.id
     return render json: {code: 2, message: "Cannot create more"} unless IceBreaker.validate_size!(ice_breaker.instagram_account_id)
     return render json: {code: 1, data: ice_breaker} if ice_breaker.save
@@ -26,7 +26,7 @@ class Api::V1::MessageManagements::IceBreakersController < ApplicationController
     ice_breaker = IceBreaker.find_by(id: params[:id])
     return render json: {code: 2, message: "Cannot find ice breaker"} if ice_breaker.blank?
     return render json: {code: 2, message: "User can't permission"} if ice_breaker.instagram_account_id != current_user.instagram_account.id
-    if ice_breaker.update ice_breaker_params
+    if ice_breaker.update normalized_ice_breaker_params
       render json: {code: 1, data: ice_breaker}
     else
       render json: {code: 2, message: "Something went wrong!"}
@@ -78,6 +78,12 @@ class Api::V1::MessageManagements::IceBreakersController < ApplicationController
 
   def ice_breaker_params
     params.require(:ice_breaker).permit(:question, :message_bag_id)
+  end
+
+  def normalized_ice_breaker_params
+    attrs = ice_breaker_params.to_h
+    attrs['message_bag_id'] = attrs['message_bag_id'].presence if attrs.key?('message_bag_id')
+    attrs
   end
 
   def check_instagram_connect

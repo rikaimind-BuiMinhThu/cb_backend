@@ -8,7 +8,7 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
   end
 
   def create
-    persistent_menu = PersistentMenu.new(persistent_menu_params)
+    persistent_menu = PersistentMenu.new(normalized_persistent_menu_params)
     persistent_menu.instagram_account_id = current_user.instagram_account.id
     return render json: {code: 2, message: "Cannot create more"} unless PersistentMenu.validate_size!(persistent_menu.instagram_account_id)
     return render json: {code: 1, data: persistent_menu} if persistent_menu.save
@@ -26,7 +26,7 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
     persistent_menu = PersistentMenu.find_by(id: params[:id])
     return render json: {code: 2, message: "Cannot find persistent menu"} if persistent_menu.blank?
     return render json: {code: 2, message: "User can't permission"} if persistent_menu.instagram_account_id != current_user.instagram_account.id
-    if persistent_menu.update persistent_menu_params
+    if persistent_menu.update normalized_persistent_menu_params
       render json: {code: 1, data: persistent_menu}
     else
       render json: {code: 2, message: persistent_menu.errors.full_messages}
@@ -78,6 +78,12 @@ class Api::V1::MessageManagements::PersistentMenusController < ApplicationContro
 
   def persistent_menu_params
     params.require(:persistent_menu).permit(:title, :message_bag_id, :url, :is_support)
+  end
+
+  def normalized_persistent_menu_params
+    attrs = persistent_menu_params.to_h
+    attrs['message_bag_id'] = attrs['message_bag_id'].presence if attrs.key?('message_bag_id')
+    attrs
   end
 
   def check_instagram_connect

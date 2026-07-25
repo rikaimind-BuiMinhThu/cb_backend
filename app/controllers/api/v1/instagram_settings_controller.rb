@@ -39,12 +39,20 @@ class Api::V1::InstagramSettingsController < ApplicationController
     instagram_account = InstagramAccount.find_by(id: params[:id])
     return render json: {code: 2, message: "Cannot find instagram account"} if instagram_account.blank?
     return render json: {code: 2, message: "User can't permission"} if instagram_account.user_id != current_user.id
-    post_comment_bag = MessageBag.find_by(id: params[:instagram_setting][:post_comment_bag_id])
-    story_comment_bag = MessageBag.find_by(id: params[:instagram_setting][:story_comment_bag_id])
-    live_comment_bag = MessageBag.find_by(id: params[:instagram_setting][:live_comment_bag_id])
-    default_reply_bag = MessageBag.find_by(id: params[:instagram_setting][:default_reply_bag_id])
-    instagram_account.update post_comment_bag: post_comment_bag, story_comment_bag: story_comment_bag, live_comment_bag: live_comment_bag, default_reply_bag: default_reply_bag
-    render json: {code: 1, data: instagram_account}
+
+    p = params.require(:instagram_setting).permit(
+      :post_comment_bag_id, :story_comment_bag_id, :live_comment_bag_id, :default_reply_bag_id
+    )
+    unless instagram_account.update(
+      post_comment_bag_id: p[:post_comment_bag_id].presence,
+      story_comment_bag_id: p[:story_comment_bag_id].presence,
+      live_comment_bag_id: p[:live_comment_bag_id].presence,
+      default_reply_bag_id: p[:default_reply_bag_id].presence
+    )
+      return render json: {code: 2, message: instagram_account.errors.full_messages}
+    end
+
+    render json: {code: 1, data: instagram_account.reload}
   end
 
   def change_status
