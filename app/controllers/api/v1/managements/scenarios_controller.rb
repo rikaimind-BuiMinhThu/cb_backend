@@ -78,6 +78,11 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         head_custom_js_code: scenario.head_custom_js_code,
         top_body_custom_js_code: scenario.top_body_custom_js_code,
         bottom_body_custom_js_code: scenario.bottom_body_custom_js_code,
+        is_used_html_ugc: scenario.is_used_html_ugc,
+        is_ugc_instagram: scenario.is_ugc_instagram,
+        is_ugc_tiktok: scenario.is_ugc_tiktok,
+        is_ugc_review: scenario.is_ugc_review,
+        html_ugc_config_content: scenario.html_ugc_config_content,
         client_cart_system: client_cart_system,
         is_used_message_loaded_past: scenario.is_used_message_loaded_past,
         opening_bot_icon: chatbot.opening_bot_icon,
@@ -200,6 +205,11 @@ class Api::V1::Managements::ScenariosController < ApplicationController
       @scenario.head_custom_js_code = params[:head_custom_js_code]
       @scenario.top_body_custom_js_code = params[:top_body_custom_js_code]
       @scenario.bottom_body_custom_js_code = params[:bottom_body_custom_js_code]
+      @scenario.is_used_html_ugc = params[:is_used_html_ugc]
+      @scenario.is_ugc_instagram = params[:is_ugc_instagram]
+      @scenario.is_ugc_tiktok = params[:is_ugc_tiktok]
+      @scenario.is_ugc_review = params[:is_ugc_review]
+      @scenario.html_ugc_config_content = params[:html_ugc_config_content]
       @scenario.timer_config = JSON.generate(params[:timer_config].as_json) if params[:timer_config].present?
       @scenario.is_used_message_loaded_past = params[:is_used_message_loaded_past]
       @scenario.use_fullwidth_chatbot_mobile = params[:use_fullwidth_chatbot_mobile]

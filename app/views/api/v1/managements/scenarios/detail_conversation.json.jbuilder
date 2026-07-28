@@ -20,6 +20,11 @@ json.data do
   json.head_custom_js_code @scenario.head_custom_js_code
   json.top_body_custom_js_code @scenario.top_body_custom_js_code
   json.bottom_body_custom_js_code @scenario.bottom_body_custom_js_code
+  json.is_used_html_ugc @scenario.is_used_html_ugc
+  json.is_ugc_instagram @scenario.is_ugc_instagram
+  json.is_ugc_tiktok @scenario.is_ugc_tiktok
+  json.is_ugc_review @scenario.is_ugc_review
+  json.html_ugc_config_content @scenario.html_ugc_config_content
   json.timer_config JSON.parse(@scenario.timer_config) unless @scenario.timer_config.blank?
   json.tamagoLandingPageUrl @landing_page_product_url
   json.merchandise_id @scenario.merchandise_id_for_api
