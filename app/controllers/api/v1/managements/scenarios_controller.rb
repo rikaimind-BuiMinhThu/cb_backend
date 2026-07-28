@@ -82,6 +82,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         is_ugc_instagram: scenario.is_ugc_instagram,
         is_ugc_tiktok: scenario.is_ugc_tiktok,
         is_ugc_review: scenario.is_ugc_review,
+        ugc_env: scenario.ugc_env.presence || 'staging',
         html_ugc_config_content: scenario.html_ugc_config_content,
         client_cart_system: client_cart_system,
         is_used_message_loaded_past: scenario.is_used_message_loaded_past,
@@ -209,6 +210,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
       @scenario.is_ugc_instagram = params[:is_ugc_instagram]
       @scenario.is_ugc_tiktok = params[:is_ugc_tiktok]
       @scenario.is_ugc_review = params[:is_ugc_review]
+      @scenario.ugc_env = params[:ugc_env].presence || 'staging'
       @scenario.html_ugc_config_content = params[:html_ugc_config_content]
       @scenario.timer_config = JSON.generate(params[:timer_config].as_json) if params[:timer_config].present?
       @scenario.is_used_message_loaded_past = params[:is_used_message_loaded_past]
