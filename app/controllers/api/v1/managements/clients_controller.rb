@@ -59,9 +59,12 @@ class Api::V1::Managements::ClientsController < ApplicationController
     client = Client.find_by(id: params[:id])
     return render json: {code: 2, message: "Not have permission"} unless current_user.admin_deel? || (current_user.admin_client? && client.id == current_user.client_id)
     if client.present?
-      data = client.as_json.except("reply_smtp_gmail_app_password").merge(
+      data = client.as_json.except("reply_smtp_gmail_app_password", "extra_config", "mock_response").merge(
         reply_smtp_gmail: client.reply_smtp_gmail,
-        has_reply_smtp_password: client.reply_smtp_gmail_app_password.present?
+        has_reply_smtp_password: client.reply_smtp_gmail_app_password.present?,
+        extra_config: client.extra_config_hash,
+        mock_response: client.mock_response_hash,
+        is_use_mock_response: client.is_use_mock_response
       )
       return render json: { code: 1, data: data }
     end
@@ -94,14 +97,17 @@ class Api::V1::Managements::ClientsController < ApplicationController
   private
 
   def client_params
-    params.require(:client).permit(:name, :address, :phone_number, :status, :plan,
+    permitted = params.require(:client).permit(:name, :address, :phone_number, :status, :plan,
       :price, :subscription_start_at, :subscription_end_at, :is_instagram, :is_line,
       :is_tiktok, :is_web, :note, :enterprise_type, :enterprise_type_2, :department_name,
       :title, :responsible_person, :logo_url, :url, :zip_code, :prefecture,
       :municipality, :building_name, :email, :name_katakana, :responsible_person_katakana,
       :unit_price_instagram, :unit_price_web, :unit_price_line, :unit_price_tiktok, :cart_system,
-      :shop_url, :client_id, :client_secret,
+      :shop_url, :client_id, :client_secret, :order_execution_mode, :is_use_mock_response,
       :reply_smtp_gmail, :reply_smtp_gmail_app_password)
+    permitted[:extra_config] = params[:client][:extra_config] if params[:client].key?(:extra_config)
+    permitted[:mock_response] = params[:client][:mock_response] if params[:client].key?(:mock_response)
+    permitted
   end
 
   def client_create_params

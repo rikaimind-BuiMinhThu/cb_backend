@@ -2,6 +2,10 @@ json.code 1
 json.message "Success"
 json.data do
   json.cart_system @client&.cart_system
+  json.client_order_execution_mode @client&.order_execution_mode
+  json.order_execution_mode @client&.order_execution_mode
+  json.extra_config (@client&.extra_config_hash.presence || @scenario.extra_config_hash)
+  json.is_use_mock_response @client&.use_subsc_store_mock? || false
   json.scenario_name @scenario.name
   json.scenario_type @scenario.scenario_type || 'payment'
   json.isUseOnlyRegularOrder @scenario.is_use_only_regular_order

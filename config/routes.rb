@@ -117,6 +117,9 @@ Rails.application.routes.draw do
         resources :scenario_user_responses, only: [:create] do
           collection do
             post :create_order
+            post :confirm_order
+            post :change_order_items
+            get :payment_config
           end
         end
         resources :conversions, only: [:create]

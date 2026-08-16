@@ -37,7 +37,8 @@ class Api::V1::Managements::ScenariosController < ApplicationController
                      .find_by(id: scenario.chatbot_id)
 
 
-    client_cart_system = Client.get_cart_system_by_user_id(chatbot.user_id) if chatbot.user_id
+    client = client_for_chatbot(chatbot)
+    client_cart_system = client&.cart_system
 
     render json: {
       code: 1,
@@ -50,6 +51,8 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         is_used_crosssell: scenario.is_used_crosssell,
         product_id_cross_sell: scenario.product_id_cross_sell_for_api,
         is_clear_landing_page_session: scenario.is_clear_landing_page_session,
+        extra_config: resolved_extra_config(client, scenario),
+        order_execution_mode: scenario.resolved_order_execution_mode,
         conversation: scenario_conversation ? JSON.parse(scenario_conversation) : "",
         created_at: scenario.created_at,
         updated_at: scenario.updated_at
@@ -75,6 +78,8 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         top_body_custom_js_code: scenario.top_body_custom_js_code,
         bottom_body_custom_js_code: scenario.bottom_body_custom_js_code,
         client_cart_system: client_cart_system,
+        order_execution_mode: scenario.resolved_order_execution_mode,
+        is_use_mock_response: client&.use_subsc_store_mock? || false,
         is_used_message_loaded_past: scenario.is_used_message_loaded_past,
         opening_bot_icon: chatbot.opening_bot_icon,
         closing_bot_icon: chatbot.closing_bot_icon,
@@ -188,6 +193,13 @@ class Api::V1::Managements::ScenariosController < ApplicationController
       @scenario.is_used_message_loaded_past = params[:is_used_message_loaded_past]
       @scenario.use_fullwidth_chatbot_mobile = params[:use_fullwidth_chatbot_mobile]
       @scenario.is_clear_landing_page_session = params[:is_clear_landing_page_session]
+      if params.key?(:order_execution_mode) || params.key?("order_execution_mode")
+        mode = params[:order_execution_mode]
+        @scenario.order_execution_mode = mode.present? ? mode : nil
+      end
+      if params.key?(:extra_config) || params.key?("extra_config")
+        @scenario.extra_config_hash = params[:extra_config]
+      end
       @scenario.save!
     rescue StandardError => error
       Rails.logger.debug(error)
@@ -234,7 +246,13 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     if scenario.blank?
       return render json: { code: 2, message: "Scenario not found" }
     end  
-    render json: { code: 1, data: scenario, cart_system: bot.user&.client&.cart_system }
+    client = bot.user&.client
+    render json: {
+      code: 1,
+      data: scenario,
+      cart_system: client&.cart_system,
+      order_execution_mode: OrderExecutionMode.resolve(client, scenario)
+    }
   end
 
   def get_list_scenario_by_client
@@ -251,6 +269,19 @@ class Api::V1::Managements::ScenariosController < ApplicationController
 
   def scenario_params
     params.require(:scenario).permit(:name, :scenario_type)
+  end
+
+  def client_for_chatbot(chatbot)
+    return nil if chatbot&.user_id.blank?
+
+    User.find_by(id: chatbot.user_id)&.client
+  end
+
+  def resolved_extra_config(client, scenario)
+    client_hash = client&.extra_config_hash
+    return client_hash if client_hash.present?
+
+    scenario.extra_config_hash
   end
 
   def build_tamago_repeat_config
