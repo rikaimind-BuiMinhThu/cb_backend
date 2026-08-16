@@ -20,6 +20,41 @@ module SubscStore
           { "id" => 1, "name" => "通常配送" }
         ]
       },
+      "products" => {
+        "products" => [
+          {
+            "id" => 1,
+            "name" => "サンプル単品",
+            "variants" => [{ "id" => 11, "name" => "通常" }]
+          }
+        ]
+      },
+      "regular_courses" => {
+        "regular_courses" => [
+          {
+            "id" => 2,
+            "name" => "サンプル定期",
+            "products" => [
+              {
+                "id" => 1,
+                "name" => "サンプル単品",
+                "variants" => [{ "id" => 11, "name" => "通常" }]
+              }
+            ],
+            "frequencies" => [{ "id" => 5, "name" => "毎月" }]
+          }
+        ]
+      },
+      "distribution_courses" => {
+        "distribution_courses" => [
+          { "id" => 3, "name" => "サンプル頒布会" }
+        ]
+      },
+      "frequencies" => {
+        "frequencies" => [
+          { "id" => 5, "name" => "毎月" }
+        ]
+      },
       "confirm_order" => {
         "success" => true,
         "order" => {
@@ -90,6 +125,10 @@ module SubscStore
       return "payment_config" if normalized.include?("payment_config")
       return "payment_method_shops" if normalized.include?("payment_method_shops")
       return "shop_shipping_methods" if normalized.include?("shop_shipping_methods")
+      return "regular_courses" if normalized.include?("regular_courses")
+      return "distribution_courses" if normalized.include?("distribution_courses")
+      return "frequencies" if normalized.include?("frequencies")
+      return "products" if normalized.match?(%r{/products(\z|/|\?)})
       return "confirm_order" if normalized.include?("confirm_order")
       return "create_order" if normalized.include?("create_order")
       return "change_order_items" if normalized.include?("change_order_items")

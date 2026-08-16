@@ -90,6 +90,24 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     }
   end
 
+  def subsc_store_catalog
+    scenario = Scenario.find_by(id: params[:id], chatbot_id: @chatbot.id)
+    return render json: { code: 2, message: "Scenario not found" } if scenario.blank?
+
+    client = client_for_chatbot(@chatbot)
+    unless client&.subsc_store? && client.subsc_store_api_ready?
+      return render json: {
+        code: 2,
+        message: "サブスクストア API の ショップURL / クライアントID / クライアントシークレット を設定してください"
+      }, status: :unprocessable_entity
+    end
+
+    catalog = SubscStore::Catalog.new(SubscStore::HttpClient.new(client)).as_json
+    render json: { code: 1, data: catalog }
+  rescue SubscStore::Error => error
+    render json: { code: 2, message: error.message }, status: :unprocessable_entity
+  end
+
   def create
     scenario = Scenario.new(scenario_params)
     scenario.chatbot_id = params[:chatbot_id]

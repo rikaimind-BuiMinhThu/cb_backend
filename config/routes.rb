@@ -22,6 +22,7 @@ Rails.application.routes.draw do
           resources :variables, except: [:new, :edit]
           resources :scenarios, except: [:new, :edit]
           get "scenarios/:id/conversation", :to => 'scenarios#detail_conversation'
+          get "scenarios/:id/subsc_store_catalog", :to => 'scenarios#subsc_store_catalog'
           post "scenarios/:id/conversation", :to => 'scenarios#conversation'
           post "scenarios/:id/duplicate", :to => 'scenarios#duplicate'
           get "scenarios/:id/preview", :to => 'scenarios#preview'
