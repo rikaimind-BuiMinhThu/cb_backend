@@ -23,7 +23,7 @@ module SubscStore
         shipments: [shipment(address)],
         user: user_payload,
         is_chatbot: true,
-        is_skip_tds: ActiveModel::Type::Boolean.new.cast(@config.fetch(:is_skip_tds, true)),
+        is_skip_tds: false,
         order_items: order_items
       }.compact
     end
@@ -69,7 +69,7 @@ module SubscStore
       if find_response("credit_card_payment").present?
         {
           payment_method_shop_id: credit_method_id,
-          is_skip_tds: ActiveModel::Type::Boolean.new.cast(@config.fetch(:is_skip_tds, true)),
+          is_skip_tds: false,
           credit_card: credit_card_payload
         }.compact
       elsif find_response("np_delivery_payment").present?
@@ -149,9 +149,14 @@ module SubscStore
     def shipment(address)
       delivery_date = parse_json(find_response("delivery_date")) || {}
       scheduled = delivery_date["value"] || delivery_date["scheduled_delivery_on"]
+      shipping_method_id = @payment_config&.shop_shipping_method_id_for(find_response("delivery_method"))
+      time_zone_id = @payment_config&.time_zone_id_for(
+        find_response("delivery_time"),
+        shipping_method_id: shipping_method_id
+      )
       payload = {
-        shop_shipping_method_id: int_or_nil(@config[:shop_shipping_method_id]) || @payment_config&.default_shop_shipping_method_id,
-        time_zone_id: int_or_nil(@config[:time_zone_id]),
+        shop_shipping_method_id: shipping_method_id,
+        time_zone_id: time_zone_id,
         shipping_address: address
       }
       if scheduled.present?
@@ -163,11 +168,11 @@ module SubscStore
     end
 
     def credit_method_id
-      int_or_nil(@config[:payment_method_shop_id_credit]) || @payment_config&.credit_payment_method_shop_id
+      @payment_config&.credit_payment_method_shop_id
     end
 
     def np_method_id
-      int_or_nil(@config[:payment_method_shop_id_np]) || @payment_config&.np_payment_method_shop_id
+      @payment_config&.np_payment_method_shop_id
     end
 
     def zip_code(data_address)

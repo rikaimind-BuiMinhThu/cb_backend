@@ -34,8 +34,31 @@ class Scenario < ApplicationRecord
     chatbot&.user&.client
   end
 
+  def scenario_subsc_store_config
+    hash = extra_config_hash
+    (hash["subsc_store"] || hash[:subsc_store] || {}).with_indifferent_access
+  end
+
   def subsc_store_config
-    owning_client&.subsc_store_config || {}.with_indifferent_access
+    client_cfg = owning_client&.subsc_store_config || {}.with_indifferent_access
+    scenario_cfg = scenario_subsc_store_config
+    merged = client_cfg.merge(scenario_cfg)
+    client_upsell = (client_cfg[:upsell] || client_cfg["upsell"] || {}).with_indifferent_access
+    scenario_upsell = (scenario_cfg[:upsell] || scenario_cfg["upsell"] || {}).with_indifferent_access
+    merged[:upsell] = client_upsell.merge(scenario_upsell)
+    merged.with_indifferent_access
+  end
+
+  def merged_extra_config_with(client)
+    scenario_hash = stringify_config_hash(extra_config_hash)
+    client_hash = stringify_config_hash(client&.extra_config_hash)
+    merged = scenario_hash.merge(client_hash)
+    scenario_subsc = stringify_config_hash(scenario_hash["subsc_store"])
+    client_subsc = stringify_config_hash(client_hash["subsc_store"])
+    merged_subsc = client_subsc.merge(scenario_subsc)
+    merged_subsc["upsell"] = stringify_config_hash(client_subsc["upsell"]).merge(stringify_config_hash(scenario_subsc["upsell"]))
+    merged["subsc_store"] = merged_subsc
+    merged
   end
 
   def resolved_order_execution_mode
@@ -43,7 +66,7 @@ class Scenario < ApplicationRecord
   end
 
   def upsell_available?
-    !!owning_client&.upsell_available?
+    ActiveModel::Type::Boolean.new.cast(subsc_store_config.dig("upsell", "enabled"))
   end
 
   def shopify_payment_merchandise_context?
@@ -62,5 +85,13 @@ class Scenario < ApplicationRecord
     return nil unless shopify_payment_merchandise_context?
     return nil unless is_used_crosssell
     product_id_cross_sell
+  end
+
+  private
+
+  def stringify_config_hash(value)
+    return {} if value.blank? || !value.respond_to?(:stringify_keys)
+
+    value.stringify_keys
   end
 end

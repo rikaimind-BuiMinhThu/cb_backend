@@ -79,7 +79,7 @@ class Client < ApplicationRecord
   def subsc_store_api_credentials_present
     return if subsc_store_api_credentials?
 
-    errors.add(:base, "サブスクストア API の Shop URL / Client ID / Client Secret を設定してください")
+    errors.add(:base, "サブスクストア API の ショップURL / クライアントID / クライアントシークレット を設定してください")
   end
 
   def reply_smtp_credentials

@@ -23,7 +23,7 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
       return render json: { code: 1, execution_mode: execution_mode, message: "skip automation" }
     end
     if @client&.subsc_store? && execution_mode == :api_only && !@client.subsc_store_api_ready?
-      return render json: { code: 2, message: "サブスクストア API の Shop URL / Client ID / Client Secret を設定してください" }, status: :unprocessable_entity
+      return render json: { code: 2, message: "サブスクストア API の ショップURL / クライアントID / クライアントシークレット を設定してください" }, status: :unprocessable_entity
     end
 
     selenium_result = ScenarioUserResponseSeleniumResult.find_by(user_input_id: params[:user_id])
@@ -95,7 +95,7 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
       return render json: { code: 2, message: "confirm_order is only for API mode" }, status: :unprocessable_entity
     end
     unless @client.subsc_store_api_ready?
-      return render json: { code: 2, message: "サブスクストア API の Shop URL / Client ID / Client Secret を設定してください" }, status: :unprocessable_entity
+      return render json: { code: 2, message: "サブスクストア API の ショップURL / クライアントID / クライアントシークレット を設定してください" }, status: :unprocessable_entity
     end
 
     purchase, payload = build_subsc_store_purchase

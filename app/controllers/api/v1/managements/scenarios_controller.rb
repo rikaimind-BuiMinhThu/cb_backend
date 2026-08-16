@@ -51,7 +51,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         is_used_crosssell: scenario.is_used_crosssell,
         product_id_cross_sell: scenario.product_id_cross_sell_for_api,
         is_clear_landing_page_session: scenario.is_clear_landing_page_session,
-        extra_config: merged_extra_config(client, scenario),
+        extra_config: scenario.merged_extra_config_with(client),
         order_execution_mode: scenario.resolved_order_execution_mode,
         conversation: scenario_conversation ? JSON.parse(scenario_conversation) : "",
         created_at: scenario.created_at,
@@ -197,6 +197,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         mode = params[:order_execution_mode]
         @scenario.order_execution_mode = mode.present? ? mode : nil
       end
+      assign_subsc_store_extra_config
       @scenario.save!
     rescue StandardError => error
       Rails.logger.debug(error)
@@ -275,7 +276,24 @@ class Api::V1::Managements::ScenariosController < ApplicationController
   end
 
   def merged_extra_config(client, scenario)
-    scenario.extra_config_hash.merge(client&.extra_config_hash || {})
+    scenario.merged_extra_config_with(client)
+  end
+
+  def assign_subsc_store_extra_config
+    return unless params.key?(:extra_config) || params.key?("extra_config")
+
+    incoming = params[:extra_config]
+    incoming = incoming.to_unsafe_h if incoming.respond_to?(:to_unsafe_h)
+    return unless incoming.respond_to?(:[])
+
+    subsc = incoming["subsc_store"] || incoming[:subsc_store]
+    return if subsc.nil?
+
+    hash = @scenario.extra_config_hash
+    hash = hash.respond_to?(:stringify_keys) ? hash.stringify_keys : {}
+    subsc_hash = subsc.respond_to?(:to_unsafe_h) ? subsc.to_unsafe_h : subsc
+    hash["subsc_store"] = subsc_hash.as_json
+    @scenario.extra_config_hash = hash
   end
 
   def build_tamago_repeat_config

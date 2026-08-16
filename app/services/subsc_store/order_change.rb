@@ -2,6 +2,7 @@ module SubscStore
   class OrderChange
     def initialize(client)
       @http = HttpClient.new(client)
+      @payment_config = PaymentConfig.new(@http)
     end
 
     def confirm_and_execute(order_id, payload)
@@ -20,7 +21,9 @@ module SubscStore
       after_kind = (upsell[:after_item_kind].presence || "regular_courses").to_s
       {
         order: {
-          payment_method_shop_id: int_or_nil(config[:payment_method_shop_id_credit] || config[:payment_method_shop_id_np]),
+          payment_method_shop_id: int_or_nil(
+            @payment_config.credit_payment_method_shop_id || @payment_config.np_payment_method_shop_id
+          ),
           frequency_id: int_or_nil(upsell[:after_frequency_id] || config[:frequency_id]),
           before_item: item_hash(
             before_kind,
