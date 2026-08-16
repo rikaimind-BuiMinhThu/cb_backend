@@ -35,13 +35,7 @@ class Scenario < ApplicationRecord
   end
 
   def subsc_store_config
-    client = owning_client
-    if client&.has_attribute?(:extra_config) && client.extra_config.present?
-      return client.subsc_store_config
-    end
-
-    hash = extra_config_hash
-    (hash["subsc_store"] || hash[:subsc_store] || hash).with_indifferent_access
+    owning_client&.subsc_store_config || {}.with_indifferent_access
   end
 
   def resolved_order_execution_mode
@@ -49,10 +43,7 @@ class Scenario < ApplicationRecord
   end
 
   def upsell_available?
-    client = owning_client
-    return client.upsell_available? if client&.has_attribute?(:extra_config) && client.extra_config.present?
-
-    ActiveModel::Type::Boolean.new.cast(subsc_store_config.dig("upsell", "enabled"))
+    !!owning_client&.upsell_available?
   end
 
   def shopify_payment_merchandise_context?

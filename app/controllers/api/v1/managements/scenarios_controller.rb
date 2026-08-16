@@ -51,7 +51,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         is_used_crosssell: scenario.is_used_crosssell,
         product_id_cross_sell: scenario.product_id_cross_sell_for_api,
         is_clear_landing_page_session: scenario.is_clear_landing_page_session,
-        extra_config: resolved_extra_config(client, scenario),
+        extra_config: merged_extra_config(client, scenario),
         order_execution_mode: scenario.resolved_order_execution_mode,
         conversation: scenario_conversation ? JSON.parse(scenario_conversation) : "",
         created_at: scenario.created_at,
@@ -197,9 +197,6 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         mode = params[:order_execution_mode]
         @scenario.order_execution_mode = mode.present? ? mode : nil
       end
-      if params.key?(:extra_config) || params.key?("extra_config")
-        @scenario.extra_config_hash = params[:extra_config]
-      end
       @scenario.save!
     rescue StandardError => error
       Rails.logger.debug(error)
@@ -277,11 +274,8 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     User.find_by(id: chatbot.user_id)&.client
   end
 
-  def resolved_extra_config(client, scenario)
-    client_hash = client&.extra_config_hash
-    return client_hash if client_hash.present?
-
-    scenario.extra_config_hash
+  def merged_extra_config(client, scenario)
+    scenario.extra_config_hash.merge(client&.extra_config_hash || {})
   end
 
   def build_tamago_repeat_config
