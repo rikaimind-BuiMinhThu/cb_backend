@@ -105,8 +105,14 @@ class Api::V1::Managements::ClientsController < ApplicationController
       :unit_price_instagram, :unit_price_web, :unit_price_line, :unit_price_tiktok, :cart_system,
       :shop_url, :client_id, :client_secret, :order_execution_mode, :is_use_mock_response,
       :reply_smtp_gmail, :reply_smtp_gmail_app_password)
-    permitted[:extra_config] = params[:client][:extra_config] if params[:client].key?(:extra_config)
-    permitted[:mock_response] = params[:client][:mock_response] if params[:client].key?(:mock_response)
+    if params[:client].key?(:extra_config)
+      extra = params[:client][:extra_config]
+      permitted[:extra_config] = extra.respond_to?(:to_unsafe_h) ? extra.to_unsafe_h : extra
+    end
+    if params[:client].key?(:mock_response)
+      mock = params[:client][:mock_response]
+      permitted[:mock_response] = mock.respond_to?(:to_unsafe_h) ? mock.to_unsafe_h : mock
+    end
     permitted
   end
 
