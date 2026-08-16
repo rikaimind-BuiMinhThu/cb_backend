@@ -3,9 +3,12 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
   skip_before_action :verify_authenticity_token, only: [:webchat_sdk, :show]
 
   def index
-    chatbots = Chatbot.joins(:user).select("chatbots.*, users.full_name as owner_name") if current_user.admin_deel?
+    chatbots = Chatbot.joins(:user)
+                      .joins("LEFT JOIN clients ON clients.id = users.client_id")
+                      .select("chatbots.*, users.full_name as owner_name, clients.name as client_name") if current_user.admin_deel?
     chatbots = UserChatbot.joins(:chatbot, :user)
-                          .select("chatbots.*, user_chatbots.role as my_authority, users.full_name as owner_name")
+                          .joins("LEFT JOIN clients ON clients.id = users.client_id")
+                          .select("chatbots.*, user_chatbots.role as my_authority, users.full_name as owner_name, clients.name as client_name")
                           .where(user_id: current_user.id) unless current_user.admin_deel?
     q = {}
     q[:bot_name_cont] = params[:name] if params[:name].present?
