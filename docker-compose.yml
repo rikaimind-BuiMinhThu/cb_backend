@@ -25,12 +25,11 @@ services:
       - "3000:3000"
     depends_on:
       - db
+    env_file:
+      - .env
     environment:
       RAILS_ENV: development
-      RAILS_DATABASE_USERNAME: root
-      RAILS_DATABASE_PASSWORD: 
       RAILS_DATABASE_HOST: host.docker.internal
-      RAILS_DATABASE: instagram_chatbot
       REDIS_URL: redis://redis:6379/11
     volumes:
       - ./:/myapp
@@ -53,13 +52,12 @@ services:
       - redis
     volumes:
       - ./:/myapp
+    env_file:
+      - .env
     environment:
-      REDIS_URL: redis://redis:6379/11
       RAILS_ENV: development
-      RAILS_DATABASE_USERNAME: root
-      RAILS_DATABASE_PASSWORD: 
       RAILS_DATABASE_HOST: host.docker.internal
-      RAILS_DATABASE: instagram_chatbot
+      REDIS_URL: redis://redis:6379/11
 
 networks:
   db:

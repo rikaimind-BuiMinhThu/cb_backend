@@ -1,43 +1,43 @@
 # Puma can serve each request in a thread from an internal thread pool.
 # The `threads` method setting takes two numbers: a minimum and maximum.
 # Any libraries that use thread pools should be configured to match
-# the maximum value specified for Puma. Default is set to 5 threads for minimum
-# and maximum; this matches the default thread size of Active Record.
-#
-max_threads_count = ENV.fetch("RAILS_MAX_THREADS") { 5 }
-min_threads_count = ENV.fetch("RAILS_MIN_THREADS") { max_threads_count }
-threads min_threads_count, max_threads_count
+# the maximum value specified for Puma.
 
-# Specifies the `worker_timeout` threshold that Puma will use to wait before
-# terminating a worker in development environments.
-#
-worker_timeout 3600 if ENV.fetch("RAILS_ENV", "development") == "development"
+rails_env = ENV.fetch("RAILS_ENV") { "development" }
+environment rails_env
 
-# Specifies the `port` that Puma will listen on to receive requests; default is 3000.
-#
-port ENV.fetch("PORT") { 3000 }
+if %w[staging production].include?(rails_env)
+  # Clustered mode reconnects AR after fork. Do not load these on the
+  # development `rails s` path (Puma would pull ActiveRecord in before Rails).
+  require "erb"
+  require "yaml"
+  require "active_record"
 
-# Specifies the `environment` that Puma will run in.
-#
-environment ENV.fetch("RAILS_ENV") { "development" }
+  workers ENV.fetch("WEB_CONCURRENCY") { 2 }
+  threads 1, 30
 
-# Specifies the `pidfile` that Puma will use.
-pidfile ENV.fetch("PIDFILE") { "tmp/pids/server.pid" }
+  app_dir = File.expand_path("../..", __FILE__)
+  shared_dir = "#{app_dir}/shared"
 
-# Specifies the number of `workers` to boot in clustered mode.
-# Workers are forked web server processes. If using threads and workers together
-# the concurrency of the application would be max `threads` * `workers`.
-# Workers do not work on JRuby or Windows (both of which do not support
-# processes).
-#
-# workers ENV.fetch("WEB_CONCURRENCY") { 2 }
+  bind "unix://#{shared_dir}/sockets/puma.sock"
+  stdout_redirect "#{shared_dir}/log/puma.stdout.log", "#{shared_dir}/log/puma.stderr.log", true
+  pidfile "#{shared_dir}/pids/puma.pid"
+  state_path "#{shared_dir}/pids/puma.state"
+  activate_control_app
 
-# Use the `preload_app!` method when specifying a `workers` number.
-# This directive tells Puma to first boot the application and load code
-# before forking the application. This takes advantage of Copy On Write
-# process behavior so workers use less memory.
-#
-# preload_app!
+  on_worker_boot do
+    ActiveRecord::Base.connection.disconnect! rescue ActiveRecord::ConnectionNotEstablished
+    db = YAML.safe_load(ERB.new(File.read("#{app_dir}/config/database.yml")).result, aliases: true)
+    ActiveRecord::Base.establish_connection(db[rails_env])
+  end
+else
+  max_threads_count = ENV.fetch("RAILS_MAX_THREADS") { 5 }
+  min_threads_count = ENV.fetch("RAILS_MIN_THREADS") { max_threads_count }
+  threads min_threads_count, max_threads_count
 
-# Allow puma to be restarted by `bin/rails restart` command.
-plugin :tmp_restart
+  worker_timeout 3600 if rails_env == "development"
+
+  port ENV.fetch("PORT") { 3000 }
+  pidfile ENV.fetch("PIDFILE") { "tmp/pids/server.pid" }
+  plugin :tmp_restart
+end

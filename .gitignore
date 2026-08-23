@@ -41,3 +41,12 @@ db/schema.rb
 Gemfile.lock
 /mysql
 .idea
+
+# Environment files (keep *.example committed)
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.staging
+.env.production

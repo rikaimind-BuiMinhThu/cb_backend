@@ -1,4 +1,5 @@
 require "active_support/core_ext/integer/time"
+require "uri"
 
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
@@ -73,11 +74,16 @@ Rails.application.configure do
   # config.action_cable.disable_request_forgery_protection = true
 
   # config encryption
-  config.active_record.encryption.primary_key = 'x5qEz2JHsf5OfNvc5HOhj0YRdQfzUcZf'
-  config.active_record.encryption.deterministic_key = 'ArewJtvAxFCy3OBppWl2VoU35H7RGXkR'
-  config.active_record.encryption.key_derivation_salt = 'v9TUm7JMmvM2moPDQxlGv5qu47kni5Pp'
+  config.active_record.encryption.primary_key = ENV.fetch("ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY")
+  config.active_record.encryption.deterministic_key = ENV.fetch("ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY")
+  config.active_record.encryption.key_derivation_salt = ENV.fetch("ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT")
 
-  config.action_mailer.default_url_options = {host: "localhost:3000"}
+  chatbot_uri = URI.parse(ENV.fetch("CHATBOT_DOMAIN"))
+  mailer_url_options = { host: chatbot_uri.host, protocol: chatbot_uri.scheme }
+  default_port = chatbot_uri.scheme == "https" ? 443 : 80
+  mailer_url_options[:port] = chatbot_uri.port if chatbot_uri.port && chatbot_uri.port != default_port
+
+  config.action_mailer.default_url_options = mailer_url_options
   config.action_mailer.perform_deliveries = true
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.smtp_settings = {

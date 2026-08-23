@@ -3,32 +3,32 @@ api:
   time_refresh_token: 30
   company: rikai
   client_name: chatbot
-  shorten_url: https://ec-chatbot.com/s/
+  shorten_url: <%= "#{ENV.fetch("CHATBOT_DOMAIN")}/s/" %>
 webhook:
-  verify_token: c6b92b43c7e8d23e2b88d86e3592f6dfccb15c29d0cd278124a168aa72bfba1a5cddcf532ea89ae6555fdcbb6a8a19d0ba2adfbe92dc54498cda953282f76501
-  page_facebook_access_token: EAAYoYLoNogABALy8IXBV82AEbSZBXE67ZBF6vpzCeUkjylYLiT9SjpZAiFLUl4B4OOX8VAOh8C1aZAFFTx0Ogzs0sj6EGlliZBPPvfc8dXOWSHxlZBzlJwZBobO1FCFPLikwias2jN8wmyEQYudM9KITnzcTMxu83UW9FdB4nsAj1zUgEZBDOhFZCjWq8Ov2oLn8ZD
-  page_instagram_access_token: EAAYoYLoNogABAKQGh4DeXwFqEDYcmuMU268st2tE0ZCL3qlL9ZAmZBfwGrFVNNA2lRLNIZCfpf28syKuPrCAZBBrsJ3PF4luC1BzxqPLs71K5Rub53zGolZBZAyR7lQancjxua6sBsXZCYqIs98ylIYZB7kZBuIYmXw8pGJxIXZBqeUoqN2KGt7KfAmvd2EmF4x5ZC4ZD
+  verify_token: "<%= ENV.fetch("WEBHOOK_VERIFY_TOKEN") %>"
+  page_facebook_access_token: "<%= ENV.fetch("PAGE_FACEBOOK_ACCESS_TOKEN") %>"
+  page_instagram_access_token: "<%= ENV.fetch("PAGE_INSTAGRAM_ACCESS_TOKEN") %>"
 facebook:
   sdk:
     url: https://graph.facebook.com/
     version: v14.0
   meta_app:
-    # app_id: 540442430955429
-    # app_secret: 32bda995fb95260d62f8c96b902052c6
-    app_id: 1733245763691008
-    app_secret: 113b79c662606799cfe1cc50b8b840eb
+    app_id: "<%= ENV.fetch("FACEBOOK_APP_ID") %>"
+    app_secret: "<%= ENV.fetch("FACEBOOK_APP_SECRET") %>"
 aws:
   s3:
-    AWS_ACCESS_KEY_ID: YOURACCESSKEY
-    AWS_SECRET_ACCESS_KEY: sEcReTkEyInSpoNGeBoBCaSe
-    S3_BUCKET: your-app-dev
-    AWS_REGION: your-region-1
+    AWS_ACCESS_KEY_ID: "<%= ENV.fetch("AWS_ACCESS_KEY_ID") %>"
+    AWS_SECRET_ACCESS_KEY: "<%= ENV.fetch("AWS_SECRET_ACCESS_KEY") %>"
+    S3_BUCKET: "<%= ENV.fetch("S3_BUCKET") %>"
+    AWS_REGION: "<%= ENV.fetch("AWS_REGION") %>"
 two_captcha:
-  api_key: 25c8e5e5abe97802902ea166bb80a0df
+  api_key: "<%= ENV.fetch("TWO_CAPTCHA_API_KEY") %>"
 captcha:
-  client_key: CAP-92061386F527525803F4BF8137379D34
+  client_key: "<%= ENV.fetch("CAPTCHA_CLIENT_KEY") %>"
 sms:
   MT_API_ENDPOINT: https://sms-api.aossms.com/p5/api/mt.json
-  SMS_CODE: 80374
-  CLIENT_ID: 101
-  TOKEN: 5c0cc0e4b7d96474f34541003e6c36c0
+  SMS_CODE: <%= ENV.fetch("SMS_CODE") %>
+  CLIENT_ID: <%= ENV.fetch("SMS_CLIENT_ID") %>
+  TOKEN: "<%= ENV.fetch("SMS_TOKEN") %>"
+GMAIL_USERNAME: "<%= ENV.fetch("GMAIL_USERNAME") %>"
+GMAIL_PASSWORD: "<%= ENV.fetch("GMAIL_PASSWORD") %>"
