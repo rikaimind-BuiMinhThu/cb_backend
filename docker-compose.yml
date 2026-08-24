@@ -3,36 +3,49 @@ version: '3.8'
 services:
   db:
     container_name: instagram_chatbot_db
-    image: mysql
+    image: mysql:9
     ports:
-      - "3306:3306"
+      - "3307:3306"
     environment:
       MYSQL_DATABASE: instagram_chatbot
       MYSQL_ROOT_PASSWORD:
       MYSQL_ALLOW_EMPTY_PASSWORD: "true"
     volumes:
       - ./mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
     networks:
-      - db
+      - appnet
 
   app:
     container_name: instagram_chatbot_api
     build:
       context: .
-      dockerfile: Dockerfile
-    command: sh ./bin/docker_start.sh
+      dockerfile: Dockerfile.local
+    command: sh bin/docker_start.sh
     ports:
       - "3000:3000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
     env_file:
       - .env
     environment:
       RAILS_ENV: development
-      RAILS_DATABASE_HOST: host.docker.internal
+      RAILS_DATABASE_HOST: db
       REDIS_URL: redis://redis:6379/11
+      BUNDLE_PATH: /myapp/tmp/docker-bundle
+      TMPDIR: /myapp/tmp/docker-tmp
     volumes:
       - ./:/myapp
+    networks:
+      - appnet
+
   redis:
     image: 'redis:6-alpine'
     container_name: redis-chatbot
@@ -42,22 +55,32 @@ services:
       - '6379:6379'
     volumes:
       - /var/lib/redis/data
+    networks:
+      - appnet
+
   sidekiq:
     build:
       context: .
+      dockerfile: Dockerfile.local
     container_name: sidekiq-chatbot
-    command: bundle exec sidekiq
+    command: sh -c "mkdir -p tmp/docker-tmp tmp/docker-bundle && flock tmp/bundle.lock bundle install && bundle exec sidekiq"
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
     volumes:
       - ./:/myapp
     env_file:
       - .env
     environment:
       RAILS_ENV: development
-      RAILS_DATABASE_HOST: host.docker.internal
+      RAILS_DATABASE_HOST: db
       REDIS_URL: redis://redis:6379/11
+      BUNDLE_PATH: /myapp/tmp/docker-bundle
+      TMPDIR: /myapp/tmp/docker-tmp
+    networks:
+      - appnet
 
 networks:
-  db:
+  appnet:
