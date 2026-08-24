@@ -10,6 +10,7 @@ module ScenarioContentCopyable
     product_id_cross_sell
     is_use_only_regular_order
     is_used_fukushashiki
+    execution_policy
     is_used_custom_css
     custom_css_content
     is_used_custom_js_code

@@ -1,4 +1,6 @@
 class Api::V1::Managements::ScenariosController < ApplicationController
+  include ScenarioContentPersistence
+
   skip_before_action :permision, only: [:preview, :get_scenario_selected]
   skip_before_action :verify_authenticity_token, only: [:preview, :get_scenario_selected]
   before_action :check_chatbot_present, except: [:preview, :get_scenario_selected, :get_list_scenario_by_client]
@@ -193,7 +195,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         @scenario.product_id_cross_sell = nil
       end
       @scenario.is_use_only_regular_order = params[:is_use_only_regular_order]
-      @scenario.is_used_fukushashiki = params[:is_used_fukushashiki]
+      apply_execution_policy!(@scenario)
       @scenario.is_used_custom_css = params[:is_used_custom_css]
       @scenario.custom_css_content = params[:custom_css_content]
       @scenario.is_used_err_msg_by_js = params[:is_used_err_msg_by_js]

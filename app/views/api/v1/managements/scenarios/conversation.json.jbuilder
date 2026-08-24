@@ -5,6 +5,7 @@ json.data do
   json.scenario_type @scenario.scenario_type || 'payment'
   json.isUseOnlyRegularOrder @scenario.is_use_only_regular_order
   json.isUseFukushashiki @scenario.is_used_fukushashiki
+  json.execution_policy @scenario.execution_policy
   json.custom_css_content @scenario.custom_css_content
   json.is_used_custom_css @scenario.is_used_custom_css
   json.is_used_err_msg_by_js @scenario.is_used_err_msg_by_js

@@ -62,7 +62,7 @@ module ScenarioContentPersistence
 
   def apply_customization_fields!(record)
     record.is_use_only_regular_order = params[:is_use_only_regular_order]
-    record.is_used_fukushashiki = params[:is_used_fukushashiki]
+    apply_execution_policy!(record)
     record.is_used_custom_css = params[:is_used_custom_css]
     record.custom_css_content = params[:custom_css_content]
     record.is_used_err_msg_by_js = params[:is_used_err_msg_by_js]
@@ -93,5 +93,14 @@ module ScenarioContentPersistence
     }.compact
 
     record.extra_config = extra.present? ? JSON.generate(extra.as_json) : nil
+  end
+
+  def apply_execution_policy!(record)
+    if params.key?(:execution_policy) && params[:execution_policy].present?
+      record.execution_policy = params[:execution_policy]
+    else
+      record.execution_policy = ActiveModel::Type::Boolean.new.cast(params[:is_used_fukushashiki]) ? :fukushashiki : :rpa
+    end
+    record.sync_fukushashiki_from_execution_policy!
   end
 end

@@ -1,6 +1,7 @@
 class ScenarioTemplate < ApplicationRecord
   include ScenarioContentCopyable
   include ScenarioExtraConfig
+  include ScenarioExecutionPolicy
 
   belongs_to :created_by, class_name: "User", optional: true
 

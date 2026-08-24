@@ -8,6 +8,7 @@ json.data do
   json.scenario_type @scenario_template.scenario_type || "payment"
   json.isUseOnlyRegularOrder @scenario_template.is_use_only_regular_order
   json.isUseFukushashiki @scenario_template.is_used_fukushashiki
+  json.execution_policy @scenario_template.execution_policy
   json.custom_css_content @scenario_template.custom_css_content
   json.is_used_custom_css @scenario_template.is_used_custom_css
   json.is_used_err_msg_by_js @scenario_template.is_used_err_msg_by_js
