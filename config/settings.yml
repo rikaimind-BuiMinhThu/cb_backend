@@ -11,7 +11,7 @@ webhook:
 facebook:
   sdk:
     url: https://graph.facebook.com/
-    version: v14.0
+    version: v25.0
   meta_app:
     app_id: "<%= ENV.fetch("FACEBOOK_APP_ID") %>"
     app_secret: "<%= ENV.fetch("FACEBOOK_APP_SECRET") %>"
