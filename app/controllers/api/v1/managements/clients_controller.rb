@@ -101,15 +101,29 @@ class Api::V1::Managements::ClientsController < ApplicationController
       :municipality, :building_name, :email, :name_katakana, :responsible_person_katakana,
       :unit_price_instagram, :unit_price_web, :unit_price_line, :unit_price_tiktok, :cart_system,
       :shop_url, :client_id, :client_secret,
-      :reply_smtp_gmail, :reply_smtp_gmail_app_password)
+      :reply_smtp_gmail, :reply_smtp_gmail_app_password, :lexica_max_chrome)
   end
 
   def client_create_params
-    strip_blank_reply_smtp_password(client_params)
+    clamp_lexica_max_chrome(strip_blank_reply_smtp_password(client_params))
   end
 
   def client_update_params
-    strip_blank_reply_smtp_password(client_params)
+    permitted = strip_blank_reply_smtp_password(client_params)
+    unless current_user.admin_deel?
+      permitted = permitted.except(:lexica_max_chrome)
+    end
+    clamp_lexica_max_chrome(permitted)
+  end
+
+  def clamp_lexica_max_chrome(permitted)
+    if permitted[:lexica_max_chrome].present?
+      global = SystemSetting.lexica_max_chrome
+      permitted[:lexica_max_chrome] = [SystemSetting.clamp_chrome(permitted[:lexica_max_chrome]), global].min
+    elsif permitted.key?(:lexica_max_chrome) && permitted[:lexica_max_chrome].blank?
+      permitted[:lexica_max_chrome] = nil
+    end
+    permitted
   end
 
   def strip_blank_reply_smtp_password(permitted)

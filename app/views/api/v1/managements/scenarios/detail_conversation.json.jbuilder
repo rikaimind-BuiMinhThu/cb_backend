@@ -29,6 +29,8 @@ json.data do
   json.timer_config JSON.parse(@scenario.timer_config) unless @scenario.timer_config.blank?
   json.tamagoLandingPageUrl @landing_page_product_url
   json.merchandise_id @scenario.merchandise_id_for_api
+  json.lexica_cart_url @scenario.lexica_cart_url
+  json.order_result_mode @scenario.order_result_mode.presence || "wait"
   json.conversation JSON.parse(@scenario.conversation) unless @scenario.conversation.blank?
   json.is_used_message_loaded_past @scenario.is_used_message_loaded_past
   json.use_fullwidth_chatbot_mobile @scenario.use_fullwidth_chatbot_mobile

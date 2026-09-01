@@ -27,4 +27,6 @@ if Rails.env.development?
     user.password_confirmation = local_password
     user.save!
   end
+
+  load Rails.root.join("db/seeds/lexica_sample.rb")
 end

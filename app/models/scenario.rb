@@ -20,6 +20,7 @@ class Scenario < ApplicationRecord
   end
 
   def merchandise_id_for_api
+    return merchandise_id if chatbot&.user&.client&.lexica?
     return nil unless shopify_payment_merchandise_context?
     merchandise_id
   end

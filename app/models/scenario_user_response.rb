@@ -213,6 +213,10 @@ class ScenarioUserResponse < ApplicationRecord
             selected = get_selected_obj_for_radio_button(conversation)
             value = selected[:value]
             data_input_name = "payment_method"
+          when "path", "order_path"
+            selected = get_selected_obj_for_radio_button(conversation)
+            value = selected && (selected[:value] || selected["value"])
+            data_input_name = "path"
           when "sex"
             selected = get_selected_obj_for_radio_button(conversation)
             value = selected[:value]
@@ -274,7 +278,17 @@ class ScenarioUserResponse < ApplicationRecord
           case conversation["card_payment_radio_button"]["initial_selection"]
           when 'credit_card'
             data_input_name = "credit_card_payment"
-            value = conversation[:card_payment_radio_button].to_json
+            card = conversation[:card_payment_radio_button] || conversation["card_payment_radio_button"]
+            if card && (card[:token_key] || card["token_key"])
+              value = {
+                token_key: card[:token_key] || card["token_key"],
+                masked_pan: card[:masked_pan] || card["masked_pan"],
+                expiry: card[:expiry] || card["expiry"],
+                holder: card[:holder] || card["holder"]
+              }.to_json
+            else
+              value = conversation[:card_payment_radio_button].to_json
+            end
           when 'paypal'
             data_input_name = "paypal_payment"
             value = selected[:value]

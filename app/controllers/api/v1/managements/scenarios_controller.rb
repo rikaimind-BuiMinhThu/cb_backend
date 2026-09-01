@@ -87,6 +87,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         ugc_env: scenario.ugc_env.presence || 'staging',
         html_ugc_config_content: scenario.html_ugc_config_content,
         client_cart_system: client_cart_system,
+        order_result_mode: scenario.order_result_mode.presence || "wait",
         is_used_message_loaded_past: scenario.is_used_message_loaded_past,
         opening_bot_icon: chatbot.opening_bot_icon,
         closing_bot_icon: chatbot.closing_bot_icon,
@@ -190,9 +191,20 @@ class Api::V1::Managements::ScenariosController < ApplicationController
           @scenario.product_id_cross_sell = nil
         end
       else
-        @scenario.merchandise_id = nil
-        @scenario.is_used_crosssell = false
-        @scenario.product_id_cross_sell = nil
+        if client&.lexica?
+          @scenario.merchandise_id = params[:merchandise_id].to_s.strip.presence
+          @scenario.is_used_crosssell = false
+          @scenario.product_id_cross_sell = nil
+        else
+          @scenario.merchandise_id = nil
+          @scenario.is_used_crosssell = false
+          @scenario.product_id_cross_sell = nil
+        end
+      end
+      if client&.lexica?
+        @scenario.lexica_cart_url = params[:lexica_cart_url]
+        mode = params[:order_result_mode].to_s
+        @scenario.order_result_mode = %w[wait async].include?(mode) ? mode : "wait"
       end
       @scenario.is_use_only_regular_order = params[:is_use_only_regular_order]
       apply_execution_policy!(@scenario)

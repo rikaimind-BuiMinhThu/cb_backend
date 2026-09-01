@@ -59,6 +59,12 @@ Rails.application.routes.draw do
         get "scenario_templates/:id/conversation", :to => "scenario_templates#detail_conversation"
         post "scenario_templates/:id/conversation", :to => "scenario_templates#conversation"
         resources :order_confirm_message_templates, only: [:index, :show, :create, :update, :destroy]
+        resources :selenium_results, only: [:index, :show] do
+          member do
+            get :screenshot
+          end
+        end
+        resource :system_settings, only: [:show, :update]
       end
       namespace :message_managements do
         get "message_groups/data_analyst", :to => 'message_groups#data_analyst'
@@ -122,6 +128,9 @@ Rails.application.routes.draw do
         resources :scenario_user_responses, only: [:create] do
           collection do
             post :create_order
+            get :selenium_results
+            post :token_failures
+            get :zeus_config
           end
         end
         resources :conversions, only: [:create]

@@ -18,8 +18,20 @@ class ChatLog
           scenario_id: scenario_id,
           user_input_id: user_input_id,
           newest: group.first.newest,
-          is_done: is_done
+          is_done: is_done,
+          order_status: order_status_for(scenario_id, user_input_id),
+          order_id: order_id_for(scenario_id, user_input_id)
         }
       end
+  end
+
+  private
+
+  def order_status_for(scenario_id, user_input_id)
+    ScenarioUserResponseSeleniumResult.find_by(scenario_id: scenario_id, user_input_id: user_input_id)&.result
+  end
+
+  def order_id_for(scenario_id, user_input_id)
+    ScenarioUserResponseSeleniumResult.find_by(scenario_id: scenario_id, user_input_id: user_input_id)&.id
   end
 end

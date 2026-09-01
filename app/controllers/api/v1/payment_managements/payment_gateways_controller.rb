@@ -1,6 +1,7 @@
 class Api::V1::PaymentManagements::PaymentGatewaysController < ApplicationController
   RETURN_FIELDS = [:id, :gateway_name, :payment_agency, :mode, :shop_id,
-    :merchant_code, :sp_code, :terminal_id, :client_ip, :store_id, :user_id, :is_default]
+    :merchant_code, :sp_code, :terminal_id, :client_ip, :store_id, :user_id, :is_default,
+    :token_js_url, :ipcode]
   def index
     payment_gateways = PaymentGateway.select(RETURN_FIELDS)
                                      .where(user_id: current_user.id)
@@ -19,7 +20,11 @@ class Api::V1::PaymentManagements::PaymentGatewaysController < ApplicationContro
     return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || current_user.admin_client?
     payment = PaymentGateway.new(payment_create_params)
     payment.user = current_user
-    payment.is_default = :yes if current_user.payment_gateways.is_default_yes.blank?
+    if payment.zeus?
+      payment.is_default = :no
+    elsif current_user.payment_gateways.charge_gateways.is_default_yes.blank?
+      payment.is_default = :yes
+    end
     return render json: {code: 1, data: payment} if payment.save
     render json: {code: 2, messages: payment.errors.full_messages}
   end
@@ -49,7 +54,7 @@ class Api::V1::PaymentManagements::PaymentGatewaysController < ApplicationContro
     return if payment.blank?
     ActiveRecord::Base.transaction do
       payment.destroy!
-      current_user.payment_gateways.first&.update(is_default: :yes)
+      current_user.payment_gateways.charge_gateways.first&.update(is_default: :yes)
       render json: {code: 1, data: payment}
     rescue
       Rails.logger.error(error)
@@ -64,12 +69,16 @@ class Api::V1::PaymentManagements::PaymentGatewaysController < ApplicationContro
 
   def payment_create_params
     params.require(:payment).permit(:gateway_name, :payment_agency, :mode, :shop_id, :shop_pass,
-      :merchant_code, :sp_code, :terminal_id, :client_ip, :store_id)
+      :merchant_code, :sp_code, :terminal_id, :client_ip, :store_id, :token_js_url, :ipcode)
   end
 
   def payment_update_params
-    params.require(:payment).permit(:gateway_name, :payment_agency, :mode, :shop_id, :shop_pass,
-      :merchant_code, :sp_code, :terminal_id, :client_ip, :store_id, :is_default)
+    permitted = params.require(:payment).permit(:gateway_name, :payment_agency, :mode, :shop_id, :shop_pass,
+      :merchant_code, :sp_code, :terminal_id, :client_ip, :store_id, :is_default, :token_js_url, :ipcode)
+    if permitted[:payment_agency] == "zeus" || PaymentGateway.find_by(id: params[:id])&.zeus?
+      permitted = permitted.except(:is_default)
+    end
+    permitted
   end
 
   def find_payment

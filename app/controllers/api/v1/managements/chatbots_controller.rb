@@ -3,18 +3,17 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
   skip_before_action :verify_authenticity_token, only: [:webchat_sdk, :show, :chat_body_version]
 
   def index
-    chatbots = Chatbot.joins(:user).select("chatbots.*, users.full_name as owner_name") if current_user.admin_deel?
-    chatbots = UserChatbot.joins(:chatbot, :user)
-                          .select("chatbots.*, user_chatbots.role as my_authority, users.full_name as owner_name")
-                          .where(user_id: current_user.id) unless current_user.admin_deel?
+    chatbots = if current_user.admin_deel?
+      Chatbot.joins(:user).select("chatbots.*, users.full_name as owner_name")
+    else
+      Chatbot.joins(:user, :user_chatbots)
+             .where(user_chatbots: { user_id: current_user.id })
+             .select("chatbots.*, user_chatbots.role as my_authority, users.full_name as owner_name")
+    end
     q = {}
     q[:bot_name_cont] = params[:name] if params[:name].present?
     q[:status_eq] = (params[:status] == 'on') ? 1 : 0 if params[:status].present? && (params[:status] == 'on' || params[:status] == 'off')
-    q_ac = {}
-    q_ac[:chatbot_bot_name_cont] = params[:name] if params[:name].present?
-    q_ac[:chatbot_status_eq] = (params[:status] == 'on') ? 1 : 0 if params[:status].present? && (params[:status] == 'on' || params[:status] == 'off')
-    chatbots = chatbots.ransack(q).result(distinct: true) if current_user.admin_deel?
-    chatbots = chatbots.ransack(q_ac).result(distinct: true) unless current_user.admin_deel?
+    chatbots = chatbots.ransack(q).result(distinct: true)
     total = chatbots.length
     chatbots = chatbots.page(params[:page]).per(10)
     unless current_user.admin_deel?

@@ -5,4 +5,5 @@ development:
 production:
   :concurrency: 2
 :queues:
+  - lexica
   - default
