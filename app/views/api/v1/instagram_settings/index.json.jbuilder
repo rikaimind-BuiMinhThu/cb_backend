@@ -1,5 +1,5 @@
 json.code 1
-json.data @instagram_accounts.each do |instagram_account|
+json.data @instagram_accounts do |instagram_account|
   json.merge! instagram_account.as_json
   if instagram_account.post_comment_bag.present?
     post_comment_group = instagram_account.post_comment_bag.message_group

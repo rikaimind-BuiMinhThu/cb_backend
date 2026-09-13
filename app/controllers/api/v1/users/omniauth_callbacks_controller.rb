@@ -54,29 +54,23 @@ class Api::V1::Users::OmniauthCallbacksController < ApplicationController
   end
 
   def check_user_token
-    info = get_request "https://graph.facebook.com/me?access_token="+ params[:access_token] +
-      "&fields=id,name,email,picture"
-    raw_info = JSON.parse info
+    require 'net/http'
+    require 'uri'
+
+    graph_url = "#{FacebookManager::GraphApiClient.base_url}/me"
+    uri = URI("#{graph_url}?access_token=#{params[:access_token]}&fields=id,name,email,picture")
+    response = Net::HTTP.get_response(uri)
+    return 2 unless response.is_a?(Net::HTTPSuccess)
+
+    raw_info = JSON.parse(response.body)
 
     if raw_info["error"].present?
       return 2
     end
     @authParams = {"info": {}}
-    puts @authParams
     @authParams[:info].merge! raw_info
     @authParams[:info][:id] = raw_info["id"]
     @authParams[:info][:image] = raw_info["picture"]["data"]["url"]
     return 1
-  end
-
-  def get_request url
-    require 'uri'
-    require 'net/http'
-    uri = URI(url)
-    if res.is_a?(Net::HTTPSuccess)
-      return res.body
-    else
-      return false
-    end
   end
 end

@@ -24,13 +24,14 @@ class Api::V1::MessageManagements::MessageBagsController < ApplicationController
 
   def destroy
     message_bag = MessageBag.find_by(id: params[:id])
-    return render json: {code: 2, message: "Cannot find message bag"} if message_bag.blank?
-    return render json: {code: 2, message: "User can't permission"} if message_bag.message_group.user_id != current_user.id
-    return render json: {code: 2, message: "Cannot delete message bag"} unless MessageBagForm.new(message_bag, current_user).check_delete
+    return render json: {code: 2, message: "メッセージ袋が見つかりません。"} if message_bag.blank?
+    return render json: {code: 2, message: "権限がありません。"} if message_bag.message_group.user_id != current_user.id
+    reason = MessageBagForm.new(message_bag, current_user).delete_block_reason
+    return render json: {code: 2, message: reason} if reason.present?
     if message_bag.destroy
       render json: {code: 1, message: "Success!"}
     else
-      render json: {code: 2, message: "Something went wrong!"}
+      render json: {code: 2, message: "削除に失敗しました。"}
     end
   end
 
