@@ -40,4 +40,5 @@ json.data do
   json.allowed_lp_domains extra["allowed_lp_domains"]
   json.lp_integration_mode extra["lp_integration_mode"]
   json.amazon_pay_config extra["amazon_pay_config"]
+  json.tag_firing extra["tag_firing"]
 end

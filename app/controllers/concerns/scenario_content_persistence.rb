@@ -84,14 +84,16 @@ module ScenarioContentPersistence
   def apply_extra_config!(record)
     return unless record.respond_to?(:extra_config=)
 
-    extra = {
+    incoming = {
       auto_logout: params[:auto_logout],
       is_use_amazon_pay: params[:is_use_amazon_pay],
       allowed_lp_domains: params[:allowed_lp_domains],
       lp_integration_mode: params[:lp_integration_mode],
       amazon_pay_config: params[:amazon_pay_config],
+      tag_firing: params[:tag_firing],
     }.compact
 
+    extra = record.extra_config_hash.merge(incoming)
     record.extra_config = extra.present? ? JSON.generate(extra.as_json) : nil
   end
 

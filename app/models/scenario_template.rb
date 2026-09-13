@@ -2,6 +2,7 @@ class ScenarioTemplate < ApplicationRecord
   include ScenarioContentCopyable
   include ScenarioExtraConfig
   include ScenarioExecutionPolicy
+  include ScenarioVariableProvisionable
 
   belongs_to :created_by, class_name: "User", optional: true
 
@@ -12,6 +13,7 @@ class ScenarioTemplate < ApplicationRecord
     preserved_name = scenario.name
     self.class.copy_content_attributes(from: self, to: scenario)
     scenario.name = preserved_name
+    provision_variables_for!(scenario)
     scenario
   end
 end

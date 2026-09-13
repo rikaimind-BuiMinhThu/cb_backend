@@ -91,7 +91,8 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         is_used_message_loaded_past: scenario.is_used_message_loaded_past,
         opening_bot_icon: chatbot.opening_bot_icon,
         closing_bot_icon: chatbot.closing_bot_icon,
-        use_fullwidth_chatbot_mobile: scenario.use_fullwidth_chatbot_mobile
+        use_fullwidth_chatbot_mobile: scenario.use_fullwidth_chatbot_mobile,
+        tag_firing: scenario.extra_config_hash["tag_firing"] || {}
       },
       all_variables: all_variables,
       design_settings: chatbot.design_settings ? JSON.parse(chatbot.design_settings) : ""
@@ -103,6 +104,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     scenario.chatbot_id = params[:chatbot_id]
     scenario.scenario_type = params[:scenario_type] || 'payment' if scenario.scenario_type.blank?
 
+    template = nil
     if params[:template_id].present?
       template = ScenarioTemplate.find_by(id: params[:template_id])
       return render json: { code: 2, message: "Template not found" } if template.blank?
@@ -112,6 +114,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
 
     ActiveRecord::Base.transaction do
       scenario.save!
+      template.provision_variables_for!(scenario) if template.present?
     rescue StandardError => error
       Rails.logger.debug(error)
       return render json: {code: 2, message: error}, status: 500
@@ -219,14 +222,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
       @scenario.is_used_message_loaded_past = params[:is_used_message_loaded_past]
       @scenario.use_fullwidth_chatbot_mobile = params[:use_fullwidth_chatbot_mobile]
       @scenario.is_clear_landing_page_session = params[:is_clear_landing_page_session]
-      extra = {
-        auto_logout: params[:auto_logout],
-        is_use_amazon_pay: params[:is_use_amazon_pay],
-        allowed_lp_domains: params[:allowed_lp_domains],
-        lp_integration_mode: params[:lp_integration_mode],
-        amazon_pay_config: params[:amazon_pay_config],
-      }.compact
-      @scenario.extra_config = extra.present? ? JSON.generate(extra.as_json) : nil
+      apply_extra_config!(@scenario)
       @scenario.save!
     rescue StandardError => error
       Rails.logger.debug(error)
@@ -267,13 +263,32 @@ class Api::V1::Managements::ScenariosController < ApplicationController
   end
 
   def get_scenario_selected
-    bot = Chatbot.find_by(id: params[:chatbot_id])     
-    return render json: { code: 2, message: "Chatbot not found" } if bot.blank?  
-    scenario = Scenario.select(:id, :name, :is_clear_landing_page_session).find_by(id: bot.scenario_selected)   
+    bot = Chatbot.find_by(id: params[:chatbot_id])
+    return render json: { code: 2, message: "Chatbot not found" } if bot.blank?
+
+    scenario = Scenario.find_by(id: bot.scenario_selected)
     if scenario.blank?
       return render json: { code: 2, message: "Scenario not found" }
-    end  
-    render json: { code: 1, data: scenario, cart_system: bot.user&.client&.cart_system }
+    end
+
+    extra = scenario.extra_config_hash
+    conversation = parse_scenario_conversation(scenario.conversation)
+    messages = conversation.is_a?(Hash) ? (conversation["messages"] || []) : []
+
+    render json: {
+      code: 1,
+      data: {
+        id: scenario.id,
+        name: scenario.name,
+        is_clear_landing_page_session: scenario.is_clear_landing_page_session,
+        messages: messages,
+        allowed_lp_domains: extra["allowed_lp_domains"] || [],
+        lp_integration_mode: extra["lp_integration_mode"],
+        amazon_pay_config: extra["amazon_pay_config"] || {},
+        tag_firing: extra["tag_firing"] || {},
+      },
+      cart_system: bot.user&.client&.cart_system
+    }
   end
 
   def get_list_scenario_by_client
@@ -302,6 +317,15 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     @scenario.tamago_repeat_config.email_confirm_field = params[:email_confirm_field] if params[:email_confirm_field].present?
     @scenario.tamago_repeat_config.name_kana_field = params[:name_kana_field] if params[:name_kana_field].present?
     @scenario.tamago_repeat_config.save!
+  end
+
+  def parse_scenario_conversation(raw)
+    return {} if raw.blank?
+    return raw if raw.is_a?(Hash) || raw.is_a?(Array)
+
+    JSON.parse(raw)
+  rescue JSON::ParserError
+    {}
   end
 
   def check_chatbot_present

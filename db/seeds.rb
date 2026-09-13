@@ -1,30 +1,28 @@
 # frozen_string_literal: true
 
+# Development dump-style seeds for local / Docker page checks.
+#
+# Docker:
+#   cd EC-ChatBot-Backend
+#   docker-compose up -d --build          # db:seed runs on container start
+#   docker exec -it instagram_chatbot_api bundle exec rails db:seed
+#
+# Login:
+#   admin@local.test / Password123!          (admin_deel)
+#   client-admin@local.test / Password123!   (admin_client — owns bot / IG data)
+#   client@local.test / Password123!         (client)
+
 PaymentSystem.find_or_create_by!(name: "Shopify Payment")
 PaymentSystem.find_or_create_by!(name: "SB Payment")
 
+# Scenario / order-confirm templates are not part of this dump.
+# Apply them with: bundle exec rake templates:seed
+
 if Rails.env.development?
-  local_client = Client.find_or_create_by!(name: "Local Dev")
-  local_client.update!(status: :active, is_web: true, is_instagram: true)
+  Dir[Rails.root.join("db/seeds/*.rb")].sort.each do |seed_file|
+    next if File.basename(seed_file) == "templates.rb"
 
-  local_users = [
-    { email: "admin@local.test", role: :admin_deel, full_name: "Local Admin" },
-    { email: "client-admin@local.test", role: :admin_client, full_name: "Local Client Admin" },
-    { email: "client@local.test", role: :client, full_name: "Local Client User" }
-  ]
-
-  local_password = "Password123!"
-
-  local_users.each do |attrs|
-    user = User.find_or_initialize_by(email: attrs[:email])
-    user.client = local_client
-    user.role = attrs[:role]
-    user.full_name = attrs[:full_name]
-    user.phone_number = "00000000000"
-    user.can_read = true
-    user.can_write = true
-    user.password = local_password
-    user.password_confirmation = local_password
-    user.save!
+    Rails.logger.info("Loading seed #{File.basename(seed_file)}")
+    load seed_file
   end
 end
