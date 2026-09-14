@@ -50,8 +50,11 @@ module SeleniumServices
       LINE_CHECKBOX = "input[name=\"LINE_LOGIN_DUMMY_CHECKBOX\"]".freeze
       LINE_LINK = ".form-order-signin a[href*=\"line\"]".freeze
 
+      # Locked after filled-cart review. Do not use bare button.btn-submit.
       PAYMENT_LIST = "#order__payment .payment-method-list".freeze
       DELIVERY_FORM = ".form-deliveryservice".freeze
+      DELIVERY_OPTION = ".form-deliveryservice label, .form-deliveryservice input, .form-deliveryservice select option".freeze
+      DELIVERY_LABELS = %w[ポスト投函].freeze
       TOKEN_KEY_INPUT = "input[name=\"token_key\"], input[name=\"TOKEN_KEY\"], input#token_key".freeze
       SUBMIT_ORDER = "#order-entry-content #checkout-control div.checkout button.btn-submit".freeze
       THANKS_HINTS = [

@@ -28,7 +28,9 @@ module SeleniumServices
         "新規会員" => "new",
         "既存会員" => "existing"
       }[value]
-      mapped || "existing"
+      raise ArgumentError, "unknown lexica path: #{value.inspect}" unless mapped
+
+      mapped
     end
   end
 end

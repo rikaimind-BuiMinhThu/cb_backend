@@ -161,7 +161,8 @@ module SeleniumServices
           case @payment_method
           when "credit" then "payment_credit"
           when "gmo_atobarai" then "payment_gmo_atobarai"
-          else "payment_cod"
+          else
+            raise LexicaStop.new("unknown_payment", "支払い方法が不正です: #{@payment_method.inspect}")
           end
         step(name, "支払い") do
           wait_page_load_complete
@@ -194,7 +195,8 @@ module SeleniumServices
         case @payment_method
         when "credit" then %w[クレジットカード ZEUS]
         when "gmo_atobarai" then %w[GMO後払い 後払い]
-        else %w[代金引換 代引]
+        else
+          raise LexicaStop.new("unknown_payment", "支払い方法が不正です: #{@payment_method.inspect}")
         end
       end
 
@@ -222,9 +224,27 @@ module SeleniumServices
 
       def apply_delivery
         step("fill_delivery", "お届け") do
-          return unless element_present?(S::DELIVERY_FORM)
-
+          if element_present?(S::DELIVERY_FORM)
+            click_delivery_option
+          end
           true
+        end
+      end
+
+      def click_delivery_option
+        S::DELIVERY_LABELS.each do |label|
+          clicked = @driver.execute_script(<<~JS, label)
+            var nodes = document.querySelectorAll(#{S::DELIVERY_OPTION.to_json});
+            for (var i = 0; i < nodes.length; i++) {
+              var t = (nodes[i].innerText || nodes[i].value || '');
+              if (t.indexOf(arguments[0]) !== -1) {
+                nodes[i].click();
+                return true;
+              }
+            }
+            return false;
+          JS
+          break if clicked
         end
       end
 
@@ -240,7 +260,6 @@ module SeleniumServices
 
       def detect_thanks
         step("detect_result", "完了を確認") do
-          sleep_by_seconds 2
           url = @driver.current_url.to_s
           source = @driver.page_source.to_s
           complete = thanks_page?(url, source)
@@ -251,7 +270,7 @@ module SeleniumServices
       end
 
       def thanks_page?(url, source)
-        return true if url.match?(/complete|thanks|thankyou|finish|\/pv\/op\/order/i)
+        return true if url.match?(/complete|thanks|thankyou|finish/i)
         return true if S::THANKS_HINTS.any? { |css| element_present?(css) }
         return true if source.match?(/ご注文(?:が)?完了|注文を受け付けました|order.?complete/i)
 
@@ -469,7 +488,7 @@ module SeleniumServices
         return "gmo_atobarai" if value.match?(/gmo|後払/i)
         return "cod" if value.match?(/cod|代引|引換/i)
 
-        value.presence || "cod"
+        raise LexicaStop.new("unknown_payment", "支払い方法が不正です: #{value.inspect}")
       end
 
       def masked_pan_from_card
