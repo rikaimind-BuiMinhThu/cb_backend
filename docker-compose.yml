@@ -79,6 +79,8 @@ services:
       REDIS_URL: redis://redis:6379/11
       BUNDLE_PATH: /myapp/tmp/docker-bundle
       TMPDIR: /myapp/tmp/docker-tmp
+      CHROME_BIN: /usr/bin/chromium-browser
+      CHROMEDRIVER_PATH: /usr/bin/chromedriver
     networks:
       - appnet
 

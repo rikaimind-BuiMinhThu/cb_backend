@@ -60,10 +60,13 @@ module SeleniumServices
 
         step("auth_login", "ログイン") do
           never_click_line
-          fill_to_text_input S::SIGNIN_LOGIN_ID, @user_email, "login id"
-          fill_to_text_input S::SIGNIN_PASSWORD, @password_value, "password"
-          click S::SIGNIN_SUBMIT, "login"
+          fill_to_text_input S::SIGNIN_LOGIN_ID, @user_email, "login id", pointer_action: false
+          fill_to_text_input S::SIGNIN_PASSWORD, @password_value, "password", pointer_action: false
+          raise LexicaStop.new("missing_login_submit", "ログインボタンが見つかりません") unless element_present?(S::SIGNIN_SUBMIT)
+
+          click S::SIGNIN_SUBMIT, "login", pointer_action: false
           wait_page_load_complete
+          wait_loading_gone
           stop_if_login_failed
         end
       end

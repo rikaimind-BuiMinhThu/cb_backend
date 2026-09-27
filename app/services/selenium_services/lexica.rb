@@ -25,8 +25,11 @@ module SeleniumServices
         "2" => "new",
         "3" => "existing",
         "はじめて" => "first_time",
+        "はじめてご注文（会員にならない）" => "first_time",
         "新規会員" => "new",
-        "既存会員" => "existing"
+        "新規会員登録して注文" => "new",
+        "既存会員" => "existing",
+        "会員ログインして注文" => "existing"
       }[value]
       raise ArgumentError, "unknown lexica path: #{value.inspect}" unless mapped
 

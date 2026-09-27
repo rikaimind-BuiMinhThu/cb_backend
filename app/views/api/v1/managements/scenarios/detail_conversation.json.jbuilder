@@ -31,6 +31,15 @@ json.data do
   json.merchandise_id @scenario.merchandise_id_for_api
   json.lexica_cart_url @scenario.lexica_cart_url
   json.order_result_mode @scenario.order_result_mode.presence || "wait"
+  json.lexica_upsell_product_url @scenario.try(:lexica_upsell_product_url)
+  json.lexica_upsell_sku @scenario.try(:lexica_upsell_sku)
+  json.lexica_cross_sell_product_url @scenario.try(:lexica_cross_sell_product_url)
+  json.lexica_cross_sell_sku @scenario.try(:lexica_cross_sell_sku)
+  json.lexica_offer_chat @scenario.try(:lexica_offer_chat)
+  json.lexica_offer_confirm_upsell @scenario.try(:lexica_offer_confirm_upsell)
+  json.lexica_offer_confirm_cross_sell @scenario.try(:lexica_offer_confirm_cross_sell)
+  json.lexica_offer_thanks_upsell @scenario.try(:lexica_offer_thanks_upsell)
+  json.lexica_offer_thanks_cross_sell @scenario.try(:lexica_offer_thanks_cross_sell)
   json.conversation JSON.parse(@scenario.conversation) unless @scenario.conversation.blank?
   json.is_used_message_loaded_past @scenario.is_used_message_loaded_past
   json.use_fullwidth_chatbot_mobile @scenario.use_fullwidth_chatbot_mobile

@@ -209,6 +209,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         @scenario.lexica_cart_url = params[:lexica_cart_url]
         mode = params[:order_result_mode].to_s
         @scenario.order_result_mode = %w[wait async].include?(mode) ? mode : "wait"
+        assign_lexica_offers!
       end
       @scenario.is_use_only_regular_order = params[:is_use_only_regular_order]
       apply_execution_policy!(@scenario)
@@ -338,6 +339,29 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     JSON.parse(raw)
   rescue JSON::ParserError
     {}
+  end
+
+  def assign_lexica_offers!
+    @scenario.lexica_upsell_product_url = params[:lexica_upsell_product_url]
+    @scenario.lexica_upsell_sku = params[:lexica_upsell_sku]
+    @scenario.lexica_cross_sell_product_url = params[:lexica_cross_sell_product_url]
+    @scenario.lexica_cross_sell_sku = params[:lexica_cross_sell_sku]
+    bool = ActiveModel::Type::Boolean.new
+    assign_lexica_flag(:lexica_offer_chat, bool, true)
+    assign_lexica_flag(:lexica_offer_confirm_upsell, bool, true)
+    assign_lexica_flag(:lexica_offer_confirm_cross_sell, bool, false)
+    assign_lexica_flag(:lexica_offer_thanks_upsell, bool, true)
+    assign_lexica_flag(:lexica_offer_thanks_cross_sell, bool, true)
+  end
+
+  def assign_lexica_flag(name, caster, default)
+    return unless @scenario.respond_to?("#{name}=")
+
+    if params.key?(name)
+      @scenario.public_send("#{name}=", caster.cast(params[name]))
+    elsif @scenario.public_send(name).nil?
+      @scenario.public_send("#{name}=", default)
+    end
   end
 
   def check_chatbot_present

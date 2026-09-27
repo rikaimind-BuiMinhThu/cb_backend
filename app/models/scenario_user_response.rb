@@ -160,7 +160,10 @@ class ScenarioUserResponse < ApplicationRecord
             value = conversation.dig(:text_input, :phone_number, :value)
           when "password"
             data_input_name = "password"
-            value = conversation.dig(:text_input, :password_confirmation, :value)
+            # FE stores plain password at text_input.password.value; confirmation type uses password_confirmation.
+            ti = conversation[:text_input] || conversation["text_input"] || {}
+            value = ti.dig(:password, :value) || ti.dig("password", "value") ||
+              ti.dig(:password_confirmation, :value) || ti.dig("password_confirmation", "value")
           when "quantity"
             data_input_name = "quantity"
             value = conversation.dig(:text_input, :text, :value)
@@ -304,8 +307,10 @@ class ScenarioUserResponse < ApplicationRecord
           end
         when "pull_down"
           case conversation[:pull_down][:save_input_content]
-          when "birthday" # 誕生日
-            value = conversation[:pull_down][:dob_ymd].to_json
+          when "birthday", "birth_date" # 誕生日 (I'm PINCH uses birth_date)
+            pd = conversation[:pull_down] || conversation["pull_down"] || {}
+            dob = pd[:dob_ymd] || pd["dob_ymd"] || {}
+            value = dob.to_json
             data_input_name = "birth_date"
           when "delivery_date" # お届け希望日
             value = get_selected_value_for_pull_down(conversation)
@@ -430,9 +435,17 @@ class ScenarioUserResponse < ApplicationRecord
     end
   end
 
+  # FE stores initial_selection as option value (preferred) or id via
+  # getRadioOptionSelectionKey. Match either so path/payment resolve.
   def self.get_selected_obj_for_radio_button(conversation)
-    selected_id = conversation[:radio_button][:initial_selection]
-    conversation[:radio_button][:default].detect { |obj| obj[:id] == selected_id }
+    rb = conversation[:radio_button] || conversation["radio_button"] || {}
+    sel = (rb[:initial_selection] || rb["initial_selection"]).to_s
+    return nil if sel.blank?
+
+    opts = Array(rb[:default] || rb["default"]) + Array(rb[:radio_button_img] || rb["radio_button_img"])
+    opts.find do |obj|
+      [obj[:id], obj["id"], obj[:value], obj["value"]].compact.map(&:to_s).include?(sel)
+    end
   end
 
   def self.get_selected_obj_for_card_payment_radio_button(conversation)

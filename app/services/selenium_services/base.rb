@@ -5,7 +5,8 @@ module SeleniumServices
   class Base
     REGULAR_ORDER_SELECT_QUANTITY_SELECTOR = "#periodically_order_order_qty_0"
     NORMAL_ORDER_SELECT_QUANTITY_SELECTOR = "#order_order_qty_0"
-    TIMEOUT = 300
+    # Explicit wait ceiling (seconds). Was 300 and masked missing selectors as Net::ReadTimeout.
+    TIMEOUT = 45
     SECRET_KEY = Rails.application.secrets.secret_refresh_token
     attr_accessor :scenario, :conversations, :driver, :tamago_repeat_config, :user_input_id
 
@@ -53,10 +54,25 @@ module SeleniumServices
           "--user-agent=#{user_agents.sample}",
         ],
       )
+      chrome_bin = ENV["CHROME_BIN"].to_s.strip
+      options.binary = chrome_bin if chrome_bin.present?
 
-      @driver = Selenium::WebDriver.for(:chrome, options: options)
+      driver_path = ENV["CHROMEDRIVER_PATH"].to_s.strip
+      service =
+        if driver_path.present?
+          Selenium::WebDriver::Chrome::Service.new(path: driver_path)
+        end
+
+      @driver =
+        if service
+          Selenium::WebDriver.for(:chrome, options: options, service: service)
+        else
+          Selenium::WebDriver.for(:chrome, options: options)
+        end
       Log.info @driver.execute_script("return navigator.userAgent"), @log_tab_level
-      @driver.manage.timeouts.implicit_wait = 300
+      # Keep implicit wait near-zero. Long waits belong in explicit Wait callers.
+      # element_present? + high implicit wait caused Net::ReadTimeout (~300s) on missing CSS.
+      @driver.manage.timeouts.implicit_wait = 0
       @driver.manage.delete_all_cookies
 
       Log.info "Init OK selenium driver", @log_tab_level

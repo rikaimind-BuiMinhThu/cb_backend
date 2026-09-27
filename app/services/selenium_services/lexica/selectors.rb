@@ -43,26 +43,42 @@ module SeleniumServices
       SIGNUP_SUBMIT = "#signup-form button.btn-submit-signup-canonical".freeze
       GO_SIGNUP = "a.go-signup-to-order".freeze
 
-      SIGNIN_FORM = ".form-order-signin".freeze
-      SIGNIN_LOGIN_ID = ".form-order-signin input[name=\"LOGIN_ID\"]".freeze
-      SIGNIN_PASSWORD = ".form-order-signin input[name=\"PASSWORD\"]".freeze
-      SIGNIN_SUBMIT = ".form-order-signin button.btn.btn-submit.btn-success".freeze
+      # Checkout gate may use form-order-signin; standalone /signin uses form-signin.
+      SIGNIN_FORM = ".form-order-signin, .form-normal-signin, .form-signin".freeze
+      SIGNIN_LOGIN_ID = ".form-order-signin input[name=\"LOGIN_ID\"], .form-signin input[name=\"LOGIN_ID\"]".freeze
+      SIGNIN_PASSWORD = ".form-order-signin input[name=\"PASSWORD\"], .form-signin input[name=\"PASSWORD\"]".freeze
+      SIGNIN_SUBMIT = ".form-order-signin button.btn-submit, .form-signin button.btn-submit".freeze
       LINE_CHECKBOX = "input[name=\"LINE_LOGIN_DUMMY_CHECKBOX\"]".freeze
-      LINE_LINK = ".form-order-signin a[href*=\"line\"]".freeze
+      LINE_LINK = ".form-order-signin a[href*=\"line\"], .form-signin a[href*=\"line\"]".freeze
 
-      # Locked after filled-cart review. Do not use bare button.btn-submit.
       PAYMENT_LIST = "#order__payment .payment-method-list".freeze
       DELIVERY_FORM = ".form-deliveryservice".freeze
       DELIVERY_OPTION = ".form-deliveryservice label, .form-deliveryservice input, .form-deliveryservice select option".freeze
       DELIVERY_LABELS = %w[ポスト投函].freeze
       TOKEN_KEY_INPUT = "input[name=\"token_key\"], input[name=\"TOKEN_KEY\"], input#token_key".freeze
-      SUBMIT_ORDER = "#order-entry-content #checkout-control div.checkout button.btn-submit".freeze
+      SUBMIT_ORDER = [
+        "#order-entry-content #checkout-control div.checkout button.btn-submit",
+        "#checkout-control button.btn-submit",
+        "button.btn-submit",
+        "input.btn-submit[type=\"submit\"]"
+      ].join(", ").freeze
+      SUBMIT_ORDER_TEXT = ["注文を確定", "この商品を申し込む", "注文する", "購入する"].freeze
+      PURCHASE_BLOCKED_HINTS = [
+        "在庫がない",
+        "限定条件のエラー",
+        "購入いただけません",
+        "お電話にてお問合せ"
+      ].freeze
       THANKS_HINTS = [
         "body#order__complete",
         "body#order_complete",
         ".order-complete",
         "#order-complete"
       ].freeze
+      # Fill after MIRAI confirm/thanks screenshots. Blank = skip unless LEXICA_STRICT_OFFERS=1.
+      CONFIRM_UPSELL = "".freeze
+      THANKS_UPSELL = "".freeze
+      THANKS_CROSS_SELL = "".freeze
       ALREADY_MEMBER_TEXT = "既に会員".freeze
       LOGIN_FAIL_TEXT = "ログインできません".freeze
     end

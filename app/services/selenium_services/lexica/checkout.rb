@@ -12,9 +12,10 @@ module SeleniumServices
         Log.info "Start lexica #{self.class.name}", @log_tab_level
         snapshot_scenario_urls
         begin
+          apply_resolved_offers
           run_checkout
           mark_done
-        rescue LexicaStop => e
+        rescue OfferError, LexicaStop => e
           fail_result(e.error_kind, e.message)
         rescue => e
           Log.error e.message
@@ -50,6 +51,9 @@ module SeleniumServices
         @first_name = split_name(find_response_by_data_input_name("user_name"), :right) || find_response_by_data_input_name("first_name")
         @last_name_kana = split_name(find_response_by_data_input_name("user_name_kana"), :left) || find_response_by_data_input_name("last_name_kana")
         @first_name_kana = split_name(find_response_by_data_input_name("user_name_kana"), :right) || find_response_by_data_input_name("first_name_kana")
+        # I'm PINCH path B has no kana step; Lexica signup requires kana — reuse name when katakana/テスト.
+        @last_name_kana = @last_name if @last_name_kana.blank? && @last_name.present?
+        @first_name_kana = @first_name if @first_name_kana.blank? && @first_name.present?
         @data_address = parse_json_value(find_response_by_data_input_name("zip_code_address"))
         @phone_number = parse_phone(find_response_by_data_input_name("phone_number") || find_response_by_data_input_name("phone"))
         @birth_date = parse_json_value(find_response_by_data_input_name("birth_date"))
@@ -63,11 +67,23 @@ module SeleniumServices
         @sku = @scenario.merchandise_id.to_s
         @product_url = @scenario.landing_page_product_url.to_s
         @cart_url = @scenario.lexica_cart_url.to_s
+        @cart_skus = [@sku].reject(&:blank?)
+        @offer_surfaces = []
         @token_key = @card_data && (@card_data["token_key"] || @card_data[:token_key])
       end
 
+      def apply_resolved_offers
+        resolved = OfferResolver.new(@scenario, @conversations).resolve!
+        @sku = resolved.sku
+        @product_url = resolved.product_url
+        @cart_skus = resolved.cart_skus
+        @offer_surfaces = resolved.surfaces.dup
+        @cross_sell_sku = resolved.cross_sell_sku
+        snapshot_scenario_urls
+      end
+
       def snapshot_scenario_urls
-        @selenium_result&.update!(
+        attrs = {
           path: @path,
           payment: @payment_method,
           sku: @sku,
@@ -77,7 +93,11 @@ module SeleniumServices
           card_expiry: card_expiry_from_card,
           card_holder: card_holder_from_card,
           token_key: nil
-        )
+        }
+        attrs[:resolved_sku] = @sku if @selenium_result&.respond_to?(:resolved_sku)
+        attrs[:resolved_product_url] = @product_url if @selenium_result&.respond_to?(:resolved_product_url)
+        attrs[:offer_surfaces] = JSON.generate(Array(@offer_surfaces)) if @selenium_result&.respond_to?(:offer_surfaces)
+        @selenium_result&.update!(attrs)
       end
 
       def open_shop
@@ -91,13 +111,33 @@ module SeleniumServices
 
       def add_to_cart
         step("add_to_cart", "カートに入れる") do
-          raise LexicaStop.new("missing_sku", "SKUが未設定です") if @sku.blank?
+          raise LexicaStop.new("missing_sku", "SKUが未設定です") if @cart_skus.blank?
 
-          href = add_to_cart_href
-          click_if_present(%(a[href="#{href}"]), "Add SKU #{@sku}") ||
-            execute_script("if (window.n && n.addItemToCart) { n.addItemToCart('#{@sku}', 1); }")
+          @cart_skus.each { |sku| add_sku_to_cart(sku) }
+          # #cart-view is on the cart host, not the LP. After AddItemToCart, ensure we are there.
+          unless element_present?(S::CART_VIEW)
+            navigate "#{cart_base_url}/"
+            wait_page_load_complete
+          end
           wait_element_load S::CART_VIEW
         end
+      end
+
+      def add_sku_to_cart(sku)
+        href = add_to_cart_href_for(sku)
+        # Prefer cart-host AddItemToCart navigation — LP often has no window.n / #cart-view.
+        if click_if_present(%(a[href="#{href}"]), "Add SKU #{sku}")
+          wait_page_load_complete
+          return
+        end
+        if @driver.execute_script("return !!(window.n && n.addItemToCart);")
+          execute_script("n.addItemToCart(#{sku.to_json}, 1);")
+          wait_page_load_complete
+          return
+        end
+
+        navigate href
+        wait_page_load_complete
       end
 
       def proceed_to_checkout
@@ -128,10 +168,14 @@ module SeleniumServices
       def fill_address(prefix)
         return if @data_address.blank?
 
-        postal = @data_address["zip_code"] || @data_address["zipCode"] || @data_address["value"]
-        pref = @data_address["prefecture"] || @data_address["address1"]
-        city = @data_address["city"] || @data_address["address2"]
-        street = @data_address["town"] || @data_address["address3"] || @data_address["street"]
+        # Chatbot zip_code_address uses value_* keys; older carts use zip_code / address1..
+        postal = @data_address["value_post_code"] || @data_address["zip_code"] ||
+          @data_address["zipCode"] || @data_address["post_code"] || @data_address["value"]
+        pref = @data_address["value_prefecture"] || @data_address["prefecture"] || @data_address["address1"]
+        city = @data_address["value_municipality"] || @data_address["municipality"] ||
+          @data_address["city"] || @data_address["address2"]
+        street = @data_address["value_address"] || @data_address["address"] ||
+          @data_address["town"] || @data_address["address3"] || @data_address["street"]
         fill_to_text_input prefix[:postal], postal, "postal" if postal.present?
         fill_to_text_input prefix[:address1], pref, "prefecture" if pref.present?
         fill_to_text_input prefix[:address2], city, "city" if city.present?
@@ -141,9 +185,9 @@ module SeleniumServices
       def fill_birthday(prefix)
         return if @birth_date.blank?
 
-        year = @birth_date["yyyy"] || @birth_date["year"]
-        month = @birth_date["mm"] || @birth_date["month"]
-        day = @birth_date["dd"] || @birth_date["day"]
+        year = @birth_date["yyyy"] || @birth_date["year"] || @birth_date["valueYear"]
+        month = @birth_date["mm"] || @birth_date["month"] || @birth_date["valueMonth"]
+        day = @birth_date["dd"] || @birth_date["day"] || @birth_date["valueDay"]
         select prefix[:year], year.to_s, "yyyy", "birth year" if year.present? && element_present?(prefix[:year])
         select prefix[:month], month.to_s.rjust(2, "0"), "mm", "birth month" if month.present? && element_present?(prefix[:month])
         select prefix[:day], day.to_s.rjust(2, "0"), "dd", "birth day" if day.present? && element_present?(prefix[:day])
@@ -152,8 +196,82 @@ module SeleniumServices
       def apply_payment_and_submit
         apply_payment
         apply_delivery
+        apply_confirm_upsell
         submit_order
         detect_thanks
+        apply_thanks_offers
+      end
+
+      def apply_confirm_upsell
+        return unless offer_flag?(:lexica_offer_confirm_upsell)
+
+        upsell_sku = @scenario.lexica_upsell_sku.to_s
+        if upsell_sku.present? && @cart_skus.include?(upsell_sku)
+          record_offer_surface("confirm_upsell_skipped")
+          return
+        end
+
+        click_offer_or_defer(
+          selector: S::CONFIRM_UPSELL,
+          surface: "confirm_upsell",
+          missing_kind: "confirm_upsell_missing",
+          missing_message: "確認画面のアップセルが見つかりません",
+          sku: upsell_sku
+        )
+      end
+
+      def apply_thanks_offers
+        if offer_flag?(:lexica_offer_thanks_upsell)
+          click_offer_or_defer(
+            selector: S::THANKS_UPSELL,
+            surface: "thanks_upsell",
+            missing_kind: "thanks_upsell_missing",
+            missing_message: "サンクス画面のアップセルが見つかりません",
+            sku: @scenario.lexica_upsell_sku.to_s
+          )
+        end
+        return unless offer_flag?(:lexica_offer_thanks_cross_sell)
+
+        click_offer_or_defer(
+          selector: S::THANKS_CROSS_SELL,
+          surface: "thanks_cross_sell",
+          missing_kind: "thanks_cross_sell_missing",
+          missing_message: "サンクス画面のクロスセルが見つかりません",
+          sku: @scenario.lexica_cross_sell_sku.to_s
+        )
+      end
+
+      def click_offer_or_defer(selector:, surface:, missing_kind:, missing_message:, sku:)
+        if selector.to_s.blank?
+          record_offer_surface("#{surface}_awaiting_selector")
+          if ENV["LEXICA_STRICT_OFFERS"] == "1"
+            raise LexicaStop.new(missing_kind, missing_message)
+          end
+          return
+        end
+
+        step(surface, surface) do
+          unless element_present?(selector)
+            raise LexicaStop.new(missing_kind, missing_message)
+          end
+
+          click selector, surface
+          @cart_skus << sku if sku.present? && !@cart_skus.include?(sku)
+          record_offer_surface(surface)
+        end
+      end
+
+      def offer_flag?(name)
+        return false unless @scenario.respond_to?(name)
+
+        ActiveModel::Type::Boolean.new.cast(@scenario.public_send(name))
+      end
+
+      def record_offer_surface(name)
+        @offer_surfaces = Array(@offer_surfaces) | [name]
+        return unless @selenium_result&.respond_to?(:offer_surfaces)
+
+        @selenium_result.update!(offer_surfaces: JSON.generate(@offer_surfaces))
       end
 
       def apply_payment
@@ -169,7 +287,11 @@ module SeleniumServices
           if element_present?(S::PAYMENT_LIST)
             click_payment_option
           end
-          inject_token_key if @payment_method == "credit"
+          if @payment_method == "credit"
+            inject_token_key
+          else
+            Log.info "GMO: no credit-auth wait", @log_tab_level
+          end
         end
       end
 
@@ -251,11 +373,42 @@ module SeleniumServices
       def submit_order
         step("submit_order", "注文確定") do
           never_click_line
-          raise LexicaStop.new("missing_submit", "注文確定ボタンが見つかりません") unless element_present?(S::SUBMIT_ORDER)
+          blocked = S::PURCHASE_BLOCKED_HINTS.find { |hint| page_contains?(hint) }
+          if blocked
+            raise LexicaStop.new(
+              "purchase_blocked",
+              "Lexicaが購入を拒否しました（#{blocked}）。SKU/在庫/限定条件を確認してください"
+            )
+          end
 
-          click S::SUBMIT_ORDER, "submit order"
+          selector = first_present_selector(S::SUBMIT_ORDER) || submit_button_by_text
+          raise LexicaStop.new("missing_submit", "注文確定ボタンが見つかりません") if selector.blank?
+
+          click selector, "submit order"
           wait_page_load_complete
         end
+      end
+
+      def first_present_selector(css_list)
+        css_list.to_s.split(",").map(&:strip).find { |css| element_present?(css) }
+      end
+
+      def submit_button_by_text
+        S::SUBMIT_ORDER_TEXT.each do |label|
+          found = @driver.execute_script(<<~JS, label)
+            var nodes = document.querySelectorAll('button, input[type="submit"], a.btn');
+            for (var i = 0; i < nodes.length; i++) {
+              var t = (nodes[i].innerText || nodes[i].value || '').replace(/\\s+/g, '');
+              if (t.indexOf(arguments[0].replace(/\\s+/g, '')) !== -1) {
+                if (!nodes[i].id) nodes[i].setAttribute('data-ecch-submit', '1');
+                return nodes[i].id ? ('#' + nodes[i].id) : '[data-ecch-submit="1"]';
+              }
+            }
+            return null;
+          JS
+          return found if found.present?
+        end
+        nil
       end
 
       def detect_thanks
@@ -289,27 +442,54 @@ module SeleniumServices
       def stop_if_already_member
         return unless page_contains?(S::ALREADY_MEMBER_TEXT) || page_contains?("すでに会員")
 
-        raise LexicaStop.new("already_member", "このメールアドレスは既に会員です")
+        Log.info "already member; continue checkout (duplicate email allowed)", @log_tab_level
+        record_offer_surface("already_member_continued")
       end
 
       def stop_if_login_failed
+        url = @driver.current_url.to_s
+        # Checkout / order pages can still embed a .form-signin widget — do not treat that as failure.
+        return if element_present?("#order-entry-content") ||
+          element_present?(S::PAYMENT_LIST) ||
+          page_contains?("ご入力") ||
+          page_contains?("ご確認")
+        return unless url.match?(%r{/signin}i)
+
         failed = page_contains?(S::LOGIN_FAIL_TEXT) ||
           page_contains?("ログインに失敗") ||
-          element_present?(S::SIGNIN_FORM)
-        return unless failed && @driver.current_url.to_s.include?("signin")
+          page_contains?("パスワードが違") ||
+          page_contains?("ログインできません")
+        # Still parked on the dedicated sign-in form after submit.
+        failed ||= element_present?(".form-normal-signin input[name=\"LOGIN_ID\"]") ||
+          element_present?(".form-order-signin input[name=\"LOGIN_ID\"]")
+        raise LexicaStop.new("login_fail", "ログインに失敗しました") if failed
+      end
 
-        raise LexicaStop.new("login_fail", "ログインに失敗しました")
+      def wait_loading_gone(timeout: 30)
+        wait = Selenium::WebDriver::Wait.new(timeout: timeout)
+        wait.until do
+          overlays = @driver.find_elements(css: ".loading, .now-loading, #loading, [class*=\"loading\"]")
+          overlays.none?(&:displayed?)
+        rescue StandardError
+          true
+        end
+      rescue Selenium::WebDriver::Error::TimeoutError
+        Log.info "loading overlay still present after #{timeout}s", @log_tab_level
       end
 
       def never_click_line
-        return unless element_present?(S::LINE_LINK) || element_present?(S::LINE_CHECKBOX)
+        # Check checkbox first (present on signup). Avoid long wait on missing LINE_LINK.
+        return unless element_present?(S::LINE_CHECKBOX) || element_present?(S::LINE_LINK)
 
         Log.info "LINE control present; not clicking", @log_tab_level
       end
 
       def add_to_cart_href
-        cart_host = cart_base_url
-        "#{cart_host}/Service/AddItemToCart/#{@sku}/1"
+        add_to_cart_href_for(@sku)
+      end
+
+      def add_to_cart_href_for(sku)
+        "#{cart_base_url}/Service/AddItemToCart/#{sku}/1"
       end
 
       def cart_base_url
@@ -417,17 +597,36 @@ module SeleniumServices
         @log_tab_level += 1
         Log.info "Fill to text input #{css_selector}: #{description}", @log_tab_level
         input_element = @driver.find_element(css: css_selector)
-        Log.info "input_element.send_keys(#{logged})", @log_tab_level + 1
-        input_element.send_keys(value)
+        begin
+          @driver.execute_script("arguments[0].scrollIntoView({block:'center'});", input_element)
+          input_element.click
+          input_element.clear
+          Log.info "input_element.send_keys(#{logged})", @log_tab_level + 1
+          input_element.send_keys(value)
+        rescue Selenium::WebDriver::Error::ElementNotInteractableError, Selenium::WebDriver::Error::InvalidElementStateError => e
+          Log.info "send_keys failed (#{e.class}); JS value set for #{description}", @log_tab_level + 1
+          @driver.execute_script(<<~JS, input_element, value.to_s)
+            const el = arguments[0];
+            const v = arguments[1];
+            el.focus();
+            el.value = v;
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+          JS
+        end
         capture
         @log_tab_level -= 1
         @driver.action.pointer_down(:left).pointer_up(:left).perform if pointer_action
       end
 
       def element_present?(css)
+        prev = @driver.manage.timeouts.implicit_wait
+        @driver.manage.timeouts.implicit_wait = 0
         @driver.find_elements(css: css).any?
       rescue
         false
+      ensure
+        @driver.manage.timeouts.implicit_wait = prev if defined?(prev) && !prev.nil?
       end
 
       def click_if_present(css, description)

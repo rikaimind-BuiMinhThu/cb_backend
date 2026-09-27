@@ -39,10 +39,10 @@ PINCH_CONFIRM_HTML = <<~HTML
     <div class="pinch-confirm-row"><span>送料</span><span>0円</span></div>
     <div class="pinch-confirm-row"><span>合計</span><span>980円（税込）</span></div>
     <div class="pinch-confirm-title">◆お客様情報（お届け先）◆</div>
-    <div class="pinch-confirm-row"><span>お名前</span><span>山田 花子</span></div>
+    <div class="pinch-confirm-row"><span>お名前</span><span>テスト テスト</span></div>
     <div class="pinch-confirm-row"><span>住所</span><span>〒1000001 東京都千代田区千代田1-1</span></div>
     <div class="pinch-confirm-row"><span>電話番号</span><span>09012345678</span></div>
-    <div class="pinch-confirm-row"><span>メールアドレス</span><span>hanako.sample@example.com</span></div>
+    <div class="pinch-confirm-row"><span>メールアドレス</span><span>pinch@test.test</span></div>
     <div class="pinch-confirm-title">◆配送方法◆</div>
     <div class="pinch-confirm-row"><span>配送方法</span><span>ポスト投函（ご在宅不要）</span></div>
     <div class="pinch-confirm-title">◆お支払い方法◆</div>
@@ -451,6 +451,15 @@ scenario.assign_attributes(
   landing_page_product_url: LP_URL,
   lexica_cart_url: CART_URL,
   order_result_mode: "async",
+  lexica_upsell_product_url: SHOP_URL,
+  lexica_upsell_sku: "SAMPLE-UPSELL-SKU",
+  lexica_cross_sell_product_url: SHOP_URL,
+  lexica_cross_sell_sku: "SAMPLE-XSELL-SKU",
+  lexica_offer_chat: true,
+  lexica_offer_confirm_upsell: true,
+  lexica_offer_confirm_cross_sell: false,
+  lexica_offer_thanks_upsell: true,
+  lexica_offer_thanks_cross_sell: true,
   is_used_custom_css: true,
   custom_css_content: CUSTOM_CSS,
   launch_button_selectors: LAUNCH_BUTTON_SELECTORS,
@@ -466,7 +475,7 @@ gateway.assign_attributes(
   mode: :test,
   token_js_url: "https://example.test/zeus/token.js",
   client_ip: "SAMPLECLIENTIP",
-  ipcode: "SAMPLEIPCODE",
+  ipcode: "20120070091",
   is_default: :no
 )
 gateway.save!

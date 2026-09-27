@@ -7,6 +7,12 @@ class LexicaScenarioJob
     client = scenario.chatbot&.user&.client
     conversations = scenario.scenario_user_responses.where(user_input_id: user_id)
     result = find_result(scenario_id, user_id)
+    begin
+      SeleniumServices::Lexica::OfferResolver.new(scenario, conversations).resolve!
+    rescue SeleniumServices::Lexica::OfferError => e
+      mark_error(scenario_id, user_id, e.error_kind, e.message)
+      return
+    end
     slot = SeleniumServices::ChromeSlot.new(client)
     result&.update!(last_step_description: slot.queued? ? "queued" : "running")
 
