@@ -38,6 +38,7 @@ class Chatbot < ApplicationRecord
   mount_base64_uploader :closing_bot_icon, ChatbotClosingBotIconUploader
 
   CHAT_BODY_VERSIONS = %w[1.0 2.0].freeze
+  # DB default is 1.0 so existing sdk-v2.js LPs stay on the v1 body. 2.0 is opt-in (/v2/sdk.js).
 
   validates :title, presence: true
   validates :subtitle, presence: true
