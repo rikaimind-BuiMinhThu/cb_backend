@@ -319,3 +319,103 @@ end
 ScenarioPage.find_or_create_by!(scenario: faq_scenario, url: "https://example.com/faq") do |page|
   page.num_type = :num_of_start
 end
+
+# --- Local UGC E2E Scenario (UGC×Chatbot Playwright) ---
+ugc_host = "http://localhost:8080"
+ugc_ig_qid = "eec6926f7a55f4fd26a317de939dd668"
+ugc_html_config_content = [
+  %(<input type="hidden" id="ugc-slider-info" data-host="#{ugc_host}">),
+  %(<input type="hidden" id="ugc-tiktok-slider-info" data-host="#{ugc_host}">),
+  %(<input type="hidden" id="ugc-review-slider-info" data-host="#{ugc_host}">),
+  %(<script src="#{ugc_host}/ugc/js/take.js"></script>),
+  %(<script src="#{ugc_host}/ugc/js/tiktoks/take.js"></script>),
+  %(<script src="#{ugc_host}/ugc/js/api_reviews/take.js"></script>),
+  %(<script src="#{ugc_host}/ugc/js/chatbot_ugc_modal_bridge.js"></script>)
+].join("\n")
+
+ugc_iframe_html = %(
+<div class="ugc-slider-wrapper" style="overflow:hidden;width:100%;">
+  <iframe class="ugc-slider" src="#{ugc_host}/ugc/api/slider?qid=#{ugc_ig_qid}&amp;v=2&amp;in_chatbot=1" style="width:100%;border:0;min-height:220px;display:block;"></iframe>
+</div>
+).gsub(/\s+/, " ").strip
+
+ugc_e2e_conversation = {
+  name: "Local UGC E2E Scenario",
+  messages: [
+    bot_text.call(1, "E2E UGC compare"),
+    {
+      id: 2,
+      hidden: false,
+      belong_to: "bot",
+      conditions: [],
+      message_content: [
+        {
+          type: "html_code",
+          html_code: {
+            content: ugc_iframe_html,
+            use_for_ugc: true
+          },
+          getting_error_notification: { use_for_confirm_message: false },
+          email: {},
+          file: {},
+          script: {},
+          text_input: {},
+          delay: { typing_on: false },
+          api_link_age: {},
+          clear_variable: { variables: [] },
+          variable_set: { variables: [] }
+        }
+      ]
+    },
+    {
+      id: 3,
+      hidden: false,
+      belong_to: "bot",
+      conditions: [],
+      message_content: [
+        {
+          type: "use_html_ugc_config",
+          use_html_ugc_config: {
+            content: ugc_html_config_content
+          },
+          getting_error_notification: { use_for_confirm_message: false },
+          email: {},
+          file: {},
+          script: {},
+          html_code: {},
+          text_input: {},
+          delay: { typing_on: false },
+          api_link_age: {},
+          clear_variable: { variables: [] },
+          variable_set: { variables: [] }
+        }
+      ]
+    },
+    # Trailing user step so preview nextStopMsgIndex > 0 (all-bot scenarios otherwise stall after msg 1)
+    user_text_input.call(
+      4,
+      title: "E2E continue",
+      save_input_content: "e2e_continue",
+      placeholder: "E2E continue"
+    )
+  ]
+}.to_json
+
+ugc_e2e_scenario = Scenario.find_or_initialize_by(chatbot: chatbot, name: "Local UGC E2E Scenario")
+ugc_e2e_scenario.assign_attributes(
+  scenario_type: "faq",
+  conversation: ugc_e2e_conversation,
+  is_used_html_ugc: true,
+  is_ugc_instagram: true,
+  is_ugc_tiktok: true,
+  is_ugc_review: true,
+  ugc_env: "local",
+  html_ugc_config_content: ugc_html_config_content
+)
+ugc_e2e_scenario.save!
+
+chatbot.update!(scenario_selected: ugc_e2e_scenario.id)
+
+ScenarioPage.find_or_create_by!(scenario: ugc_e2e_scenario, url: "http://localhost:8080/ugc-chatbot-local-test.html") do |page|
+  page.num_type = :num_of_start
+end
