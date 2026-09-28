@@ -309,7 +309,10 @@ module SeleniumServices
             }
             return false;
           JS
-          break if clicked
+          if clicked
+            record_action(type: "click", where: "#order__payment", label: "payment #{label}")
+            break
+          end
         end
       end
 
@@ -504,8 +507,12 @@ module SeleniumServices
         "#{cart_base_url}/signup"
       end
 
+      MAX_STEP_ACTIONS = 80
+      MAX_ACTION_VALUE_LEN = 500
+
       def step(name, description)
-        log_step(name, description)
+        @current_step_actions = []
+        @selenium_result&.update!(last_step_description: description, last_step_no: @step)
         yield
         log_step(name, description, ok: true)
       rescue LexicaStop
@@ -517,15 +524,39 @@ module SeleniumServices
       end
 
       def log_step(name, description, ok: nil, error: nil)
+        actions = Array(@current_step_actions)
+        @current_step_actions = nil
         @selenium_result&.append_rpa_step(
           "name" => name,
           "description" => description,
           "url" => (@driver.current_url rescue nil),
           "ok" => ok,
-          "error" => error,
-          "at" => Time.current.iso8601
+          "error" => (error.nil? ? nil : sanitize_error(error)),
+          "at" => Time.current.iso8601,
+          "actions" => actions
         )
         @selenium_result&.update!(last_step_description: description, last_step_no: @step)
+      end
+
+      def record_action(type:, where:, label: nil, value: nil)
+        return unless @current_step_actions.is_a?(Array)
+        return if @current_step_actions.length >= MAX_STEP_ACTIONS
+
+        entry = {
+          "type" => type.to_s,
+          "where" => where.to_s.slice(0, MAX_ACTION_VALUE_LEN),
+          "label" => label.to_s
+        }
+        entry["value"] = redact_action_value(label, value) unless value.nil?
+        @current_step_actions << entry
+      end
+
+      def redact_action_value(label, value)
+        text = value.to_s
+        return "********" if label.to_s.downcase.include?("password")
+        return "[token]" if label.to_s.downcase.include?("token")
+
+        sanitize_error(text).to_s.slice(0, MAX_ACTION_VALUE_LEN)
       end
 
       def mark_done
@@ -589,10 +620,14 @@ module SeleniumServices
       end
 
       def sanitize_error(message)
-        message.to_s.gsub(@password_value.to_s, "********").gsub(@token_key.to_s, "[token]").slice(0, 2000)
+        text = message.to_s
+        text = text.gsub(@password_value, "********") if @password_value.present?
+        text = text.gsub(@token_key, "[token]") if @token_key.present?
+        text.slice(0, 2000)
       end
 
       def fill_to_text_input(css_selector, value, description = "", pointer_action: true)
+        record_action(type: "fill", where: css_selector, label: description, value: value)
         logged = description.to_s.downcase.include?("password") ? "********" : value
         @log_tab_level += 1
         Log.info "Fill to text input #{css_selector}: #{description}", @log_tab_level
@@ -617,6 +652,26 @@ module SeleniumServices
         capture
         @log_tab_level -= 1
         @driver.action.pointer_down(:left).pointer_up(:left).perform if pointer_action
+      end
+
+      def click(css_selector, description = "", pointer_action: true)
+        record_action(type: "click", where: css_selector, label: description)
+        super
+      end
+
+      def navigate(url)
+        record_action(type: "navigate", where: url, label: "navigate")
+        super
+      end
+
+      def select(css_selector, value, attr_name = "undefined attributes", description = "", pointer_action: true)
+        record_action(
+          type: "select",
+          where: css_selector,
+          label: description.presence || attr_name,
+          value: value
+        )
+        super
       end
 
       def element_present?(css)
