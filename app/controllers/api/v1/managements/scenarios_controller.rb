@@ -367,6 +367,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
   def check_chatbot_present
     @chatbot = Chatbot.find_by(id: params[:chatbot_id])
     return render json: {code: 2, message: "Chatbot not found"} if @chatbot.blank?
+    return if current_user.admin_deel?
     user_chatbot = UserChatbot.find_by(user_id: current_user.id, chatbot_id: params[:chatbot_id])
     return render json: {code: 2, message: "No permission"} if (user_chatbot.blank? || user_chatbot.reader?)
   end
