@@ -1,0 +1,688 @@
+/* =====================================================================
+   I'm PINCH look — Custom CSS of the scenario (カスタムCSS).
+   Values measured from lp.mirai-japan.co.jp (BotChan EFO) at 500x680.
+   Seeded from cb_backend/db/seeds/im_pinch/custom.css by lexica_sample.rb.
+   ===================================================================== */
+
+/* ---------- 0. Font ---------- */
+#sp-container1,
+#sp-container1 *:not(i):not(.fa):not(.fas):not(.far) {
+  font-family: "Hiragino Sans", "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", "メイリオ", Meiryo, "ＭＳ Ｐゴシック", "MS PGothic", sans-serif !important;
+  /* the admin UI kit turns on tabular digits globally; the original uses proportional ones */
+  font-variant-numeric: normal !important;
+  font-feature-settings: normal !important;
+}
+
+/* ---------- 1. Window ---------- */
+#sp-container1 {
+  background: #f7e9e5 !important;
+  border-radius: 5px 5px 0 0 !important;
+  box-shadow: 0 0 29px 2px rgba(0, 0, 0, .1) !important;
+  overflow: hidden !important;
+}
+#sp-container1.preview-open-frame--mobile {
+  border-radius: 0 !important;
+}
+/* open animation: slide up + fade, 0.4s (PC only; none on smartphone) */
+#sp-container1.slideUp {
+  animation: pinchOpen .4s ease-in-out both !important;
+}
+#sp-container1.slideUpSp {
+  animation: none !important;
+}
+@keyframes pinchOpen {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* closed launcher: hidden on landing pages (the chat opens from the page's own buttons, like the
+   original LP); it stays visible on the admin demo page (ボットデモ), which has no such buttons */
+html:not(:has(.bot-demo-preview)) .preview-closed-launcher {
+  display: none !important;
+}
+
+/* ---------- 2. Header: white, 40px, centered logo, thin close icon ---------- */
+#sp-container1 #sp-header {
+  position: relative !important;
+  height: 40px !important;
+  min-width: 0 !important;
+  background: #fff !important;
+  border-radius: 5px 5px 0 0 !important;
+  cursor: pointer;
+  transition: opacity .4s ease-in-out;
+}
+#sp-container1.preview-open-frame--mobile #sp-header {
+  border-radius: 0 !important;
+}
+#sp-container1 #sp-header:hover {
+  opacity: .85;
+}
+#sp-header .sp-header-left {
+  padding: 0 !important;
+  justify-content: center;
+}
+#sp-header .sp-avatar-bt,
+#sp-header .sp-header-left-label-sub-title {
+  display: none !important;
+}
+#sp-header .sp-header-left-label {
+  margin: 0 !important;
+}
+/* logo image = 開く時のボットアイコン (Bot icon when open): 25% of the header width, centered */
+#sp-container1 #sp-header .sp-header-left:has(img[src*="opening_bot_icon"]) .sp-avatar-bt {
+  display: block !important;
+  width: 25% !important;
+  height: auto !important;
+  margin: 0 !important;
+}
+#sp-container1 #sp-header .sp-avatar-bt img[src*="opening_bot_icon"] {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  border-radius: 0 !important;
+  object-fit: contain !important;
+}
+#sp-container1 #sp-header .sp-header-left:has(img[src*="opening_bot_icon"]) .sp-header-left-label {
+  display: none !important;
+}
+/* text logo fallback (shows バブル設定 > タイトル) when no logo image is uploaded */
+#sp-container1 #sp-header .sp-header-left-label-title {
+  color: #111 !important;
+  font-family: "Arial Black", "Helvetica Neue", Arial, "メイリオ", Meiryo, sans-serif !important;
+  font-size: 19px !important;
+  font-weight: 900 !important;
+  letter-spacing: .5px;
+  line-height: 40px;
+}
+/* close icon: thin "x", 20px, 25px from the right edge */
+#sp-header .sp-header-right {
+  position: absolute !important;
+  right: 25px;
+  top: 10px;
+  padding: 0 !important;
+}
+#sp-header .sp-header-right-arrow {
+  width: 20px;
+  height: 20px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M3 3l14 14M17 3L3 17' fill='none' stroke='%237a8997' stroke-width='1.3' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+#sp-header .sp-header-right-arrow i {
+  display: none !important;
+}
+
+/* ---------- 3. Progress area: 50px, label left, text center, white track ---------- */
+#sp-container1 #sp-process-bar {
+  position: relative !important;
+  height: 50px !important;
+  margin: 0 20px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+}
+/* center text */
+#sp-container1 #sp-process-bar::before {
+  content: "お申し込み最短30秒";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 11px;
+  text-align: center;
+  color: #f48879;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+  letter-spacing: .5px;
+}
+/* step label, left */
+#sp-container1 #sp-process-bar::after {
+  content: "1/6";
+  position: absolute;
+  left: 0;
+  top: 11px;
+  color: #f19f95;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+  letter-spacing: .5px;
+}
+/* the original bar element becomes the white TRACK */
+#sp-container1 #sp-process-bar .sp-process-bar-color {
+  position: absolute !important;
+  left: 0;
+  bottom: 10px;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 10px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: #fff !important;
+  border-radius: 20px !important;
+  overflow: hidden;
+  font-size: 0 !important;
+  color: transparent !important;
+  animation: none !important;
+}
+/* ...and its ::before is the pink FILL */
+#sp-container1 #sp-process-bar .sp-process-bar-color::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 20%;
+  background: #f19f95;
+  border-radius: 20px;
+  transition: width .6s ease;
+}
+/* step N = N user cards on screen */
+#sp-container1:has(.sp-body-user-side ~ .sp-body-user-side) #sp-process-bar::after { content: "2/6"; left: 2px; }
+#sp-container1:has(.sp-body-user-side ~ .sp-body-user-side) #sp-process-bar .sp-process-bar-color::before { width: 40%; }
+#sp-container1:has(.sp-body-user-side ~ .sp-body-user-side ~ .sp-body-user-side) #sp-process-bar::after { content: "3/6"; left: 2px; }
+#sp-container1:has(.sp-body-user-side ~ .sp-body-user-side ~ .sp-body-user-side) #sp-process-bar .sp-process-bar-color::before { width: 60%; }
+#sp-container1:has(.sp-body-user-side ~ .sp-body-user-side ~ .sp-body-user-side ~ .sp-body-user-side) #sp-process-bar::after { content: "4/6"; left: 2px; }
+#sp-container1:has(.sp-body-user-side ~ .sp-body-user-side ~ .sp-body-user-side ~ .sp-body-user-side) #sp-process-bar .sp-process-bar-color::before { width: 80%; }
+#sp-container1:has(.sp-body-user-side ~ .sp-body-user-side ~ .sp-body-user-side ~ .sp-body-user-side ~ .sp-body-user-side) #sp-process-bar::after { content: "5/6"; left: 2px; }
+#sp-container1:has(.sp-body-user-side ~ .sp-body-user-side ~ .sp-body-user-side ~ .sp-body-user-side ~ .sp-body-user-side) #sp-process-bar .sp-process-bar-color::before { width: 90%; }
+#sp-container1:has(.sp-body-user-side ~ .sp-body-user-side ~ .sp-body-user-side ~ .sp-body-user-side ~ .sp-body-user-side ~ .sp-body-user-side) #sp-process-bar::after { content: "6/6"; left: 2px; }
+#sp-container1:has(.sp-body-user-side ~ .sp-body-user-side ~ .sp-body-user-side ~ .sp-body-user-side ~ .sp-body-user-side ~ .sp-body-user-side) #sp-process-bar .sp-process-bar-color::before { width: 100%; }
+
+/* Step map for this scenario: the newest user card on screen decides the label and the fill.
+   One pair of rules per user message (#msg_id_<message id>), in flow order. The ids follow the
+   message order in db/seeds/im_pinch_conversation.rb; edit this block when messages are added or removed. */
+/* 性別 (Gender) */
+#sp-container1:has(#msg_id_2.sp-body-user-side) #sp-process-bar::after { content: "1/6"; }
+#sp-container1:has(#msg_id_2.sp-body-user-side) #sp-process-bar .sp-process-bar-color::before { width: 20%; }
+/* お名前 (Name) */
+#sp-container1:has(#msg_id_4.sp-body-user-side) #sp-process-bar::after { content: "2/6"; left: 2px; }
+#sp-container1:has(#msg_id_4.sp-body-user-side) #sp-process-bar .sp-process-bar-color::before { width: 40%; }
+/* ご注文の種類 (Order type) */
+#sp-container1:has(#msg_id_5.sp-body-user-side) #sp-process-bar::after { content: "3/6"; left: 2px; }
+#sp-container1:has(#msg_id_5.sp-body-user-side) #sp-process-bar .sp-process-bar-color::before { width: 60%; }
+/* メールアドレス・電話番号 (Email / phone) */
+#sp-container1:has(#msg_id_6.sp-body-user-side) #sp-process-bar::after { content: "3/6"; left: 2px; }
+#sp-container1:has(#msg_id_6.sp-body-user-side) #sp-process-bar .sp-process-bar-color::before { width: 60%; }
+/* ご住所 (Address) */
+#sp-container1:has(#msg_id_8.sp-body-user-side) #sp-process-bar::after { content: "4/6"; left: 2px; }
+#sp-container1:has(#msg_id_8.sp-body-user-side) #sp-process-bar .sp-process-bar-color::before { width: 80%; }
+/* 生年月日 (Date of birth) */
+#sp-container1:has(#msg_id_10.sp-body-user-side) #sp-process-bar::after { content: "4/6"; left: 2px; }
+#sp-container1:has(#msg_id_10.sp-body-user-side) #sp-process-bar .sp-process-bar-color::before { width: 80%; }
+/* パスワード (Password) */
+#sp-container1:has(#msg_id_12.sp-body-user-side) #sp-process-bar::after { content: "4/6"; left: 2px; }
+#sp-container1:has(#msg_id_12.sp-body-user-side) #sp-process-bar .sp-process-bar-color::before { width: 80%; }
+/* 会員規約 (Member terms) */
+#sp-container1:has(#msg_id_14.sp-body-user-side) #sp-process-bar::after { content: "4/6"; left: 2px; }
+#sp-container1:has(#msg_id_14.sp-body-user-side) #sp-process-bar .sp-process-bar-color::before { width: 80%; }
+/* ログインID (Login e-mail) */
+#sp-container1:has(#msg_id_16.sp-body-user-side) #sp-process-bar::after { content: "3/6"; left: 2px; }
+#sp-container1:has(#msg_id_16.sp-body-user-side) #sp-process-bar .sp-process-bar-color::before { width: 60%; }
+/* ログインパスワード (Login password) */
+#sp-container1:has(#msg_id_17.sp-body-user-side) #sp-process-bar::after { content: "4/6"; left: 2px; }
+#sp-container1:has(#msg_id_17.sp-body-user-side) #sp-process-bar .sp-process-bar-color::before { width: 80%; }
+/* お支払い方法 (Payment method) */
+#sp-container1:has(#msg_id_20.sp-body-user-side) #sp-process-bar::after { content: "5/6"; left: 2px; }
+#sp-container1:has(#msg_id_20.sp-body-user-side) #sp-process-bar .sp-process-bar-color::before { width: 90%; }
+/* クレジットカード (Credit card) */
+#sp-container1:has(#msg_id_23.sp-body-user-side) #sp-process-bar::after { content: "5/6"; left: 2px; }
+#sp-container1:has(#msg_id_23.sp-body-user-side) #sp-process-bar .sp-process-bar-color::before { width: 90%; }
+/* サイズ選択 (Size / upsell) */
+#sp-container1:has(#msg_id_28.sp-body-user-side) #sp-process-bar::after { content: "5/6"; left: 2px; }
+#sp-container1:has(#msg_id_28.sp-body-user-side) #sp-process-bar .sp-process-bar-color::before { width: 90%; }
+/* ご注文内容の確認 (Order confirmation) */
+#sp-container1:has(#msg_id_32.sp-body-user-side) #sp-process-bar::after { content: "6/6"; left: 2px; }
+#sp-container1:has(#msg_id_32.sp-body-user-side) #sp-process-bar .sp-process-bar-color::before { width: 100%; }
+
+/* ---------- 4. Message area: pink radial gradient ---------- */
+#sp-container1 #sp-body {
+  padding: 5px 10px 60px 5px !important;
+  background: radial-gradient(circle, rgb(255, 210, 209) 0%, rgb(255, 249, 251) 61%) !important;
+  border-radius: 0 !important;
+}
+
+/* ---------- 5. Bot message ---------- */
+#sp-container1 #sp-body .sp-body-bot-side {
+  position: relative !important;
+  display: block !important;
+  min-height: 48px;
+  margin: 0 0 5.5px !important;
+  padding: 3px 0 !important;
+}
+#sp-container1 #sp-body .sp-body-bot-side > .sp-body-bot-side-avatar {
+  position: absolute !important;
+  left: 0;
+  bottom: 5px;
+  width: 42px !important;
+  height: 42px !important;
+  margin: 0 !important;
+}
+#sp-container1 #sp-body .sp-body-bot-side > .sp-body-bot-side-avatar img {
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 50% !important;
+  object-fit: cover;
+}
+#sp-container1 #sp-body .sp-body-bot-side-messages {
+  display: block !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+#sp-container1 #sp-body .sp-body-bot-side:has(> .sp-body-bot-side-avatar) .sp-body-bot-side-messages {
+  width: calc(100% - 46px) !important;
+  margin-left: 46px !important;
+}
+#sp-container1 #sp-body .ss-bot-chat-text-input-shell {
+  display: inline-block;
+  max-width: calc(100% - 5px);
+  margin-left: 5px;
+  vertical-align: top;
+}
+#sp-container1 #sp-body .ss-bot-chat-detail-content.ss-message__content--bot-text {
+  margin: 0 !important;
+  padding: 15px 12px !important;
+  background: #ffeeee !important;
+  color: #333 !important;
+  font-size: 19px !important;
+  line-height: 1.4 !important;
+  letter-spacing: .55px;
+  border-radius: 0 3.8px 3.8px 3.8px !important;
+  white-space: pre-line;
+  word-break: break-word;
+}
+#sp-body .ss-bot-chat-text-input-bot-icon {
+  display: none !important;
+}
+/* message entrance animations */
+#sp-container1 #sp-body .sp-body-bot-side.slideRight {
+  animation: pinchLeftAppear .38s forwards !important;
+  transform-origin: left bottom;
+}
+#sp-container1 #sp-body .sp-body-user-side.slideLeft {
+  animation: pinchEmbot .3s .3s both !important;
+}
+@keyframes pinchLeftAppear {
+  from { opacity: 0; transform: translate3d(-20px, 0, 0) scale(.8); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes pinchEmbot {
+  from { opacity: 0; transform: translate3d(20px, 0, 0); }
+  to   { opacity: 1; transform: none; }
+}
+/* typing indicator: 66x34 bubble with 3 white dots */
+#sp-container1 #sp-body img.ss-bot-chat-delay {
+  box-sizing: border-box;
+  width: 66px !important;
+  height: 34px !important;
+  margin-left: 5px;
+  padding: 0 !important;
+  border-radius: 3.8px !important;
+  object-fit: none;
+  object-position: 200px 200px;
+  background-color: #f3aa2e !important;
+  background-image:
+    radial-gradient(circle closest-side, #fff 96%, transparent 100%),
+    radial-gradient(circle closest-side, #fff 96%, transparent 100%),
+    radial-gradient(circle closest-side, #fff 96%, transparent 100%) !important;
+  background-repeat: no-repeat !important;
+  background-position: 18px 50%, 34px 50%, 50px 50% !important;
+  background-size: 12px 12px, 12px 12px, 12px 12px;
+  animation: pinchTyping 1.5s ease-in-out infinite;
+}
+@keyframes pinchTyping {
+  0%   { background-size: 12px 12px, 6px 6px,   0 0; background-position: 12px 50%, 31px 50%, 50px 50%; }
+  33%  { background-size: 6px 6px,   12px 12px, 6px 6px; background-position: 15px 50%, 28px 50%, 47px 50%; }
+  66%  { background-size: 0 0,       6px 6px,   12px 12px; background-position: 18px 50%, 31px 50%, 44px 50%; }
+  100% { background-size: 12px 12px, 6px 6px,   0 0; background-position: 12px 50%, 31px 50%, 50px 50%; }
+}
+
+/* ---------- 6. User card ---------- */
+#sp-container1 #sp-body .sp-body-user-side {
+  margin: 0 0 5.5px !important;
+  padding: 3px 0 !important;
+}
+#sp-container1 #sp-body .sp-body-user-side-messages {
+  width: 100% !important;
+  padding: 10px !important;
+  background: #f5f5f5 !important;
+  border: 0 !important;
+  border-radius: 12px 12px 0 12px !important;
+  box-shadow: none !important;
+}
+#sp-container1 #sp-body .sp-body-user-side-messages > .ss-user-message__content-wrapper {
+  padding: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+#sp-body .ss-user-chat-text-input-user-icon {
+  display: none !important;
+}
+/* field title: 17px bold, 2px tracking; hide "※必須" */
+#sp-container1 #sp-body .ss-message__content--user-radio_button-title,
+#sp-container1 #sp-body .ss-message__content--user-text-input-title,
+#sp-container1 #sp-body .sp-body-user-side-messages [class*="ss-message__content--user-"][class$="-title"] {
+  display: block;
+  padding: 3px 0;
+  margin: 0 0 1px;
+  color: #333 !important;
+  font-size: 17px !important;
+  font-weight: 700 !important;
+  line-height: 24.3px;
+  letter-spacing: 2px;
+}
+#sp-container1 #sp-body .ss-message__content--user-radio_button-top,
+#sp-container1 #sp-body .ss-message__content--user-text-input-top {
+  display: block !important;
+  margin: 0 !important;
+}
+#sp-container1 #sp-body .sp-body-user-side-messages [class*="ss-message__content--user-"][class*="-top"] {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+#sp-body .ss-message__content--user-text-input-required {
+  display: none !important;
+}
+
+/* ---------- 7. Gender tiles (first user card: ラジオボタン with 2 images side by side) ---------- */
+#sp-container1 #sp-body .sp-body-user-side:not(.sp-body-user-side ~ .sp-body-user-side) .ss-message__content--user-radio_button-img-grid {
+  gap: 8px !important;
+  padding: 0 4px !important;
+}
+#sp-container1 #sp-body .sp-body-user-side:not(.sp-body-user-side ~ .sp-body-user-side) .ss-message__content--user-radio_button--radio_button_img {
+  margin: 0 !important;
+  padding: 5px !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 5px !important;
+  box-shadow: none !important;
+  cursor: pointer;
+}
+#sp-container1 #sp-body .sp-body-user-side:not(.sp-body-user-side ~ .sp-body-user-side) .ss-message__content--user-radio_button--radio_button_img img {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  border-radius: 5px !important;
+}
+/* selected tile: 2px salmon frame */
+#sp-container1 #sp-body .sp-body-user-side:not(.sp-body-user-side ~ .sp-body-user-side) .ss-message__content--user-radio_button--radio_button_img.ss-message__content--user-radio_button--selected {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: inset 0 0 0 2px #e37b6f !important;
+}
+/* ...and, as on the original, the selected tile is 1.6px taller (the image keeps its size) */
+#sp-container1 #sp-body .sp-body-user-side:not(.sp-body-user-side ~ .sp-body-user-side) .ss-message__content--user-radio_button--radio_button_img.ss-message__content--user-radio_button--selected img {
+  box-sizing: content-box !important;
+  width: calc(100% - 0px) !important;
+  padding-bottom: 1.6px !important;
+  background-color: #209da9;
+}
+#sp-container1 #sp-body .sp-body-user-side:not(.sp-body-user-side ~ .sp-body-user-side) .ss-message__content--user-radio_button--radio_button_img.ss-message__content--user-radio_button--selected:nth-child(2) img {
+  background-color: #ee4d67;
+}
+/* the other tile turns grey once one is selected */
+#sp-container1 #sp-body .sp-body-user-side:not(.sp-body-user-side ~ .sp-body-user-side) .ss-message__content--user-radio_button-img-grid:has(.ss-message__content--user-radio_button--selected) .ss-message__content--user-radio_button--radio_button_img:not(.ss-message__content--user-radio_button--selected) img {
+  filter: grayscale(1);
+  opacity: .65;
+}
+
+/* ---------- 7b. Text radio options: white blocks, no circle, pink when selected ---------- */
+#sp-container1 #sp-body .ss-message__content--user-radio_button-wrapper > .ss-message__content--user-radio_button {
+  position: relative;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: #fff !important;
+  border: 1px solid #919191 !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+#sp-container1 #sp-body .ss-message__content--user-radio_button-wrapper > .ss-message__content--user-radio_button + .ss-message__content--user-radio_button {
+  margin-top: 6px !important;
+}
+#sp-container1 #sp-body .ss-message__content--user-radio_button-wrapper > .ss-message__content--user-radio_button > input[type="radio"] {
+  position: absolute !important;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  opacity: 0 !important;
+  cursor: pointer;
+}
+#sp-container1 #sp-body .ss-message__content--user-radio_button-wrapper > .ss-message__content--user-radio_button > label {
+  display: block !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 12px 20px !important;
+  color: #333 !important;
+  font-size: 17px !important;
+  line-height: 1.4 !important;
+  letter-spacing: 2px;
+  text-align: center;
+  cursor: pointer;
+}
+#sp-container1 #sp-body .ss-message__content--user-radio_button-wrapper > .ss-message__content--user-radio_button.ss-message__content--user-radio_button--selected {
+  background: #ffb1c2 !important;
+  border-color: #919191 !important;
+}
+
+/* ---------- 8. Text inputs ---------- */
+#sp-container1 #sp-body .sp-body-user-side-messages input:not([type="radio"]):not([type="checkbox"]) {
+  min-height: 55px !important;
+  padding: 8px !important;
+  background: #fff !important;
+  border: 1px solid #e0e0e0 !important;
+  border-radius: 5px !important;
+  box-shadow: none !important;
+  color: #333 !important;
+  font-size: 17px !important;
+}
+#sp-container1 #sp-body .sp-body-user-side-messages input:not([type="radio"]):not([type="checkbox"]):placeholder-shown {
+  background: #f7e9e5 !important;
+}
+#sp-container1 #sp-body .sp-body-user-side-messages input::placeholder {
+  color: #999 !important;
+  font-size: 16px !important;
+  letter-spacing: normal !important;
+  transform: translate(-1.5px, 1px);
+}
+#sp-container1 #sp-body .sp-body-user-side-messages input:not([type="radio"]):not([type="checkbox"]):focus {
+  border: 2px solid #0597f2 !important;
+  outline: 0 !important;
+}
+
+#sp-container1 #sp-body .sp-body-user-side-messages input:not([type="radio"]):not([type="checkbox"]):focus::placeholder {
+  font-size: 10px !important;
+  transform: translate(-1.5px, -17px);
+}
+#sp-container1 #sp-body .sp-body-user-side-messages input::placeholder {
+  transition: font-size .2s ease, transform .2s ease;
+}
+#sp-container1 #sp-body .ss-message__split-row {
+  display: flex !important;
+  gap: 3px !important;
+}
+#sp-container1 #sp-body .ss-message__split-row > .ss-input-custom-container {
+  flex: 1 1 0 !important;
+  width: auto !important;
+  min-width: 0;
+  margin: 0 !important;
+}
+
+/* ---------- 9. Next button (次へ) ---------- */
+#sp-container1 #sp-body .sp-user-message-button-action {
+  display: block !important;
+  margin: 48px 0 0 !important;
+  padding: 0 0 0 15px !important;
+  text-align: left !important;
+  overflow: visible !important;
+}
+#sp-container1 #sp-body .sp-user-message-button-action--hidden {
+  display: none !important;
+}
+#sp-container1 #sp-body .sp-user-message-button-action button.ss-user-message__action-btn {
+  box-sizing: border-box !important;
+  width: calc(100% + 4px) !important;
+  min-width: 137px !important;
+  height: 64px !important;
+  min-height: 64px !important;
+  margin: 0 !important;
+  padding: 0 14px !important;
+  background: #02bb92 !important;
+  border: 0 !important;
+  border-radius: 35px !important;
+  box-shadow: none !important;
+  color: #fff !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  animation: none !important;
+}
+/* only the newest card's button shakes */
+#sp-container1 #sp-body .sp-body-user-side:not(:has(~ .sp-body-user-side)) .sp-user-message-button-action button.ss-user-message__action-btn {
+  animation: pinchShakeX 1.8s ease infinite !important;
+}
+#sp-container1 #sp-body .sp-user-message-button-action button.ss-user-message__action-btn:disabled {
+  display: none !important;
+}
+#sp-container1 #sp-body .sp-user-message-button-action:has(> button.btn-update) {
+  display: none !important;
+}
+@keyframes pinchShakeX {
+  from, to { transform: translate3d(0, 0, 0); }
+  30%, 50%, 70%, 90% { transform: translate3d(-5px, 0, 0); }
+  40%, 60%, 80% { transform: translate3d(5px, 0, 0); }
+}
+
+/* =====================================================================
+   Content blocks: bot images, confirm block, terms checkbox, submit
+   button, card brands
+   ===================================================================== */
+.pinch-bot-art,
+.ss-message__content--user-chat-image img,
+.ss-message__content--user-radio_button--radio_button_img img,
+.ss-message__content--user-radio_button--upsell_button img {
+  width: 100% !important;
+  height: auto !important;
+  object-fit: contain !important;
+  display: block !important;
+}
+.html-code-message-preview:has(.pinch-bot-art) {
+  background: transparent !important;
+  padding: 0 !important;
+}
+.ss-message__content--user-radio_button--radio_button_img {
+  border: 1px solid #E0E0E0 !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+.ss-message__content--user-radio_button--selected {
+  border: 2px solid #EE4D67 !important;
+}
+.ss-message__content--user-html-code {
+  width: 100%;
+  background: #ffffff;
+}
+.pinch-confirm {
+  font-size: 13px;
+  color: #333333;
+  line-height: 1.6;
+  background: #ffffff;
+  padding: 0 4px 8px;
+}
+.pinch-confirm-edit {
+  display: block;
+  text-align: right;
+  color: #0597F2;
+  text-decoration: underline;
+  margin: 0 0 12px;
+}
+.pinch-confirm-title {
+  font-weight: 700;
+  text-align: center;
+  margin: 16px 0 8px;
+}
+.pinch-confirm-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid #e5e5e5;
+}
+.pinch-confirm-row span:first-child {
+  flex: 0 0 88px;
+  color: #666666;
+}
+.pinch-confirm-row span:last-child {
+  text-align: right;
+  flex: 1;
+}
+.ss-message__content--user-agree_to_term-title {
+  font-weight: 700;
+}
+.ss-message__content--user-agree_to_term-detail_content textarea {
+  border: 1px solid #cccccc;
+  border-radius: 0;
+  background: #ffffff;
+  box-sizing: border-box;
+  min-height: 160px;
+  overflow-y: auto;
+}
+.ss-message__content--user-agree_to_term-detail_content .ss-user-setting__item-checkbox {
+  display: flex !important;
+  justify-content: center !important;
+  width: 100% !important;
+  margin-top: 12px;
+}
+.ss-message__content--user-agree_to_term-detail_content .ant-checkbox-wrapper {
+  display: inline-flex !important;
+  align-items: center !important;
+  color: #333333 !important;
+}
+.ss-message__content--user-agree_to_term-detail_content .ant-checkbox {
+  top: 0 !important;
+}
+.ss-message__content--user-agree_to_term-detail_content .ant-checkbox-inner,
+.ss-message__content--user-agree_to_term-detail_content .ant-checkbox-checked::after {
+  display: none !important;
+}
+.ss-message__content--user-agree_to_term-detail_content .ant-checkbox-input {
+  opacity: 1 !important;
+  position: static !important;
+  width: 18px !important;
+  height: 18px !important;
+  pointer-events: auto !important;
+  appearance: checkbox !important;
+  -webkit-appearance: checkbox !important;
+}
+.ss-message__content--user-agree_to_term-detail_content .ant-checkbox + span {
+  padding-left: 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+.ss-message__content--user-agree_to_term-detail_content .ant-checkbox + span > div {
+  display: inline !important;
+  line-height: 1 !important;
+}
+.chatbot-submit-button {
+  background: #f4b183 !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 64px !important;
+  min-height: 56px !important;
+  height: 56px !important;
+  width: 100% !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+}
+.pinch-card-brands {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.pinch-card-brands img {
+  height: 28px;
+  width: auto;
+}

@@ -3,6 +3,8 @@
 # Development sample for 未来 (Mirai) Lexica. Idempotent. Does not change Local Dev.
 # Does not enqueue LexicaScenarioJob.
 
+require "base64"
+
 load Rails.root.join("db/seeds/im_pinch_conversation.rb") unless defined?(Seeds::ImPinchConversation)
 
 PASSWORD = "Password123!"
@@ -69,186 +71,15 @@ PINCH_CONFIRM_PRIVACY = <<~TEXT
   (3)法令等により提供を求められた場合
 TEXT
 SAMPLE_PASSWORD = "Sample1234"
-LAUNCH_BUTTON_SELECTORS = ".bot_open, .p-cta__bodyBtn_a, .p-ctasp__btn12, .float.bot_open"
-CUSTOM_CSS = <<~CSS
-  #sp-header .sp-header-left-label-sub-title {
-    display: none !important;
-  }
-  .ss-message__content--user { border-radius: 12px 12px 0 12px !important; }
-  .ss-message__content--bot { font-size: 19px !important; }
-  #sp-container1 #sp-body.sp-body .sp-user-message-button-action button.ss-user-message__action-btn {
-    background: #02BB92 !important;
-    color: #FFFFFF !important;
-    border-radius: 35px !important;
-    min-height: 64px !important;
-    height: 64px !important;
-    min-width: 137px !important;
-    width: calc(100% - 24px) !important;
-    font-size: 16px !important;
-    font-weight: 700 !important;
-    box-sizing: border-box !important;
-    padding: 0 16px !important;
-  }
-  .pinch-bot-art,
-  .ss-message__content--user-chat-image img,
-  .ss-message__content--user-radio_button--radio_button_img img,
-  .ss-message__content--user-radio_button--upsell_button img {
-    width: 100% !important;
-    height: auto !important;
-    object-fit: contain !important;
-    display: block !important;
-  }
-  .html-code-message-preview:has(.pinch-bot-art) {
-    background: transparent !important;
-    padding: 0 !important;
-  }
-  .ss-message__content--user-radio_button--radio_button_img {
-    border: 1px solid #E0E0E0 !important;
-    border-radius: 8px !important;
-    overflow: hidden !important;
-    padding: 0 !important;
-  }
-  .ss-message__content--user-radio_button--selected {
-    border: 2px solid #EE4D67 !important;
-  }
-  .ss-message__content--user-html-code {
-    width: 100%;
-    background: #ffffff;
-  }
-  .pinch-confirm {
-    font-size: 13px;
-    color: #333333;
-    line-height: 1.6;
-    background: #ffffff;
-    padding: 0 4px 8px;
-  }
-  .pinch-confirm-edit {
-    display: block;
-    text-align: right;
-    color: #0597F2;
-    text-decoration: underline;
-    margin: 0 0 12px;
-  }
-  .pinch-confirm-title {
-    font-weight: 700;
-    text-align: center;
-    margin: 16px 0 8px;
-  }
-  .pinch-confirm-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 8px 0;
-    border-top: 1px solid #e5e5e5;
-  }
-  .pinch-confirm-row span:first-child {
-    flex: 0 0 88px;
-    color: #666666;
-  }
-  .pinch-confirm-row span:last-child {
-    text-align: right;
-    flex: 1;
-  }
-  .ss-message__content--user-agree_to_term-title {
-    font-weight: 700;
-  }
-  .ss-message__content--user-text-input-required {
-    display: none !important;
-  }
-  .ss-message__content--user-agree_to_term-detail_content textarea {
-    border: 1px solid #cccccc;
-    border-radius: 0;
-    background: #ffffff;
-    box-sizing: border-box;
-    min-height: 160px;
-    overflow-y: auto;
-  }
-  .ss-message__content--user-agree_to_term-detail_content .ss-user-setting__item-checkbox {
-    display: flex !important;
-    justify-content: center !important;
-    width: 100% !important;
-    margin-top: 12px;
-  }
-  .ss-message__content--user-agree_to_term-detail_content .ant-checkbox-wrapper {
-    display: inline-flex !important;
-    align-items: center !important;
-    color: #333333 !important;
-  }
-  .ss-message__content--user-agree_to_term-detail_content .ant-checkbox {
-    top: 0 !important;
-  }
-  .ss-message__content--user-agree_to_term-detail_content .ant-checkbox-inner,
-  .ss-message__content--user-agree_to_term-detail_content .ant-checkbox-checked::after {
-    display: none !important;
-  }
-  .ss-message__content--user-agree_to_term-detail_content .ant-checkbox-input {
-    opacity: 1 !important;
-    position: static !important;
-    width: 18px !important;
-    height: 18px !important;
-    pointer-events: auto !important;
-    appearance: checkbox !important;
-    -webkit-appearance: checkbox !important;
-  }
-  .ss-message__content--user-agree_to_term-detail_content .ant-checkbox + span {
-    padding-left: 8px !important;
-    display: inline-flex !important;
-    align-items: center !important;
-  }
-  .ss-message__content--user-agree_to_term-detail_content .ant-checkbox + span > div {
-    display: inline !important;
-    line-height: 1 !important;
-  }
-  .chatbot-submit-button {
-    background: #f4b183 !important;
-    color: #ffffff !important;
-    border: none !important;
-    border-radius: 64px !important;
-    min-height: 56px !important;
-    height: 56px !important;
-    width: 100% !important;
-    font-size: 18px !important;
-    font-weight: 700 !important;
-  }
-  .pinch-card-brands {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-  }
-  .pinch-card-brands img {
-    height: 28px;
-    width: auto;
-  }
-  #sp-process-bar {
-    position: relative !important;
-    padding-top: 22px !important;
-    height: auto !important;
-    border-radius: 20px !important;
-    background: #ffffff !important;
-  }
-  #sp-process-bar::before {
-    content: "お申し込み最短３０秒";
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    width: 100%;
-    text-align: center;
-    color: #f19f95;
-    font-size: 13px;
-    font-weight: 700;
-    line-height: 20px;
-  }
-  .sp-process-bar .animation,
-  .sp-process-bar-color {
-    background: #d96b62 !important;
-    color: #ffffff !important;
-    font-weight: 700 !important;
-    min-width: 36% !important;
-  }
-  .sp-process-bar-complete { background: #ca2618 !important; color: #ffffff !important; border-radius: 15px !important; }
-CSS
+LAUNCH_BUTTON_SELECTORS = ".bot_open, .p-cta__bodyBtn_a, .p-ctasp__btn12, .float.bot_open, .cta"
+# Look measured from the original LP chat: CSS, LP-side JS and images live in db/seeds/im_pinch/.
+PINCH_ASSET_DIR = Rails.root.join("db/seeds/im_pinch")
+CUSTOM_CSS = File.read(PINCH_ASSET_DIR.join("custom.css"), encoding: "UTF-8")
+CUSTOM_LP_JS = File.read(PINCH_ASSET_DIR.join("lp.js"), encoding: "UTF-8")
+PINCH_GENDER_TILES = %w[male female].to_h do |gender|
+  image = File.binread(PINCH_ASSET_DIR.join("gender-#{gender}.png"))
+  ["gender_#{gender}".to_sym, "data:image/png;base64,#{Base64.strict_encode64(image)}"]
+end.freeze
 
 PINCH_DESIGN_SETTINGS = {
   display_type: 3,
@@ -257,12 +88,12 @@ PINCH_DESIGN_SETTINGS = {
   width_sp: 100,
   height_sp: 100,
   position_pc: 1,
-  button_type_pc: 1,
+  button_type_pc: 2,
   right_position_pc_title: "",
-  right_margin_pc: 16,
-  bottom_margin_pc: 16,
+  right_margin_pc: 5,
+  bottom_margin_pc: 0,
   position_sp: 1,
-  button_type_sp: 1,
+  button_type_sp: 2,
   right_position_sp_title: "",
   right_margin_sp: 0,
   bottom_margin_sp: 0,
@@ -275,15 +106,15 @@ PINCH_DESIGN_SETTINGS = {
     header_title_font_size: "15px",
     header_subtitle_text_color: "#FFFFFF",
     header_subtitle_font_size: "13px",
-    chat_window_bg_color: "#FFF8F2",
+    chat_window_bg_color: "#F7E9E5",
     bot_message_bg_color: "#FFEEEE",
     bot_message_text_color: "#333333",
-    bot_message_font_size: "17px",
+    bot_message_font_size: "19px",
     bot_message_border_style: "no_tail",
     user_message_bg_color: "#F5F5F5",
     user_message_text_color: "#333333",
     user_message_font_size: "17px",
-    user_message_border_style: "with_tail",
+    user_message_border_style: "no_tail",
     required_label_text_color: "#FF0000",
     required_label_font_size: "12px",
     field_font_size: "17px",
@@ -291,7 +122,7 @@ PINCH_DESIGN_SETTINGS = {
     field_unfocus_border_color: "#E0E0E0",
     field_focus_bg_color: "#FFFFFF",
     field_focus_border_color: "#0597F2",
-    field_focus_bg_effect: "outline_soft",
+    field_focus_bg_effect: "none",
     radio_unselected_bg_color: "#FFFFFF",
     radio_unselected_border_color: "#E0E0E0",
     radio_selected_bg_color: "#FFB1C2",
@@ -310,9 +141,9 @@ PINCH_DESIGN_SETTINGS = {
     button_pressed_text_color: "#FFFFFF",
     button_disabled_bg_color: "#D0D6DC",
     button_disabled_text_color: "#FFFFFF",
-    button_font_size: "16px",
+    button_font_size: "14px",
     button_border_style: "pill",
-    button_effect: "bounce",
+    button_effect: "none",
     button_width: "100%",
     button_position: "center",
     progress_bar_bg_color: "#FFFFFF",
@@ -402,12 +233,14 @@ chatbot.assign_attributes(
   bot_name: "I'm PINCH",
   title: "30秒でカンタンお申込み♪",
   subtitle: "I'm PINCH美容液",
-  design_type: :material,
+  design_type: :flat,
   main_color: :yellow,
   status: :on,
   chat_body_version: "2.0",
   design_settings: PINCH_DESIGN_SETTINGS.to_json
 )
+chatbot.icon = File.open(PINCH_ASSET_DIR.join("avatar.png")) if chatbot.icon.blank?
+chatbot.opening_bot_icon = File.open(PINCH_ASSET_DIR.join("logo.jpg")) if chatbot.opening_bot_icon.blank?
 chatbot.save!
 
 %w[
@@ -435,7 +268,7 @@ end
 end
 
 conversation = Seeds::ImPinchConversation.build(
-  PINCH_IMG.merge(
+  PINCH_IMG.merge(PINCH_GENDER_TILES).merge(
     card_brands_html: PINCH_CARD_BRANDS_HTML,
     confirm_html: PINCH_CONFIRM_HTML,
     confirm_privacy: PINCH_CONFIRM_PRIVACY
@@ -462,6 +295,8 @@ scenario.assign_attributes(
   lexica_offer_thanks_cross_sell: true,
   is_used_custom_css: true,
   custom_css_content: CUSTOM_CSS,
+  is_used_custom_js_code: true,
+  bottom_body_custom_js_code: CUSTOM_LP_JS,
   launch_button_selectors: LAUNCH_BUTTON_SELECTORS,
   conversation: JSON.generate(conversation)
 )

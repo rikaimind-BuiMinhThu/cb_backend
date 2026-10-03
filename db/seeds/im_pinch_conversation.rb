@@ -197,7 +197,8 @@ module Seeds
       }
     end
 
-    def gender_radio(title, save_name)
+    # Two image tiles side by side: the image type advances on tap, the preset gender tiles do not.
+    def gender_radio(title, save_name, images)
       {
         id: 1,
         type: "radio_button",
@@ -205,15 +206,13 @@ module Seeds
           title_require: true,
           title: title,
           require: true,
-          type: "default",
+          type: "radio_button_img",
           initial_selection: "",
           is_save_input_content: true,
           save_input_content: save_name,
-          use_as_gender: true,
-          gender_display_type: "horizontal",
           img_layout: { type: "horizontal_equal_2", custom_widths: ["50", "50"] },
-          option_padding: "0px",
-          option_margin: "5px",
+          option_padding: "5px",
+          option_margin: "8px",
           default: [
             {
               id: 1,
@@ -228,7 +227,10 @@ module Seeds
               preset_config: gender_preset("#F5A3B5", "#EE8FA6", "#E56B88", icon_url: GENDER_ICON_FEMALE)
             }
           ],
-          radio_button_img: [{ id: 1 }],
+          radio_button_img: [
+            { id: 1, text: "男性", value: "male", img: images[:gender_male], alt: "男性" },
+            { id: 2, text: "女性", value: "female", img: images[:gender_female], alt: "女性" }
+          ],
           upsell_button: [],
           block_style: [{ id: 1 }]
         }
@@ -276,8 +278,13 @@ module Seeds
       pay_credit = cond_is("payment_method", "credit")
 
       messages = [
-        bot_text("I’m PINCH(10ml)7日間お試しキットのご注文を承ります。はじめに、性別をお選びください。"),
-        user_message(gender_radio("性別", "gender")),
+        bot_text("I’m PINCH(10ml)7日間お試しキットのご注文を承ります。\nはじめに、性別をお選びください。"),
+        user_message(gender_radio("性別", "gender", images), next_button: false),
+        # Name comes right after gender, as on the original LP; the order-type question follows it.
+        bot_text("次にお名前をご入力ください。"),
+        user_message(
+          text_input("お名前", "user_name", "text", placeholder: "山田", split: true, left: "山田", right: "花子")
+        ),
         user_message(
           radio(
             "ご注文の種類",
@@ -287,12 +294,8 @@ module Seeds
               { text: "新規会員登録して注文", value: "new" },
               { text: "会員ログインして注文", value: "existing" }
             ]
-          )
-        ),
-        bot_text("お客様情報をご入力ください。", conditions: profile),
-        user_message(
-          text_input("お名前", "user_name", "text", placeholder: "山田", split: true, left: "山田", right: "花子"),
-          conditions: profile
+          ),
+          next_button: false
         ),
         user_message(
           text_input("メールアドレス", "user_email", "email_address", placeholder: "hanako@impinch.com"),
@@ -509,7 +512,7 @@ module Seeds
         urlCartConfirmPage: "",
         isUsedCartConfirmPage: false,
         coupon: "",
-        isUseBtnUpdateTracking: false,
+        isUseBtnUpdateTracking: true,
         isUseGlobalDelay: false,
         globalDelayTime: nil
       }
