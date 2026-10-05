@@ -71,6 +71,4 @@ WORKDIR /myapp
 
 COPY Gemfile Gemfile
 
-COPY Gemfile.lock Gemfile.lock
-
 RUN bundle install

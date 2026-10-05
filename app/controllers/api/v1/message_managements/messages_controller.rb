@@ -86,7 +86,6 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
       Rails.logger.debug(error)
       return render json: {code: 2, message: error}
     end
-    message.update message_params
     render json: {code: 1, data: message}
   end
 
@@ -128,7 +127,13 @@ class Api::V1::MessageManagements::MessagesController < ApplicationController
   private
 
   def message_params
-    params.require(:message).permit(:message_bag_id, :message_value, :message_type,
+    permitted = params.require(:message).permit(:message_bag_id, :message_value, :message_type,
       :img_value, :preview_past_post_url)
+    if action_name == 'update' && permitted[:img_value].present?
+      unless permitted[:img_value].to_s.start_with?('data:image')
+        permitted.delete(:img_value)
+      end
+    end
+    permitted
   end
 end

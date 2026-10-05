@@ -9,7 +9,7 @@ class Api::V1::Analytics::ChatbotUsagesController < ApplicationController
     end_date = params[:end_date].to_date
 
     @q = {created_at_lteq: end_date.end_of_day, created_at_gteq: begin_date.beginning_of_day}
-    @q[:instagram_account_id_eq] = current_user.instagram_account&.id
+    @q[:instagram_account_id_eq] = current_user.instagram_account&.id unless current_user.admin_deel?
     return get_stats_live if params[:id] == "live"
     if params[:id] == "user"
       counts = InstagramUser.ransack(@q).result
@@ -35,9 +35,14 @@ class Api::V1::Analytics::ChatbotUsagesController < ApplicationController
   private
 
   def get_stats_live
-    media_ids = ChatbotUsage.live_comment_received.ransack(@q).result
-    total = media_ids.length
-    media_ids = media_ids.page(params[:page]).per(10).group(:media_id).pluck(:media_id)
+    scope = ChatbotUsage.live_comment_received.ransack(@q).result
+    if current_user.admin_deel? && params[:client_name].present?
+      scope = scope.joins(instagram_account: { user: :client })
+                   .where("clients.name LIKE ?", "%#{params[:client_name]}%")
+    end
+
+    total = scope.distinct.count(:media_id)
+    media_ids = scope.group(:media_id).page(params[:page]).per(10).pluck(:media_id)
     live_usages = []
     media_ids.each do |media_id|
       live_usage = {}
@@ -46,6 +51,9 @@ class Api::V1::Analytics::ChatbotUsagesController < ApplicationController
       live_usage[:comment_count] = chatbot_lives.count
       live_usage[:user_count] = chatbot_lives.pluck(:instagram_user_id).uniq.length
       live_usage[:comment_lives] = chatbot_lives.joins(:instagram_user).select(:id, :content, :full_name, "DATE_FORMAT(chatbot_usages.created_at, '%d/%m/%Y %H:%m:%S') as created_at")
+      if current_user.admin_deel?
+        live_usage[:client_name] = chatbot_lives.joins(instagram_account: { user: :client }).pick("clients.name")
+      end
       live_usages.push(live_usage)
     end
     render json: {code: 1, live_usages: live_usages, total: total}

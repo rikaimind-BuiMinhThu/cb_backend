@@ -1,9 +1,13 @@
 require "ostruct"
 
 class Client < ApplicationRecord
+  ADMIN_VERSION_V2 = "v2".freeze
+
   acts_as_paranoid
   has_many :users, dependent: :destroy
   has_one :client_email, dependent: :destroy
+
+  before_create :assign_v2_admin_version
 
   encrypts :reply_smtp_gmail_app_password, deterministic: true
 
@@ -43,6 +47,10 @@ class Client < ApplicationRecord
     end
 
     return cart_system.cart_system_none
+  end
+
+  def assign_v2_admin_version
+    self.default_admin_version = ADMIN_VERSION_V2
   end
 
   def subscription_start_at_cannot_be_greater_than_subscription_end_at

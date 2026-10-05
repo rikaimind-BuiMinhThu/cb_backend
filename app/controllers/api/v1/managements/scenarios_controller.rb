@@ -1,4 +1,6 @@
 class Api::V1::Managements::ScenariosController < ApplicationController
+  include ScenarioContentPersistence
+
   skip_before_action :permision, only: [:preview, :get_scenario_selected]
   skip_before_action :verify_authenticity_token, only: [:preview, :get_scenario_selected]
   before_action :check_chatbot_present, except: [:preview, :get_scenario_selected, :get_list_scenario_by_client]
@@ -33,7 +35,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
                             .where(chatbot_id: scenario.chatbot_id)
 
     chatbot = Chatbot.select(:id, :main_color, :main_color_other, :icon, :opening_bot_icon, :closing_bot_icon, :title, :subtitle, :withdrawal_prevention_status,
-                             :withdrawal_prevention_link_url, :withdrawal_prevention_image_url, :design_settings, :user_id)
+                             :withdrawal_prevention_link_url, :withdrawal_prevention_image_url, :design_settings, :user_id, :design_type)
                      .find_by(id: scenario.chatbot_id)
 
 
@@ -59,6 +61,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         id: chatbot.id,
         main_color: chatbot.main_color,
         main_color_other: chatbot.main_color_other,
+        design_type: chatbot.design_type,
         icon: chatbot.icon,
         title: chatbot.title,
         subtitle: chatbot.subtitle,
@@ -69,16 +72,27 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         custom_css_content: scenario.custom_css_content,
         is_used_err_msg_by_js: scenario.is_used_err_msg_by_js,
         err_msg_js_code: scenario.err_msg_js_code,
+        err_msg_setting_mode: scenario.err_msg_setting_mode,
+        err_msg_field_selectors: scenario.err_msg_field_selectors,
+        err_msg_form_selectors: scenario.err_msg_form_selectors,
+        launch_button_selectors: scenario.launch_button_selectors,
         is_used_custom_js_code: scenario.is_used_custom_js_code,
         timer_config: scenario.timer_config ? JSON.parse(scenario.timer_config) : "",
         head_custom_js_code: scenario.head_custom_js_code,
         top_body_custom_js_code: scenario.top_body_custom_js_code,
         bottom_body_custom_js_code: scenario.bottom_body_custom_js_code,
+        is_used_html_ugc: scenario.is_used_html_ugc,
+        is_ugc_instagram: scenario.is_ugc_instagram,
+        is_ugc_tiktok: scenario.is_ugc_tiktok,
+        is_ugc_review: scenario.is_ugc_review,
+        ugc_env: scenario.ugc_env.presence || 'staging',
+        html_ugc_config_content: scenario.html_ugc_config_content,
         client_cart_system: client_cart_system,
         is_used_message_loaded_past: scenario.is_used_message_loaded_past,
         opening_bot_icon: chatbot.opening_bot_icon,
         closing_bot_icon: chatbot.closing_bot_icon,
-        use_fullwidth_chatbot_mobile: scenario.use_fullwidth_chatbot_mobile
+        use_fullwidth_chatbot_mobile: scenario.use_fullwidth_chatbot_mobile,
+        tag_firing: scenario.extra_config_hash["tag_firing"] || {}
       },
       all_variables: all_variables,
       design_settings: chatbot.design_settings ? JSON.parse(chatbot.design_settings) : ""
@@ -89,8 +103,18 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     scenario = Scenario.new(scenario_params)
     scenario.chatbot_id = params[:chatbot_id]
     scenario.scenario_type = params[:scenario_type] || 'payment' if scenario.scenario_type.blank?
+
+    template = nil
+    if params[:template_id].present?
+      template = ScenarioTemplate.find_by(id: params[:template_id])
+      return render json: { code: 2, message: "Template not found" } if template.blank?
+
+      template.apply_to!(scenario)
+    end
+
     ActiveRecord::Base.transaction do
       scenario.save!
+      template.provision_variables_for!(scenario) if template.present?
     rescue StandardError => error
       Rails.logger.debug(error)
       return render json: {code: 2, message: error}, status: 500
@@ -175,19 +199,30 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         @scenario.product_id_cross_sell = nil
       end
       @scenario.is_use_only_regular_order = params[:is_use_only_regular_order]
-      @scenario.is_used_fukushashiki = params[:is_used_fukushashiki]
+      apply_execution_policy!(@scenario)
       @scenario.is_used_custom_css = params[:is_used_custom_css]
       @scenario.custom_css_content = params[:custom_css_content]
       @scenario.is_used_err_msg_by_js = params[:is_used_err_msg_by_js]
       @scenario.err_msg_js_code = params[:err_msg_js_code]
+      @scenario.err_msg_setting_mode = params[:err_msg_setting_mode] if params.key?(:err_msg_setting_mode)
+      @scenario.err_msg_field_selectors = params[:err_msg_field_selectors]
+      @scenario.err_msg_form_selectors = params[:err_msg_form_selectors]
+      @scenario.launch_button_selectors = params[:launch_button_selectors]
       @scenario.is_used_custom_js_code = params[:is_used_custom_js_code]
       @scenario.head_custom_js_code = params[:head_custom_js_code]
       @scenario.top_body_custom_js_code = params[:top_body_custom_js_code]
       @scenario.bottom_body_custom_js_code = params[:bottom_body_custom_js_code]
+      @scenario.is_used_html_ugc = params[:is_used_html_ugc]
+      @scenario.is_ugc_instagram = params[:is_ugc_instagram]
+      @scenario.is_ugc_tiktok = params[:is_ugc_tiktok]
+      @scenario.is_ugc_review = params[:is_ugc_review]
+      @scenario.ugc_env = params[:ugc_env].presence || 'staging'
+      @scenario.html_ugc_config_content = params[:html_ugc_config_content]
       @scenario.timer_config = JSON.generate(params[:timer_config].as_json) if params[:timer_config].present?
       @scenario.is_used_message_loaded_past = params[:is_used_message_loaded_past]
       @scenario.use_fullwidth_chatbot_mobile = params[:use_fullwidth_chatbot_mobile]
       @scenario.is_clear_landing_page_session = params[:is_clear_landing_page_session]
+      apply_extra_config!(@scenario)
       @scenario.save!
     rescue StandardError => error
       Rails.logger.debug(error)
@@ -228,13 +263,32 @@ class Api::V1::Managements::ScenariosController < ApplicationController
   end
 
   def get_scenario_selected
-    bot = Chatbot.find_by(id: params[:chatbot_id])     
-    return render json: { code: 2, message: "Chatbot not found" } if bot.blank?  
-    scenario = Scenario.select(:id, :name, :is_clear_landing_page_session).find_by(id: bot.scenario_selected)   
+    bot = Chatbot.find_by(id: params[:chatbot_id])
+    return render json: { code: 2, message: "Chatbot not found" } if bot.blank?
+
+    scenario = Scenario.find_by(id: bot.scenario_selected)
     if scenario.blank?
       return render json: { code: 2, message: "Scenario not found" }
-    end  
-    render json: { code: 1, data: scenario, cart_system: bot.user&.client&.cart_system }
+    end
+
+    extra = scenario.extra_config_hash
+    conversation = parse_scenario_conversation(scenario.conversation)
+    messages = conversation.is_a?(Hash) ? (conversation["messages"] || []) : []
+
+    render json: {
+      code: 1,
+      data: {
+        id: scenario.id,
+        name: scenario.name,
+        is_clear_landing_page_session: scenario.is_clear_landing_page_session,
+        messages: messages,
+        allowed_lp_domains: extra["allowed_lp_domains"] || [],
+        lp_integration_mode: extra["lp_integration_mode"],
+        amazon_pay_config: extra["amazon_pay_config"] || {},
+        tag_firing: extra["tag_firing"] || {},
+      },
+      cart_system: bot.user&.client&.cart_system
+    }
   end
 
   def get_list_scenario_by_client
@@ -265,9 +319,19 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     @scenario.tamago_repeat_config.save!
   end
 
+  def parse_scenario_conversation(raw)
+    return {} if raw.blank?
+    return raw if raw.is_a?(Hash) || raw.is_a?(Array)
+
+    JSON.parse(raw)
+  rescue JSON::ParserError
+    {}
+  end
+
   def check_chatbot_present
     @chatbot = Chatbot.find_by(id: params[:chatbot_id])
     return render json: {code: 2, message: "Chatbot not found"} if @chatbot.blank?
+    return if current_user.admin_deel?
     user_chatbot = UserChatbot.find_by(user_id: current_user.id, chatbot_id: params[:chatbot_id])
     return render json: {code: 2, message: "No permission"} if (user_chatbot.blank? || user_chatbot.reader?)
   end

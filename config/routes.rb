@@ -32,6 +32,7 @@ Rails.application.routes.draw do
         get "chatbots/:chatbot_id/get_scenario_selected", :to => 'scenarios#get_scenario_selected'
         get "chatbots/:id/design_settings", :to => 'chatbots#get_design_settings'
         post "chatbots/:id/design_settings", :to => 'chatbots#update_design_settings'
+        get "chatbots/:id/chat_body_version", :to => 'chatbots#chat_body_version'
         get "chatbots/:id/sdk", :to => 'chatbots#webchat_sdk'
         get "chat_log/statistic", :to => 'chat_log#statistic'
         get "chat_log/:bot_id/list", :to => 'chat_log#index'
@@ -54,6 +55,10 @@ Rails.application.routes.draw do
         resources :sms_templates, only: [:index, :create, :show, :update, :destroy]
         resources :plans, only: [:index, :show, :update, :create, :destroy]
         resources :payment_histories, only: [:show, :update, :create, :destroy]
+        resources :scenario_templates, only: [:index, :show, :create, :destroy]
+        get "scenario_templates/:id/conversation", :to => "scenario_templates#detail_conversation"
+        post "scenario_templates/:id/conversation", :to => "scenario_templates#conversation"
+        resources :order_confirm_message_templates, only: [:index, :show, :create, :update, :destroy]
       end
       namespace :message_managements do
         get "message_groups/data_analyst", :to => 'message_groups#data_analyst'
@@ -83,7 +88,11 @@ Rails.application.routes.draw do
         resources :conversions, only: [:index, :create, :show]
         resources :supporting_users, only: :destroy
       end
-      resources :instagram_settings, only: [:index, :show, :update, :destroy]
+      resources :instagram_settings, only: [:index, :show, :update, :destroy] do
+        collection do
+          get :profile
+        end
+      end
       get "webhook", :to => 'chatbots#webhook'
       post "webhook", :to => 'chatbots#webhook_callback'
       post "instagram_connect", :to => 'instagram_settings#connect'

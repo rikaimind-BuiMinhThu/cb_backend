@@ -1,0 +1,1 @@
+chatbot_domain: <%= ENV.fetch("CHATBOT_DOMAIN") %>

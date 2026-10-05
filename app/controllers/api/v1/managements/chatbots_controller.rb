@@ -1,6 +1,6 @@
 class Api::V1::Managements::ChatbotsController < ApplicationController
-  skip_before_action :permision, only: [:webchat_sdk, :show]
-  skip_before_action :verify_authenticity_token, only: [:webchat_sdk, :show]
+  skip_before_action :permision, only: [:webchat_sdk, :show, :chat_body_version]
+  skip_before_action :verify_authenticity_token, only: [:webchat_sdk, :show, :chat_body_version]
 
   def index
     chatbots = Chatbot.joins(:user).select("chatbots.*, users.full_name as owner_name") if current_user.admin_deel?
@@ -179,6 +179,13 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
     return render json: {code: 1, message: "Success"}
   end
 
+  def chat_body_version
+    chatbot = Chatbot.select(:id, :chat_body_version).find_by(id: params[:id])
+    return render json: { code: 2, message: "Chatbot not found" } if chatbot.blank?
+
+    render json: { code: 1, data: { chat_body_version: chatbot.chat_body_version } }
+  end
+
   def webchat_sdk
     chatbot = Chatbot.find_by(id: params[:id])
     return render json: {code: 2, message: "Chatbot not found"} if chatbot.blank?
@@ -194,7 +201,8 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
                             .where(chatbot_id: scenario.chatbot_id)
 
     chatbot = Chatbot.select(:id, :main_color, :icon, :title, :subtitle, :withdrawal_prevention_status,
-                             :withdrawal_prevention_link_url, :withdrawal_prevention_image_url, :design_settings)
+                             :withdrawal_prevention_link_url, :withdrawal_prevention_image_url, :design_settings,
+                             :chat_body_version)
                      .find_by(id: scenario.chatbot_id)
 
     render json: {
@@ -216,7 +224,8 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
         subtitle: chatbot.subtitle,
         withdrawal_prevention_status: chatbot.withdrawal_prevention_status,
         withdrawal_prevention_link_url: chatbot.withdrawal_prevention_link_url,
-        withdrawal_prevention_image_url: chatbot.withdrawal_prevention_image_url
+        withdrawal_prevention_image_url: chatbot.withdrawal_prevention_image_url,
+        chat_body_version: chatbot.chat_body_version
       },
       all_variables: all_variables,
       design_settings: chatbot.design_settings ? JSON.parse(chatbot.design_settings) : ""
@@ -228,9 +237,6 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
   def chatbot_params
     params.require(:chatbot).permit(:title, :subtitle, :design_type,
       :main_color, :status, :icon, :bot_name, :main_color_other, :opening_bot_icon, :closing_bot_icon, 
-      :remove_opening_bot_icon, :remove_closing_bot_icon)
+      :remove_opening_bot_icon, :remove_closing_bot_icon, :chat_body_version)
   end
 end
-
-
-

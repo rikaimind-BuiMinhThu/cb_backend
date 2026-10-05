@@ -5,14 +5,24 @@ json.data do
   json.scenario_type @scenario.scenario_type || 'payment'
   json.isUseOnlyRegularOrder @scenario.is_use_only_regular_order
   json.isUseFukushashiki @scenario.is_used_fukushashiki
+  json.execution_policy @scenario.execution_policy
   json.custom_css_content @scenario.custom_css_content
   json.is_used_custom_css @scenario.is_used_custom_css
   json.is_used_err_msg_by_js @scenario.is_used_err_msg_by_js
   json.err_msg_js_code @scenario.err_msg_js_code
+  json.err_msg_setting_mode @scenario.err_msg_setting_mode
+  json.err_msg_field_selectors @scenario.err_msg_field_selectors
+  json.err_msg_form_selectors @scenario.err_msg_form_selectors
+  json.launch_button_selectors @scenario.launch_button_selectors
   json.is_used_custom_js_code @scenario.is_used_custom_js_code
   json.head_custom_js_code @scenario.head_custom_js_code
   json.top_body_custom_js_code @scenario.top_body_custom_js_code
   json.bottom_body_custom_js_code @scenario.bottom_body_custom_js_code
+  json.is_used_html_ugc @scenario.is_used_html_ugc
+  json.is_ugc_instagram @scenario.is_ugc_instagram
+  json.is_ugc_tiktok @scenario.is_ugc_tiktok
+  json.is_ugc_review @scenario.is_ugc_review
+  json.html_ugc_config_content @scenario.html_ugc_config_content
   json.timer_config JSON.parse(@scenario.timer_config) unless @scenario.timer_config.blank?
   json.tamagoLandingPageUrl @scenario.tamago_repeat_config&.tamago_landing_page_url
   json.merchandise_id @scenario.merchandise_id_for_api

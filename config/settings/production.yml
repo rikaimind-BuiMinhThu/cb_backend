@@ -1,1 +1,1 @@
-chatbot_domain: 'https://ec-chatbot-test.com'
+chatbot_domain: <%= ENV.fetch("CHATBOT_DOMAIN") %>

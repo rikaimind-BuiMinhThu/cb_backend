@@ -1,26 +1,38 @@
 class MessageGroupForm
   include ActiveModel::Model
 
+  GROUP_PREFIX = "グループ内のメッセージ袋が".freeze
+
   attr_reader :message_group
   attr_reader :current_user
 
   def initialize(message_group, current_user)
     @message_group = message_group
-    @instagram_account = current_user.instagram_account
+    @current_user = current_user
   end
 
   def check_delete
-    return true if @instagram_account.blank?
-    list_setting_ids = KeywordSetting.where(instagram_account_id: @instagram_account.id).pluck(:message_bag_id)
-    list_setting_ids.push(@instagram_account.post_comment_bag_id) if @instagram_account.post_comment_bag_id.present?
-    list_setting_ids.push(@instagram_account.story_comment_bag_id) if @instagram_account.story_comment_bag_id.present?
-    list_setting_ids.push(@instagram_account.live_comment_bag_id) if @instagram_account.live_comment_bag_id.present?
+    delete_block_reason.nil?
+  end
+
+  def delete_block_reason
     list_bag_ids = @message_group.message_bags.pluck(:id)
-    if list_bag_ids.present?
-      list_bag_ids.each do |bag_id|
-        return false if list_setting_ids.include?(bag_id)
-      end
+    return nil if list_bag_ids.blank?
+
+    list_bag_ids.each do |bag_id|
+      reason = bag_block_reason(bag_id)
+      return "#{GROUP_PREFIX}#{reason}" if reason.present?
     end
-    return true
+
+    nil
+  end
+
+  private
+
+  def bag_block_reason(bag_id)
+    bag = MessageBag.find_by(id: bag_id)
+    return nil if bag.blank?
+
+    MessageBagForm.new(bag, @current_user).delete_block_reason
   end
 end

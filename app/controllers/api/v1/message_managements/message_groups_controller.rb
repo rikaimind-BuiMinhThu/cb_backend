@@ -40,13 +40,14 @@ class Api::V1::MessageManagements::MessageGroupsController < ApplicationControll
 
   def destroy
     message_group = MessageGroup.find_by(id: params[:id])
-    return render json: {code: 2, message: "Cannot find message group"} if message_group.blank?
-    return render json: {code: 2, message: "User can't permission"} if message_group.user_id != current_user.id
-    return render json: {code: 2, message: "Cannot delete message group"} unless MessageGroupForm.new(message_group, current_user).check_delete
+    return render json: {code: 2, message: "メッセージグループが見つかりません。"} if message_group.blank?
+    return render json: {code: 2, message: "権限がありません。"} if message_group.user_id != current_user.id
+    reason = MessageGroupForm.new(message_group, current_user).delete_block_reason
+    return render json: {code: 2, message: reason} if reason.present?
     if message_group.destroy
       render json: {code: 1, message: "Success!"}
     else
-      render json: {code: 2, message: "Something went wrong!"}
+      render json: {code: 2, message: "削除に失敗しました。"}
     end
   end
 

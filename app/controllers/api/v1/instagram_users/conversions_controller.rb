@@ -2,25 +2,31 @@ class Api::V1::InstagramUsers::ConversionsController < ApplicationController
   skip_before_action :permision, only: [:create]
   skip_before_action :verify_authenticity_token
 
+  CHANNELS = {
+    dm: :dm,
+    story: :story_comment,
+    live: :live_comment
+  }.freeze
+
   def index
     instagram_users = InstagramUser.all
     return render json: {code: 2, message: "Not have permission"} unless current_user.admin_deel? || current_user.admin_client?
     instagram_users = instagram_users.where(instagram_account: current_user.instagram_account)
-    live_instagram_users = instagram_users.live_comment
-    story_instagram_users = instagram_users.story_comment
-    dm_instagram_users = instagram_users.dm
 
-    @live_instagram_user_count = live_instagram_users.count
-    @story_instagram_user_count = story_instagram_users.count
-    @dm_instagram_user_count = dm_instagram_users.count
+    begin_date, end_date = parse_date_range
+    instagram_users = filter_users_by_created_at(instagram_users, begin_date, end_date)
 
-    @live_instagram_message_count = ChatbotUsage.where(instagram_user: live_instagram_users.pluck(:id)).count
-    @story_instagram_message_count = ChatbotUsage.where(instagram_user: story_instagram_users.pluck(:id)).count
-    @dm_instagram_message_count = ChatbotUsage.where(instagram_user: dm_instagram_users.pluck(:id)).count
+    stats = build_channel_stats(instagram_users, begin_date, end_date)
 
-    @live_conversion_count = Conversion.where(instagram_user: live_instagram_users.pluck(:id)).count
-    @story_conversion_count = Conversion.where(instagram_user: story_instagram_users.pluck(:id)).count
-    @dm_conversion_count = Conversion.where(instagram_user: dm_instagram_users.pluck(:id)).count
+    @live_instagram_user_count = stats[:live][:user_count]
+    @story_instagram_user_count = stats[:story][:user_count]
+    @dm_instagram_user_count = stats[:dm][:user_count]
+    @live_instagram_message_count = stats[:live][:message_count]
+    @story_instagram_message_count = stats[:story][:message_count]
+    @dm_instagram_message_count = stats[:dm][:message_count]
+    @live_conversion_count = stats[:live][:conversion_count]
+    @story_conversion_count = stats[:story][:conversion_count]
+    @dm_conversion_count = stats[:dm][:conversion_count]
   end
 
   def show
@@ -43,5 +49,40 @@ class Api::V1::InstagramUsers::ConversionsController < ApplicationController
                       message_bag_id: message_bag.id)
     return render json: {code: 1, message: "Success"} if conversion.save
     render json: {code: 2, data: conversion.errors.full_messages}
+  end
+
+  private
+
+  def parse_date_range
+    return [nil, nil] if params[:begin_date].blank? || params[:end_date].blank?
+
+    [params[:begin_date].to_date, params[:end_date].to_date]
+  end
+
+  def filter_users_by_created_at(scope, begin_date, end_date)
+    return scope if begin_date.blank? || end_date.blank?
+
+    scope.where(created_at: begin_date.beginning_of_day..end_date.end_of_day)
+  end
+
+  def build_channel_stats(instagram_users, begin_date, end_date)
+    CHANNELS.each_with_object({}) do |(key, channel_scope), stats|
+      channel_users = instagram_users.public_send(channel_scope)
+      user_ids = channel_users.pluck(:id)
+
+      message_scope = ChatbotUsage.where(instagram_user_id: user_ids)
+      conversion_scope = Conversion.where(instagram_user_id: user_ids)
+
+      if begin_date.present? && end_date.present?
+        message_scope = message_scope.search_by_begin_date_and_end_date(begin_date, end_date)
+        conversion_scope = conversion_scope.search_by_begin_date_and_end_date(begin_date, end_date)
+      end
+
+      stats[key] = {
+        user_count: channel_users.count,
+        message_count: message_scope.count,
+        conversion_count: conversion_scope.count
+      }
+    end
   end
 end

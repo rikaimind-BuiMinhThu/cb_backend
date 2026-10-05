@@ -2,18 +2,22 @@ default: &default
   adapter: mysql2
   encoding: utf8mb4
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-  username: <%= ENV.fetch("RAILS_DATABASE_USERNAME") { "root" } %>
-  password: <%= ENV.fetch("RAILS_DATABASE_PASSWORD") { "" } %>
-  host: <%= ENV.fetch("RAILS_DATABASE_HOST") { "127.0.0.1" } %>
+  username: <%= ENV.fetch("RAILS_DATABASE_USERNAME") %>
+  password: <%= ENV.fetch("RAILS_DATABASE_PASSWORD") %>
+  host: <%= ENV.fetch("RAILS_DATABASE_HOST") %>
 
 development:
   <<: *default
-  database: <%= ENV.fetch("RAILS_DATABASE") { "instagram_chatbot" } %>
+  database: <%= ENV.fetch("RAILS_DATABASE") %>
 
 test:
   <<: *default
-  database: <%= ENV.fetch("RAILS_DATABASE") { "instagram_chatbot_test" } %>
+  database: <%= ENV.fetch("RAILS_DATABASE") %>
+
+staging:
+  <<: *default
+  database: <%= ENV.fetch("RAILS_DATABASE") %>
 
 production:
   <<: *default
-  database: <%= ENV.fetch("RAILS_DATABASE") { "instagram_chatbot_production" } %>
+  database: <%= ENV.fetch("RAILS_DATABASE") %>
