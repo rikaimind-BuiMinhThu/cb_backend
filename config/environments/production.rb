@@ -82,6 +82,7 @@ Rails.application.configure do
   }
 
   # Active Record encryption (required for Client#reply_smtp_gmail_app_password, ClientEmail#password).
+  # Set these to the same values as config/environments/development.rb for ciphertext compatibility.
   config.active_record.encryption.primary_key = ENV.fetch("ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY")
   config.active_record.encryption.deterministic_key = ENV.fetch("ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY")
   config.active_record.encryption.key_derivation_salt = ENV.fetch("ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT")
