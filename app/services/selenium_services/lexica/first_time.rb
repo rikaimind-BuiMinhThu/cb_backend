@@ -11,6 +11,21 @@ module SeleniumServices
 
       private
 
+      def preferred_submit_selector
+        @driver.execute_script(<<~JS)
+          var nodes = document.querySelectorAll('button');
+          for (var i = 0; i < nodes.length; i++) {
+            var oc = nodes[i].getAttribute('onclick') || '';
+            var text = (nodes[i].innerText || '').replace(/\\s+/g, '');
+            if (text.indexOf('ご注文内容の確認へ') === -1) continue;
+            if (oc.indexOf('flg-guest') === -1 || oc.indexOf('true') === -1) continue;
+            nodes[i].setAttribute('data-ecch-guest-submit', '1');
+            return '[data-ecch-guest-submit="1"]';
+          }
+          return null;
+        JS
+      end
+
       def fill_first_time
         step("auth_first_time", "はじめて入力") do
           never_click_line

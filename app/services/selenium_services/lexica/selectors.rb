@@ -13,11 +13,11 @@ module SeleniumServices
       FIRST_TIME_NAME2 = ".form-order-signup input.name2".freeze
       FIRST_TIME_KANA1 = ".form-order-signup input.kana1".freeze
       FIRST_TIME_KANA2 = ".form-order-signup input.kana2".freeze
-      FIRST_TIME_POSTAL = ".form-order-signup input[name=\"CUSTOMER_POSTAL_CODE\"]".freeze
-      FIRST_TIME_ADDRESS1 = ".form-order-signup input[name=\"CUSTOMER_ADDRESS1\"]".freeze
-      FIRST_TIME_ADDRESS2 = ".form-order-signup input[name=\"CUSTOMER_ADDRESS2\"]".freeze
-      FIRST_TIME_ADDRESS3 = ".form-order-signup input[name=\"CUSTOMER_ADDRESS3\"]".freeze
-      FIRST_TIME_PHONE = ".form-order-signup input[name=\"CUSTOMER_PHONE_NUMBER\"]".freeze
+      FIRST_TIME_POSTAL = ".form-order-signup input[name=\"ORDERER_POSTAL_CODE\"], .form-order-signup input[name=\"CUSTOMER_POSTAL_CODE\"]".freeze
+      FIRST_TIME_ADDRESS1 = ".form-order-signup input[name=\"ORDERER_ADDRESS1\"], .form-order-signup input[name=\"CUSTOMER_ADDRESS1\"]".freeze
+      FIRST_TIME_ADDRESS2 = ".form-order-signup input[name=\"ORDERER_ADDRESS2\"], .form-order-signup input[name=\"CUSTOMER_ADDRESS2\"]".freeze
+      FIRST_TIME_ADDRESS3 = ".form-order-signup input[name=\"ORDERER_ADDRESS3\"], .form-order-signup input[name=\"CUSTOMER_ADDRESS3\"]".freeze
+      FIRST_TIME_PHONE = ".form-order-signup input[name=\"ORDERER_PHONE_NUMBER\"], .form-order-signup input[name=\"CUSTOMER_PHONE_NUMBER\"]".freeze
       FIRST_TIME_YEAR = ".form-order-signup select[name=\"yyyy\"]".freeze
       FIRST_TIME_MONTH = ".form-order-signup select[name=\"mm\"]".freeze
       FIRST_TIME_DAY = ".form-order-signup select[name=\"dd\"]".freeze

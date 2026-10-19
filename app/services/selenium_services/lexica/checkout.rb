@@ -291,7 +291,7 @@ module SeleniumServices
           end
         step(name, "支払い") do
           wait_page_load_complete
-          if element_present?(S::PAYMENT_LIST)
+          if element_present?(S::PAYMENT_LIST) || element_present?(".payment-method-name label")
             click_payment_option
           end
           if @payment_method == "credit"
@@ -306,7 +306,7 @@ module SeleniumServices
         labels = payment_option_labels
         labels.each do |label|
           clicked = @driver.execute_script(<<~JS, label)
-            var nodes = document.querySelectorAll('#order__payment label, #order__payment .payment-method-list label, #order__payment input');
+            var nodes = document.querySelectorAll('#order__payment label, #order__payment .payment-method-list label, #order__payment input, .payment-method-name label');
             for (var i = 0; i < nodes.length; i++) {
               var t = (nodes[i].innerText || nodes[i].value || '');
               if (t.indexOf(arguments[0]) !== -1) {
@@ -391,12 +391,17 @@ module SeleniumServices
             )
           end
 
-          selector = first_present_selector(S::SUBMIT_ORDER) || submit_button_by_text
+          selector = preferred_submit_selector
+          selector = first_present_selector(S::SUBMIT_ORDER) || submit_button_by_text if selector.blank?
           raise LexicaStop.new("missing_submit", "注文確定ボタンが見つかりません") if selector.blank?
 
           click selector, "submit order"
           wait_page_load_complete
         end
+      end
+
+      def preferred_submit_selector
+        nil
       end
 
       def first_present_selector(css_list)
