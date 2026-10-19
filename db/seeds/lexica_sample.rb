@@ -7,6 +7,8 @@ load Rails.root.join("db/seeds/im_pinch_conversation.rb") unless defined?(Seeds:
 
 PASSWORD = "Password123!"
 CART_URL = "https://cart.mirai-japan.co.jp/"
+# I'm PINCH 10ml 7日間お試しキット（単品）. LP AddItemToCart id. SAMPLE-SKU is not a cart item.
+PINCH_TRIAL_SKU = "_P046"
 SHOP_URL = "https://mirai-japan.co.jp/"
 LP_URL = "https://lp.mirai-japan.co.jp/ab/QvEvbJAyCPfzYIkKS_gvQ"
 OPERATOR_ICON = "https://botchan.blob.core.windows.net/production/uploads/bot_picture/624c0e7303a30.png"
@@ -447,7 +449,7 @@ scenario = Scenario.find_by(chatbot: chatbot, name: "I'm PINCH お申し込み")
 scenario.assign_attributes(
   name: "I'm PINCH お申し込み",
   scenario_type: "payment",
-  merchandise_id: "SAMPLE-SKU",
+  merchandise_id: PINCH_TRIAL_SKU,
   landing_page_product_url: LP_URL,
   lexica_cart_url: CART_URL,
   order_result_mode: "async",

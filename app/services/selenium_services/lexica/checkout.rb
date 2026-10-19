@@ -120,7 +120,14 @@ module SeleniumServices
             wait_page_load_complete
           end
           wait_element_load S::CART_VIEW
+          reject_unknown_sku
         end
+      end
+
+      def reject_unknown_sku
+        return unless @driver.page_source.to_s.include?("商品が見つかりません")
+
+        raise LexicaStop.new("missing_sku", "商品コード（#{@cart_skus.join(",")}）の商品が見つかりません")
       end
 
       def add_sku_to_cart(sku)
