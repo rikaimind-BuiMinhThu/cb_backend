@@ -184,11 +184,27 @@ module SeleniumServices
         street = @data_address["value_address"] || @data_address["address"] ||
           @data_address["town"] || @data_address["address3"] || @data_address["street"]
         fill_to_text_input prefix[:postal], postal, "postal" if postal.present?
-        # Zip lookup rewrites the city after the postal blur. Write the saved address after that.
-        sleep_by_seconds 1 if postal.present?
-        fill_to_text_input prefix[:address1], pref, "prefecture" if pref.present?
-        fill_to_text_input prefix[:address2], city, "city" if city.present?
+        # The cart's postal lookup fills prefecture and city. Overwriting those fails validation.
+        wait_for_postal_lookup(prefix[:address1]) if postal.present?
+        if input_value(prefix[:address1]).blank?
+          fill_to_text_input prefix[:address1], pref, "prefecture" if pref.present?
+          fill_to_text_input prefix[:address2], city, "city" if city.present?
+        end
         fill_to_text_input prefix[:address3], street, "street" if street.present?
+      end
+
+      def wait_for_postal_lookup(address_css)
+        Selenium::WebDriver::Wait.new(timeout: 5).until { input_value(address_css).present? }
+      rescue Selenium::WebDriver::Error::TimeoutError
+        nil
+      end
+
+      def input_value(css)
+        return "" unless element_present?(css)
+
+        @driver.find_element(css: css).attribute("value").to_s
+      rescue Selenium::WebDriver::Error::NoSuchElementError
+        ""
       end
 
       def fill_birthday(prefix)
@@ -398,18 +414,47 @@ module SeleniumServices
           raise LexicaStop.new("missing_submit", "注文確定ボタンが見つかりません") if selector.blank?
 
           click selector, "submit order"
-          wait_page_load_complete
+          # Guest submit starts reCAPTCHA, then posts again. document.readyState is already complete.
+          wait_for_checkout_progress
           if @driver.current_url.to_s.include?("/order/signin")
             errors = Array(visible_form_errors)
             raise LexicaStop.new("form_invalid", errors.presence&.join(" / ") || "確認画面へ進めませんでした")
           end
+          confirm_review_page
         end
+      end
+
+      def wait_for_checkout_progress
+        Selenium::WebDriver::Wait.new(timeout: 20).until do
+          url = @driver.current_url.to_s
+          !url.include?("/order/signin") || visible_form_errors.any?
+        end
+      rescue Selenium::WebDriver::Error::TimeoutError
+        nil
+      end
+
+      def confirm_review_page
+        url_before = @driver.current_url.to_s
+        source = @driver.page_source.to_s
+        return if thanks_page?(url_before, source)
+        return unless url_before.include?("/order/entry") || url_before.include?("/order/confirm")
+
+        selector = submit_button_by_text
+        return if selector.blank?
+
+        click selector, "confirm order"
+        Selenium::WebDriver::Wait.new(timeout: 20).until do
+          current = @driver.current_url.to_s
+          current != url_before || thanks_page?(current, @driver.page_source.to_s)
+        end
+      rescue Selenium::WebDriver::Error::TimeoutError
+        nil
       end
 
       def visible_form_errors
         @driver.execute_script(<<~JS)
-          return Array.from(document.querySelectorAll('.nmessage, .error, .alert, .input-error'))
-            .map(function(el) { return (el.innerText || '').replace(/\\s+/g, ' ').trim(); })
+          return Array.from(document.querySelectorAll('#error-msg, .nmessage, .error, .alert, .input-error'))
+            .map(function(el) { return (el.textContent || '').replace(/\\s+/g, ' ').trim(); })
             .filter(Boolean)
             .slice(0, 5);
         JS
@@ -627,9 +672,57 @@ module SeleniumServices
       end
 
       def last_screenshot_path
-        Dir["#{@screenshot_path}/#{@scenario.id}_#{@user_input_id}_*.png"].max
+        Dir["#{@screenshot_path}/#{@scenario.id}_#{@user_input_id}_*.png"].max_by { |path| File.mtime(path) }
       rescue
         nil
+      end
+
+      def init_selenium_driver
+        @log_tab_level += 1
+        Selenium::WebDriver.logger.output = File.join("#{Rails.root}/log", "selenium.log")
+        Selenium::WebDriver.logger.level = :debug
+        Log.info "Init selenium driver for chrome", @log_tab_level
+        options = Selenium::WebDriver::Chrome::Options.new(
+          args: [
+            "--lang=ja",
+            "--headless=new",
+            "--no-sandbox",
+            "--disable-gpu",
+            "--disable-dev-shm-usage",
+            "--window-size=2560,1440",
+            "--disable-blink-features=AutomationControlled",
+            "--user-agent=#{desktop_user_agent}",
+          ],
+        )
+        options.exclude_switches = ["enable-automation"]
+        chrome_bin = ENV["CHROME_BIN"].to_s.strip
+        options.binary = chrome_bin if chrome_bin.present?
+
+        driver_path = ENV["CHROMEDRIVER_PATH"].to_s.strip
+        service =
+          if driver_path.present?
+            Selenium::WebDriver::Chrome::Service.new(path: driver_path)
+          end
+
+        @driver =
+          if service
+            Selenium::WebDriver.for(:chrome, options: options, service: service)
+          else
+            Selenium::WebDriver.for(:chrome, options: options)
+          end
+        @driver.execute_cdp(
+          "Page.addScriptToEvaluateOnNewDocument",
+          source: "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+        )
+        Log.info @driver.execute_script("return navigator.userAgent"), @log_tab_level
+        @driver.manage.timeouts.implicit_wait = 0
+        @driver.manage.delete_all_cookies
+        Log.info "Init OK selenium driver", @log_tab_level
+        @log_tab_level -= 1
+      end
+
+      def desktop_user_agent
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36"
       end
 
       def notify_failure(kind, message)
