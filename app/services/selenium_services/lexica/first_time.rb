@@ -31,6 +31,8 @@ module SeleniumServices
           never_click_line
           raise LexicaStop.new("missing_first_time_form", "はじめて入力欄が見つかりません") unless element_present?(S::FIRST_TIME_FORM)
 
+          @driver.execute_script("var banner = document.querySelector('.remainWrapper'); if (banner) banner.style.display = 'none';")
+
           fill_customer_fields(
             email: S::FIRST_TIME_EMAIL,
             name1: S::FIRST_TIME_NAME1,

@@ -399,7 +399,20 @@ module SeleniumServices
 
           click selector, "submit order"
           wait_page_load_complete
+          if @driver.current_url.to_s.include?("/order/signin")
+            errors = Array(visible_form_errors)
+            raise LexicaStop.new("form_invalid", errors.presence&.join(" / ") || "確認画面へ進めませんでした")
+          end
         end
+      end
+
+      def visible_form_errors
+        @driver.execute_script(<<~JS)
+          return Array.from(document.querySelectorAll('.nmessage, .error, .alert, .input-error'))
+            .map(function(el) { return (el.innerText || '').replace(/\\s+/g, ' ').trim(); })
+            .filter(Boolean)
+            .slice(0, 5);
+        JS
       end
 
       def preferred_submit_selector
@@ -659,7 +672,12 @@ module SeleniumServices
           input_element.clear
           Log.info "input_element.send_keys(#{logged})", @log_tab_level + 1
           input_element.send_keys(value)
-        rescue Selenium::WebDriver::Error::ElementNotInteractableError, Selenium::WebDriver::Error::InvalidElementStateError => e
+          if input_element.attribute("value").to_s.blank?
+            raise Selenium::WebDriver::Error::InvalidElementStateError, "value did not stick"
+          end
+        rescue Selenium::WebDriver::Error::ElementNotInteractableError,
+               Selenium::WebDriver::Error::InvalidElementStateError,
+               Selenium::WebDriver::Error::ElementClickInterceptedError => e
           Log.info "send_keys failed (#{e.class}); JS value set for #{description}", @log_tab_level + 1
           @driver.execute_script(<<~JS, input_element, value.to_s)
             const el = arguments[0];
@@ -672,12 +690,11 @@ module SeleniumServices
         end
         capture
         @log_tab_level -= 1
-        @driver.action.pointer_down(:left).pointer_up(:left).perform if pointer_action
       end
 
       def click(css_selector, description = "", pointer_action: true)
         record_action(type: "click", where: css_selector, label: description)
-        super
+        super(css_selector, description, pointer_action: false)
       end
 
       def navigate(url)
