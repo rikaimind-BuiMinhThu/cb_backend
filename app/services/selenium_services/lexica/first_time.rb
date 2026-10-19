@@ -5,8 +5,14 @@ module SeleniumServices
         open_shop
         add_to_cart
         proceed_to_checkout
+        # Payment controls sit on the same form and can redraw it. Fill after that redraw.
+        apply_payment
+        apply_delivery
         fill_first_time
-        apply_payment_and_submit
+        apply_confirm_upsell
+        submit_order
+        detect_thanks
+        apply_thanks_offers
       end
 
       private
