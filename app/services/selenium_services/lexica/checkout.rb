@@ -184,6 +184,8 @@ module SeleniumServices
         street = @data_address["value_address"] || @data_address["address"] ||
           @data_address["town"] || @data_address["address3"] || @data_address["street"]
         fill_to_text_input prefix[:postal], postal, "postal" if postal.present?
+        # Zip lookup rewrites the city after the postal blur. Write the saved address after that.
+        sleep_by_seconds 1 if postal.present?
         fill_to_text_input prefix[:address1], pref, "prefecture" if pref.present?
         fill_to_text_input prefix[:address2], city, "city" if city.present?
         fill_to_text_input prefix[:address3], street, "street" if street.present?
@@ -402,6 +404,13 @@ module SeleniumServices
 
       def preferred_submit_selector
         nil
+      end
+
+      def find_response_by_data_input_name(data_input_name)
+        @conversations
+          .select { |conversation| conversation.data_input_name == data_input_name }
+          .max_by { |conversation| conversation.id.to_i }
+          &.value
       end
 
       def first_present_selector(css_list)
