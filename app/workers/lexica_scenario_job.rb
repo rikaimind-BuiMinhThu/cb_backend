@@ -2,7 +2,12 @@ class LexicaScenarioJob
   include Sidekiq::Worker
   sidekiq_options queue: :lexica, retry: 0
 
-  def perform(scenario_id, user_id)
+  CHROME_SLOT_MAX_RETRIES = 3
+  CHROME_SLOT_RETRY_DELAY = 15.seconds
+  CHROME_SLOT_ERROR_KINDS = %w[chrome_slot_timeout chrome_slot_orphan].freeze
+
+  def perform(scenario_id, user_id, chrome_slot_attempt = 0)
+    chrome_slot_attempt = chrome_slot_attempt.to_i
     scenario = Scenario.find(scenario_id)
     client = scenario.chatbot&.user&.client
     conversations = scenario.scenario_user_responses.where(user_input_id: user_id)
@@ -24,7 +29,13 @@ class LexicaScenarioJob
   rescue Selenium::WebDriver::Error::UnexpectedAlertOpenError => e
     mark_error(scenario_id, user_id, "alert", e.message)
   rescue Timeout::Error => e
-    mark_error(scenario_id, user_id, "chrome_slot_timeout", e.message)
+    schedule_chrome_slot_retry_or_fail(
+      scenario_id,
+      user_id,
+      "chrome_slot_timeout",
+      e.message,
+      chrome_slot_attempt
+    )
   rescue => e
     mark_error(scenario_id, user_id, "rpa_error", e.message)
   end
@@ -33,6 +44,43 @@ class LexicaScenarioJob
 
   def find_result(scenario_id, user_id)
     ScenarioUserResponseSeleniumResult.find_by(user_input_id: user_id, scenario_id: scenario_id)
+  end
+
+  def schedule_chrome_slot_retry_or_fail(scenario_id, user_id, kind, message, chrome_slot_attempt)
+    unless CHROME_SLOT_ERROR_KINDS.include?(kind.to_s)
+      mark_error(scenario_id, user_id, kind, message)
+      return
+    end
+
+    if chrome_slot_attempt < CHROME_SLOT_MAX_RETRIES
+      reset_result_for_chrome_slot_retry(scenario_id, user_id)
+      next_attempt = chrome_slot_attempt + 1
+      Rails.logger.info(
+        "LexicaScenarioJob chrome_slot retry scenario_id=#{scenario_id} user_id=#{user_id} " \
+        "kind=#{kind} next_attempt=#{next_attempt}/#{CHROME_SLOT_MAX_RETRIES}"
+      )
+      self.class.perform_in(CHROME_SLOT_RETRY_DELAY, scenario_id, user_id, next_attempt)
+    else
+      mark_error(
+        scenario_id,
+        user_id,
+        kind,
+        "#{message} (chrome_slot retries exhausted after #{CHROME_SLOT_MAX_RETRIES})"
+      )
+    end
+  end
+
+  def reset_result_for_chrome_slot_retry(scenario_id, user_id)
+    result = find_result(scenario_id, user_id)
+    return unless result
+
+    result.update!(
+      result: :running,
+      last_step_description: "queued",
+      error_kind: nil,
+      error_message: nil,
+      end_time: nil
+    )
   end
 
   def mark_error(scenario_id, user_id, kind, message)
