@@ -279,7 +279,7 @@ class ScenarioUserResponse < ApplicationRecord
         when "card_payment_radio_button"
           selected = get_selected_obj_for_card_payment_radio_button(conversation)
           case conversation["card_payment_radio_button"]["initial_selection"]
-          when 'credit_card'
+          when 'credit_card', 'credit', 'zeus'
             data_input_name = "credit_card_payment"
             card = conversation[:card_payment_radio_button] || conversation["card_payment_radio_button"]
             if card && (card[:token_key] || card["token_key"])
