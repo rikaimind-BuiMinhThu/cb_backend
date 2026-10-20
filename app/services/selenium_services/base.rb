@@ -95,13 +95,22 @@ module SeleniumServices
         if is_capture
           delete_last_screenshot_file
           Log.info "#{@step}: capture", @log_tab_level
-          @driver.save_screenshot("#{@screenshot_path}/#{@scenario.id}_#{@user_input_id}_#{@step}.png")
+          write_png("#{@screenshot_path}/#{@scenario.id}_#{@user_input_id}_#{@step}.png")
         end
       rescue
         Log.error "#{@step}: capture failue", @log_tab_level
       end
       @step += 1
       @log_tab_level -= 1
+    end
+
+    def write_png(path)
+      2.times do |attempt|
+        @driver.save_screenshot(path)
+        return if File.file?(path) && File.size(path) >= 32
+
+        sleep 1 if attempt.zero?
+      end
     end
 
     def delete_last_screenshot_file

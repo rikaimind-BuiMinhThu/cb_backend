@@ -6,6 +6,7 @@ module SeleniumServices
     class Checkout < SeleniumServices::Base
       S = Selectors
       PATH_NAME = nil
+      RECAPTCHA_MARK = "リキャプチャ".freeze
 
       def process
         @log_tab_level += 1
@@ -399,6 +400,7 @@ module SeleniumServices
       end
 
       def submit_order
+        reached_recaptcha = false
         step("submit_order", "注文確定") do
           never_click_line
           blocked = S::PURCHASE_BLOCKED_HINTS.find { |hint| page_contains?(hint) }
@@ -416,21 +418,51 @@ module SeleniumServices
           click selector, "submit order"
           # Guest submit starts reCAPTCHA, then posts again. document.readyState is already complete.
           wait_for_checkout_progress
-          if @driver.current_url.to_s.include?("/order/signin")
+          reached_recaptcha = on_signin? && (recaptcha_page_message.present? || recaptcha_token_present?)
+          if !reached_recaptcha && on_signin?
             errors = Array(visible_form_errors)
             raise LexicaStop.new("form_invalid", errors.presence&.join(" / ") || "確認画面へ進めませんでした")
           end
-          confirm_review_page
+          confirm_review_page unless reached_recaptcha
+        end
+        return unless reached_recaptcha
+
+        step("recaptcha", "reCAPTCHA") do
+          raise LexicaStop.new("recaptcha", recaptcha_stop_message)
         end
       end
 
       def wait_for_checkout_progress
-        Selenium::WebDriver::Wait.new(timeout: 20).until do
-          url = @driver.current_url.to_s
-          !url.include?("/order/signin") || visible_form_errors.any?
+        Selenium::WebDriver::Wait.new(timeout: 45).until do
+          !on_signin? || visible_form_errors.any? || recaptcha_page_message.present? || recaptcha_token_present?
         end
       rescue Selenium::WebDriver::Error::TimeoutError
         nil
+      end
+
+      def on_signin?
+        @driver.current_url.to_s.include?("/order/signin")
+      end
+
+      def recaptcha_stop_message
+        recaptcha_page_message.presence || "reCAPTCHAの検証が実行されました"
+      end
+
+      def recaptcha_page_message
+        visible = Array(visible_form_errors).find { |error| error.to_s.include?(RECAPTCHA_MARK) }
+        return visible if visible.present?
+        return RECAPTCHA_MARK if page_contains?(RECAPTCHA_MARK)
+
+        nil
+      end
+
+      def recaptcha_token_present?
+        @driver.execute_script(<<~JS)
+          var el = document.querySelector('textarea[name="g-recaptcha-response"], #g-recaptcha-response');
+          return !!(el && el.value && el.value.length > 20);
+        JS
+      rescue
+        false
       end
 
       def confirm_review_page
@@ -657,8 +689,7 @@ module SeleniumServices
 
       def fail_result(kind, message)
         @is_error = true
-        capture false
-        screenshot = last_screenshot_path
+        screenshot = save_failure_screenshot
         @selenium_result&.update!(
           result: :error,
           end_time: DateTime.now,
@@ -671,10 +702,22 @@ module SeleniumServices
         notify_failure(kind, message)
       end
 
-      def last_screenshot_path
-        Dir["#{@screenshot_path}/#{@scenario.id}_#{@user_input_id}_*.png"].max_by { |path| File.mtime(path) }
+      def save_failure_screenshot
+        FileUtils.mkdir_p(@screenshot_path)
+        path = File.join(@screenshot_path, "#{@scenario.id}_#{@user_input_id}_fail.png")
+        write_png(path)
+        return path if png_file?(path)
+
+        nil
       rescue
         nil
+      end
+
+      def png_file?(path)
+        return false unless path && File.file?(path)
+        return false if File.size(path) < 32
+
+        File.binread(path, 4) == "\x89PNG".b
       end
 
       def init_selenium_driver

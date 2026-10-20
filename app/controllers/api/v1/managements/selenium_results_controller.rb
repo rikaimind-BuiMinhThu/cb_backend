@@ -35,13 +35,23 @@ class Api::V1::Managements::SeleniumResultsController < ApplicationController
     return render json: { code: 2, message: "not lexica" }, status: 403 unless lexica_client?
 
     row = base_scope.find_by(id: params[:id])
-    return render json: { code: 2, message: "not found" } if row.blank? || row.screenshot_path.blank?
-    return render json: { code: 2, message: "missing file" } unless File.exist?(row.screenshot_path)
+    return render json: { code: 2, message: "not found" }, status: :not_found if row.blank? || row.screenshot_path.blank?
+    return render json: { code: 2, message: "missing file" }, status: :not_found unless png_screenshot?(row.screenshot_path)
 
     send_file row.screenshot_path, type: "image/png", disposition: "inline"
   end
 
   private
+
+  def png_screenshot?(path)
+    return false if path.blank?
+    return false unless File.file?(path)
+    return false if File.size(path) < 32
+
+    File.binread(path, 4) == "\x89PNG".b
+  rescue
+    false
+  end
 
   def staff?
     current_user&.admin_deel? || current_user&.admin_client?
@@ -98,7 +108,7 @@ class Api::V1::Managements::SeleniumResultsController < ApplicationController
       error_kind: row.error_kind,
       error_message: row.error_message,
       screenshot_path: row.screenshot_path,
-      has_screenshot: row.screenshot_path.present?,
+      has_screenshot: png_screenshot?(row.screenshot_path),
       masked_pan: row.masked_pan,
       card_expiry: row.card_expiry,
       card_holder: row.card_holder,
