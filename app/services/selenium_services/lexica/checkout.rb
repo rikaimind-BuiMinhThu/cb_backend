@@ -720,6 +720,12 @@ module SeleniumServices
         File.binread(path, 4) == "\x89PNG".b
       end
 
+      # Skip per-step PNGs (Base#capture sleeps 2s + screenshot). Failure still uses save_failure_screenshot.
+      def capture(is_capture = true)
+        sleep 0.2
+        @step += 1
+      end
+
       def init_selenium_driver
         @log_tab_level += 1
         Selenium::WebDriver.logger.output = File.join("#{Rails.root}/log", "selenium.log")
@@ -733,6 +739,18 @@ module SeleniumServices
             "--disable-gpu",
             "--disable-dev-shm-usage",
             "--window-size=2560,1440",
+            "--disable-extensions",
+            "--disable-background-networking",
+            "--disable-sync",
+            "--disable-default-apps",
+            "--no-first-run",
+            "--mute-audio",
+            "--disable-hang-monitor",
+            "--disable-popup-blocking",
+            "--disable-prompt-on-repost",
+            "--disable-component-update",
+            "--metrics-recording-only",
+            "--disable-features=TranslateUI",
             "--disable-blink-features=AutomationControlled",
             "--user-agent=#{desktop_user_agent}",
           ],
@@ -753,6 +771,15 @@ module SeleniumServices
           else
             Selenium::WebDriver.for(:chrome, options: options)
           end
+        @driver.execute_cdp("Network.enable")
+        @driver.execute_cdp(
+          "Network.setBlockedURLs",
+          urls: [
+            "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp", "*.svg", "*.ico",
+            "*google-analytics*", "*googletagmanager*", "*doubleclick*",
+            "*facebook.net*", "*hotjar*",
+          ]
+        )
         @driver.execute_cdp(
           "Page.addScriptToEvaluateOnNewDocument",
           source: "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
