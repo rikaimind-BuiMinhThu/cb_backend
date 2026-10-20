@@ -95,7 +95,9 @@ class Api::V1::Managements::SeleniumResultsController < ApplicationController
       lexica_order_id: row.lexica_order_id,
       last_step_description: row.last_step_description,
       scenario_id: row.scenario_id,
-      user_input_id: row.user_input_id
+      user_input_id: row.user_input_id,
+      chrome_slot_defer_count: row.chrome_slot_defer_count,
+      chrome_slot_retry_count: row.chrome_slot_retry_count
     }
   end
 

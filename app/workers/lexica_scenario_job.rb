@@ -6,6 +6,8 @@ class LexicaScenarioJob
   CHROME_SLOT_RETRY_DELAY = 15.seconds
   CHROME_SLOT_ERROR_KINDS = %w[chrome_slot_timeout chrome_slot_orphan].freeze
   SLOT_DEFER_DELAY = SeleniumServices::ChromeSlot::DEFER_SECONDS.seconds
+  RPA_STEP_DEFER = "chrome_slot_defer"
+  RPA_STEP_RETRY = "chrome_slot_retry"
 
   def perform(scenario_id, user_id, chrome_slot_attempt = 0, slot_wait_started_at = nil)
     chrome_slot_attempt = chrome_slot_attempt.to_i
@@ -35,7 +37,13 @@ class LexicaScenarioJob
 
     slot = SeleniumServices::ChromeSlot.new(client)
     unless slot.acquire
+      wait_elapsed = Time.now.to_i - slot_wait_started_at
+      self.class.append_chrome_slot_defer!(result, chrome_slot_attempt, wait_elapsed)
       result&.update!(last_step_description: "queued")
+      Rails.logger.info(
+        "LexicaScenarioJob chrome_slot defer scenario_id=#{scenario_id} user_id=#{user_id} " \
+        "attempt=#{chrome_slot_attempt} wait_elapsed=#{wait_elapsed}s"
+      )
       self.class.perform_in(
         SLOT_DEFER_DELAY,
         scenario_id,
@@ -90,6 +98,8 @@ class LexicaScenarioJob
     if chrome_slot_attempt < CHROME_SLOT_MAX_RETRIES
       reset_result_for_chrome_slot_retry(scenario_id, user_id)
       next_attempt = chrome_slot_attempt + 1
+      result = find_result(scenario_id, user_id)
+      append_chrome_slot_retry!(result, next_attempt, kind)
       Rails.logger.info(
         "LexicaScenarioJob chrome_slot retry scenario_id=#{scenario_id} user_id=#{user_id} " \
         "kind=#{kind} next_attempt=#{next_attempt}/#{CHROME_SLOT_MAX_RETRIES}"
@@ -103,6 +113,33 @@ class LexicaScenarioJob
         "#{message} (chrome_slot retries exhausted after #{CHROME_SLOT_MAX_RETRIES})"
       )
     end
+  end
+
+  def self.append_chrome_slot_defer!(result, attempt, wait_elapsed)
+    return unless result
+
+    result.append_rpa_step(
+      "name" => RPA_STEP_DEFER,
+      "description" => "Chrome枠待ち (再キュー #{SeleniumServices::ChromeSlot::DEFER_SECONDS}s)",
+      "ok" => nil,
+      "at" => Time.current.iso8601,
+      "attempt" => attempt,
+      "wait_elapsed_sec" => wait_elapsed
+    )
+  end
+
+  def self.append_chrome_slot_retry!(result, attempt, kind)
+    return unless result
+
+    result.append_rpa_step(
+      "name" => RPA_STEP_RETRY,
+      "description" => "Chrome枠リトライ #{attempt}/#{CHROME_SLOT_MAX_RETRIES} (#{kind})",
+      "ok" => false,
+      "at" => Time.current.iso8601,
+      "attempt" => attempt,
+      "error_kind" => kind.to_s,
+      "error" => kind.to_s
+    )
   end
 
   def self.reset_result_for_chrome_slot_retry(scenario_id, user_id)

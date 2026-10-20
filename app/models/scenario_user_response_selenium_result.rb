@@ -53,4 +53,12 @@ class ScenarioUserResponseSeleniumResult < ApplicationRecord
   def retryable?
     error? && (token_failure? || !submitted_to_cart?)
   end
+
+  def chrome_slot_defer_count
+    rpa_steps_array.count { |step| step["name"].to_s == "chrome_slot_defer" }
+  end
+
+  def chrome_slot_retry_count
+    rpa_steps_array.count { |step| step["name"].to_s == "chrome_slot_retry" }
+  end
 end
