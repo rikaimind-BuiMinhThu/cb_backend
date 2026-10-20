@@ -85,6 +85,8 @@ class Api::V1::Managements::SeleniumResultsController < ApplicationController
     {
       id: row.id,
       created_at: row.created_at,
+      start_time: row.start_time,
+      end_time: row.end_time,
       result: row.result,
       path: row.path,
       path_label: row.path_label,

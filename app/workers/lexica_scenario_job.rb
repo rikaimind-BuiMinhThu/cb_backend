@@ -55,7 +55,7 @@ class LexicaScenarioJob
     end
 
     begin
-      result&.update!(last_step_description: "running")
+      result&.update!(last_step_description: "running", start_time: Time.current)
       service = SeleniumServices::Lexica.build(scenario, conversations)
       service.process
     ensure
