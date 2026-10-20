@@ -3,11 +3,39 @@ module SeleniumServices
     GLOBAL_KEY = "lexica_chrome"
     WAIT_SECONDS = 600
     POLL_SECONDS = 1
+    DEFER_SECONDS = 5
 
     def initialize(client)
       @client = client
+      @acquired = false
     end
 
+    # Non-blocking: try once. Returns true if both global and client slots held.
+    def acquire
+      return false unless try_acquire(GLOBAL_KEY, global_max)
+
+      unless try_acquire(client_key, effective_max)
+        release(GLOBAL_KEY)
+        return false
+      end
+
+      @acquired = true
+      true
+    end
+
+    def release_if_acquired
+      return unless @acquired
+
+      release(client_key)
+      release(GLOBAL_KEY)
+      @acquired = false
+    end
+
+    def acquired?
+      @acquired
+    end
+
+    # Legacy blocking API — prefer #acquire + job-level defer for Lexica.
     def with_slot
       acquired_global = false
       acquired_client = false
@@ -16,10 +44,12 @@ module SeleniumServices
         acquired_global = true
         wait_for { try_acquire(client_key, effective_max) }
         acquired_client = true
+        @acquired = true
         yield
       ensure
         release(client_key) if acquired_client
         release(GLOBAL_KEY) if acquired_global
+        @acquired = false
       end
     end
 

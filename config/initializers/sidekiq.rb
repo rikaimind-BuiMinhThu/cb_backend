@@ -16,6 +16,14 @@ Sidekiq.configure_server do |config|
                                               args: schedule.args })
       end
     end
+    Sidekiq.set_schedule(
+      "lexica_chrome_slot_orphan_reaper",
+      {
+        class: "LexicaChromeSlotOrphanReaperJob",
+        cron: "* * * * *",
+        queue: "lexica"
+      }
+    )
     Sidekiq::Scheduler.reload_schedule!
   end
 end
