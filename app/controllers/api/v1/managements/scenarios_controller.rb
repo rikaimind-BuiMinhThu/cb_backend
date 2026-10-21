@@ -89,6 +89,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         html_ugc_config_content: scenario.html_ugc_config_content,
         client_cart_system: client_cart_system,
         order_result_mode: scenario.order_result_mode.presence || "wait",
+        execution_policy: scenario.execution_policy,
         is_used_message_loaded_past: scenario.is_used_message_loaded_past,
         opening_bot_icon: chatbot.opening_bot_icon,
         closing_bot_icon: chatbot.closing_bot_icon,
