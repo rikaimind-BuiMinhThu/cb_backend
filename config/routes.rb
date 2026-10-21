@@ -145,6 +145,7 @@ Rails.application.routes.draw do
         end
         resources :scenario_user_responses_message, only: [:create]
         post "entry", to: "scenario_users#entry"
+        post "tracking", to: "scenario_users#tracking"
       end
       get '/shopify/product_variants', to: 'shopify#product_variants'
       get '/shopify/product_variant', to: 'shopify#product_variant'

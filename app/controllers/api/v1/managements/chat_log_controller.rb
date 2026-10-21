@@ -49,7 +49,11 @@ class Api::V1::Managements::ChatLogController < ApplicationController
       if(params[:end_date].present?)
         scenario_user_responses = scenario_user_responses.where('DATE(created_at) <= ? ',params[:end_date].to_date)
       end
-      render json: { code: 1, conversations: scenario_user_responses }
+      render json: {
+        code: 1,
+        conversations: scenario_user_responses,
+        tracking: tracking_payload(params[:sc_id], params[:user_id])
+      }
     rescue Exception => e
       return render json: { code: 2, message: e }
     end
@@ -171,6 +175,22 @@ class Api::V1::Managements::ChatLogController < ApplicationController
   end
 
   private
+
+  def tracking_payload(scenario_id, user_input_id)
+    row = ScenarioUser.find_by(scenario_id: scenario_id, user_input_id: user_input_id)
+    return nil unless row
+
+    {
+      device: row.device,
+      ip_address: row.ip_address,
+      user_agent: row.user_agent,
+      browser: row.browser,
+      country: row.country,
+      city: row.city,
+      referer: row.referer,
+      page_url: row.page_url,
+    }
+  end
 
   def parse_date(date_str)
     Date.parse(date_str) rescue nil
