@@ -168,7 +168,7 @@ class LexicaScenarioJob
   end
 
   def self.find_result(scenario_id, user_id)
-    ScenarioUserResponseSeleniumResult.find_by(user_input_id: user_id, scenario_id: scenario_id)
+    ScenarioUserResponseSeleniumResult.for_visitor(scenario_id, user_id).first
   end
 
   private

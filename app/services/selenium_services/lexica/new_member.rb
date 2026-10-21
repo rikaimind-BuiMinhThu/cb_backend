@@ -5,9 +5,7 @@ module SeleniumServices
         open_signup
         fill_signup
         submit_signup
-        open_shop
-        add_to_cart
-        proceed_to_checkout
+        shop_to_checkout
         login_if_gate_present
         apply_payment_and_submit
       end
@@ -56,19 +54,7 @@ module SeleniumServices
       end
 
       def login_if_gate_present
-        return unless element_present?(S::SIGNIN_FORM)
-
-        step("auth_login", "ログイン") do
-          never_click_line
-          fill_to_text_input S::SIGNIN_LOGIN_ID, @user_email, "login id", pointer_action: false
-          fill_to_text_input S::SIGNIN_PASSWORD, @password_value, "password", pointer_action: false
-          raise LexicaStop.new("missing_login_submit", "ログインボタンが見つかりません") unless element_present?(S::SIGNIN_SUBMIT)
-
-          click S::SIGNIN_SUBMIT, "login", pointer_action: false
-          wait_page_load_complete
-          wait_loading_gone
-          stop_if_login_failed
-        end
+        sign_in(required: false, pointer_action: false, wait_for_loading: true, require_submit: true)
       end
     end
   end

@@ -196,22 +196,11 @@ class Api::V1::Managements::ScenariosController < ApplicationController
           @scenario.product_id_cross_sell = nil
         end
       else
-        if client&.lexica?
-          @scenario.merchandise_id = params[:merchandise_id].to_s.strip.presence
-          @scenario.is_used_crosssell = false
-          @scenario.product_id_cross_sell = nil
-        else
-          @scenario.merchandise_id = nil
-          @scenario.is_used_crosssell = false
-          @scenario.product_id_cross_sell = nil
-        end
+        @scenario.merchandise_id = nil
+        @scenario.is_used_crosssell = false
+        @scenario.product_id_cross_sell = nil
       end
-      if client&.lexica?
-        @scenario.lexica_cart_url = params[:lexica_cart_url]
-        mode = params[:order_result_mode].to_s
-        @scenario.order_result_mode = %w[wait async].include?(mode) ? mode : "wait"
-        assign_lexica_offers!
-      end
+      assign_lexica_scenario!(client)
       @scenario.is_use_only_regular_order = params[:is_use_only_regular_order]
       apply_execution_policy!(@scenario)
       @scenario.is_used_custom_css = params[:is_used_custom_css]
@@ -340,6 +329,16 @@ class Api::V1::Managements::ScenariosController < ApplicationController
     JSON.parse(raw)
   rescue JSON::ParserError
     {}
+  end
+
+  def assign_lexica_scenario!(client)
+    return unless client&.lexica?
+
+    @scenario.merchandise_id = params[:merchandise_id].to_s.strip.presence
+    @scenario.lexica_cart_url = params[:lexica_cart_url]
+    mode = params[:order_result_mode].to_s
+    @scenario.order_result_mode = %w[wait async].include?(mode) ? mode : "wait"
+    assign_lexica_offers!
   end
 
   def assign_lexica_offers!

@@ -23,7 +23,7 @@ class LexicaScenarioJobTest < ActiveSupport::TestCase
     end
 
     def result
-      @attrs[:result]
+      @attrs[:result].to_s
     end
 
     def error_kind
@@ -56,6 +56,9 @@ class LexicaScenarioJobTest < ActiveSupport::TestCase
 
     def open?
       result.to_s == "open"
+    end
+
+    def append_rpa_step(_step)
     end
   end
 
@@ -212,7 +215,7 @@ class LexicaChromeSlotOrphanReaperJobTest < ActiveSupport::TestCase
     relation.define_singleton_method(:find_each) { |&blk| blk.call(stale) }
 
     recovered = nil
-    ScenarioUserResponseSeleniumResult.stub(:where, ->(*) { relation }) do
+    ScenarioUserResponseSeleniumResult.stub(:stale_queued, ->(*) { relation }) do
       LexicaScenarioJob.stub(:recover_chrome_slot_orphan!, ->(row) { recovered = row }) do
         LexicaChromeSlotOrphanReaperJob.new.perform
       end

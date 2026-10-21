@@ -5,9 +5,7 @@ class LexicaChromeSlotOrphanReaperJob
   STALE_AFTER = 2.minutes
 
   def perform
-    scope = ScenarioUserResponseSeleniumResult
-      .where(result: :running, last_step_description: "queued")
-      .where("updated_at < ?", STALE_AFTER.ago)
+    scope = ScenarioUserResponseSeleniumResult.stale_queued(STALE_AFTER.ago)
 
     scope.find_each do |row|
       Rails.logger.info(

@@ -5,8 +5,7 @@ module SeleniumServices
   class Base
     REGULAR_ORDER_SELECT_QUANTITY_SELECTOR = "#periodically_order_order_qty_0"
     NORMAL_ORDER_SELECT_QUANTITY_SELECTOR = "#order_order_qty_0"
-    # Explicit wait ceiling (seconds). Was 300 and masked missing selectors as Net::ReadTimeout.
-    TIMEOUT = 45
+    TIMEOUT = 300
     SECRET_KEY = Rails.application.secrets.secret_refresh_token
     attr_accessor :scenario, :conversations, :driver, :tamago_repeat_config, :user_input_id
 
@@ -54,25 +53,9 @@ module SeleniumServices
           "--user-agent=#{user_agents.sample}",
         ],
       )
-      chrome_bin = ENV["CHROME_BIN"].to_s.strip
-      options.binary = chrome_bin if chrome_bin.present?
-
-      driver_path = ENV["CHROMEDRIVER_PATH"].to_s.strip
-      service =
-        if driver_path.present?
-          Selenium::WebDriver::Chrome::Service.new(path: driver_path)
-        end
-
-      @driver =
-        if service
-          Selenium::WebDriver.for(:chrome, options: options, service: service)
-        else
-          Selenium::WebDriver.for(:chrome, options: options)
-        end
+      @driver = Selenium::WebDriver.for(:chrome, options: options)
       Log.info @driver.execute_script("return navigator.userAgent"), @log_tab_level
-      # Keep implicit wait near-zero. Long waits belong in explicit Wait callers.
-      # element_present? + high implicit wait caused Net::ReadTimeout (~300s) on missing CSS.
-      @driver.manage.timeouts.implicit_wait = 0
+      @driver.manage.timeouts.implicit_wait = 300
       @driver.manage.delete_all_cookies
 
       Log.info "Init OK selenium driver", @log_tab_level
@@ -95,22 +78,13 @@ module SeleniumServices
         if is_capture
           delete_last_screenshot_file
           Log.info "#{@step}: capture", @log_tab_level
-          write_png("#{@screenshot_path}/#{@scenario.id}_#{@user_input_id}_#{@step}.png")
+          @driver.save_screenshot("#{@screenshot_path}/#{@scenario.id}_#{@user_input_id}_#{@step}.png")
         end
       rescue
         Log.error "#{@step}: capture failue", @log_tab_level
       end
       @step += 1
       @log_tab_level -= 1
-    end
-
-    def write_png(path)
-      2.times do |attempt|
-        @driver.save_screenshot(path)
-        return if File.file?(path) && File.size(path) >= 32
-
-        sleep 1 if attempt.zero?
-      end
     end
 
     def delete_last_screenshot_file
@@ -194,14 +168,14 @@ module SeleniumServices
 
     def wait_page_load(sub_url)
       @log_tab_level += 1
-      wait = Selenium::WebDriver::Wait.new(:timeout => TIMEOUT)
+      wait = Selenium::WebDriver::Wait.new(:timeout => self.class::TIMEOUT)
       wait.until { @driver.current_url.include?(sub_url) }
       @log_tab_level -= 1
     end
 
     def wait_element_load(css_selector)
       @log_tab_level += 1
-      wait = Selenium::WebDriver::Wait.new(:timeout => TIMEOUT)
+      wait = Selenium::WebDriver::Wait.new(:timeout => self.class::TIMEOUT)
       wait.until { @driver.find_element(css: css_selector).displayed? }
       capture
       @log_tab_level -= 1
@@ -210,7 +184,7 @@ module SeleniumServices
     def wait_page_load_complete
       @log_tab_level += 1
       Log.info "wait_page_load_complete", @log_tab_level
-      wait = Selenium::WebDriver::Wait.new(:timeout => TIMEOUT)
+      wait = Selenium::WebDriver::Wait.new(:timeout => self.class::TIMEOUT)
       wait.until { @driver.execute_script('return document.readyState') == 'complete' }
       @log_tab_level -= 1
     end

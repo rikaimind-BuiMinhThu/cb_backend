@@ -28,10 +28,10 @@ class ChatLog
   private
 
   def order_status_for(scenario_id, user_input_id)
-    ScenarioUserResponseSeleniumResult.find_by(scenario_id: scenario_id, user_input_id: user_input_id)&.result
+    ScenarioUserResponseSeleniumResult.for_visitor(scenario_id, user_input_id).first&.result
   end
 
   def order_id_for(scenario_id, user_input_id)
-    ScenarioUserResponseSeleniumResult.find_by(scenario_id: scenario_id, user_input_id: user_input_id)&.id
+    ScenarioUserResponseSeleniumResult.for_visitor(scenario_id, user_input_id).first&.id
   end
 end

@@ -3,7 +3,7 @@ require File.dirname(__FILE__) + "/../../log"
 
 module SeleniumServices
   module Lexica
-    class Checkout < SeleniumServices::Base
+    class Checkout < SeleniumServices::Lexica::Base
       S = Selectors
       PATH_NAME = nil
       RECAPTCHA_MARK = "リキャプチャ".freeze
@@ -160,6 +160,12 @@ module SeleniumServices
           end
           wait_page_load_complete
         end
+      end
+
+      def shop_to_checkout
+        open_shop
+        add_to_cart
+        proceed_to_checkout
       end
 
       def fill_customer_fields(prefix)
@@ -579,6 +585,26 @@ module SeleniumServices
         raise LexicaStop.new("login_fail", "ログインに失敗しました") if failed
       end
 
+      def sign_in(required:, pointer_action: true, wait_for_loading: false, require_submit: false, require_password: false)
+        return unless required || element_present?(S::SIGNIN_FORM)
+
+        step("auth_login", "ログイン") do
+          never_click_line
+          raise LexicaStop.new("missing_login_form", "ログイン欄が見つかりません") if required && !element_present?(S::SIGNIN_FORM)
+
+          fill_to_text_input S::SIGNIN_LOGIN_ID, @user_email, "login id", pointer_action: pointer_action
+          raise LexicaStop.new("missing_password", "パスワードがありません") if require_password && @password_value.blank?
+
+          fill_to_text_input S::SIGNIN_PASSWORD, @password_value, "password", pointer_action: pointer_action
+          raise LexicaStop.new("missing_login_submit", "ログインボタンが見つかりません") if require_submit && !element_present?(S::SIGNIN_SUBMIT)
+
+          click S::SIGNIN_SUBMIT, "login", pointer_action: pointer_action
+          wait_page_load_complete
+          wait_loading_gone if wait_for_loading
+          stop_if_login_failed
+        end
+      end
+
       def wait_loading_gone(timeout: 30)
         wait = Selenium::WebDriver::Wait.new(timeout: timeout)
         wait.until do
@@ -689,7 +715,6 @@ module SeleniumServices
 
       def fail_result(kind, message)
         @is_error = true
-        screenshot = save_failure_screenshot
         @selenium_result&.update!(
           result: :error,
           end_time: DateTime.now,
@@ -697,102 +722,36 @@ module SeleniumServices
           last_step_description: @selenium_result.last_step_description,
           error_kind: kind,
           error_message: sanitize_error(message),
-          screenshot_path: screenshot
+          screenshot_path: failure_screenshot_key
         )
         notify_failure(kind, message)
       end
 
-      def save_failure_screenshot
+      def failure_screenshot_key
+        return if @selenium_result&.id.blank? || @selenium_result.client_id.blank?
+
         FileUtils.mkdir_p(@screenshot_path)
         path = File.join(@screenshot_path, "#{@scenario.id}_#{@user_input_id}_fail.png")
         write_png(path)
-        return path if png_file?(path)
-
+        AmazonWebServices::RpaScreenshotS3.call(
+          path,
+          client_id: @selenium_result.client_id,
+          scenario_id: @scenario.id,
+          bot_order_id: @selenium_result.id
+        )
+      rescue => error
+        Log.error "RpaScreenshotS3 failed: #{error.message}"
         nil
+      ensure
+        delete_local_png(path)
+      end
+
+      def delete_local_png(path)
+        return if path.blank? || !File.file?(path)
+
+        File.delete(path)
       rescue
         nil
-      end
-
-      def png_file?(path)
-        return false unless path && File.file?(path)
-        return false if File.size(path) < 32
-
-        File.binread(path, 4) == "\x89PNG".b
-      end
-
-      # Skip per-step PNGs (Base#capture sleeps 2s + screenshot). Failure still uses save_failure_screenshot.
-      def capture(is_capture = true)
-        sleep 0.2
-        @step += 1
-      end
-
-      def init_selenium_driver
-        @log_tab_level += 1
-        Selenium::WebDriver.logger.output = File.join("#{Rails.root}/log", "selenium.log")
-        Selenium::WebDriver.logger.level = :debug
-        Log.info "Init selenium driver for chrome", @log_tab_level
-        options = Selenium::WebDriver::Chrome::Options.new(
-          args: [
-            "--lang=ja",
-            "--headless=new",
-            "--no-sandbox",
-            "--disable-gpu",
-            "--disable-dev-shm-usage",
-            "--window-size=2560,1440",
-            "--disable-extensions",
-            "--disable-background-networking",
-            "--disable-sync",
-            "--disable-default-apps",
-            "--no-first-run",
-            "--mute-audio",
-            "--disable-hang-monitor",
-            "--disable-popup-blocking",
-            "--disable-prompt-on-repost",
-            "--disable-component-update",
-            "--metrics-recording-only",
-            "--disable-features=TranslateUI",
-            "--disable-blink-features=AutomationControlled",
-            "--user-agent=#{desktop_user_agent}",
-          ],
-        )
-        options.exclude_switches = ["enable-automation"]
-        chrome_bin = ENV["CHROME_BIN"].to_s.strip
-        options.binary = chrome_bin if chrome_bin.present?
-
-        driver_path = ENV["CHROMEDRIVER_PATH"].to_s.strip
-        service =
-          if driver_path.present?
-            Selenium::WebDriver::Chrome::Service.new(path: driver_path)
-          end
-
-        @driver =
-          if service
-            Selenium::WebDriver.for(:chrome, options: options, service: service)
-          else
-            Selenium::WebDriver.for(:chrome, options: options)
-          end
-        @driver.execute_cdp("Network.enable")
-        @driver.execute_cdp(
-          "Network.setBlockedURLs",
-          urls: [
-            "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp", "*.svg", "*.ico",
-            "*google-analytics*", "*googletagmanager*", "*doubleclick*",
-            "*facebook.net*", "*hotjar*",
-          ]
-        )
-        @driver.execute_cdp(
-          "Page.addScriptToEvaluateOnNewDocument",
-          source: "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
-        )
-        Log.info @driver.execute_script("return navigator.userAgent"), @log_tab_level
-        @driver.manage.timeouts.implicit_wait = 0
-        @driver.manage.delete_all_cookies
-        Log.info "Init OK selenium driver", @log_tab_level
-        @log_tab_level -= 1
-      end
-
-      def desktop_user_agent
-        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36"
       end
 
       def notify_failure(kind, message)

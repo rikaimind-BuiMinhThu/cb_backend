@@ -2,9 +2,7 @@ module SeleniumServices
   module Lexica
     class FirstTime < Checkout
       def run_checkout
-        open_shop
-        add_to_cart
-        proceed_to_checkout
+        shop_to_checkout
         # Payment controls sit on the same form and can redraw it. Fill after that redraw.
         apply_payment
         apply_delivery

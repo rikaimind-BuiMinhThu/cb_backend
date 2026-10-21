@@ -1,19 +1,20 @@
 class ScenarioUserResponseSeleniumResult < ApplicationRecord
+  belongs_to :scenario
+
   enum result: { open: 0, running: 1, done: 2, error: 3 }
 
-  PATH_LABELS = {
-    "first_time" => "はじめて",
-    "new" => "新規会員",
-    "existing" => "既存会員"
-  }.freeze
-
-  PAYMENT_LABELS = {
-    "credit" => "ZEUSクレジットカード",
-    "zeus" => "ZEUSクレジットカード",
-    "gmo_atobarai" => "GMO後払い",
-    "cod" => "代金引換",
-    "cash_on_delivery" => "代金引換"
-  }.freeze
+  scope :for_chatbot, ->(id) { where(chatbot_id: id) }
+  scope :for_client, ->(id) { where(client_id: id) }
+  scope :for_listing, ->(chatbot_id:, client_id:) {
+    relation = all
+    relation = relation.for_chatbot(chatbot_id) if chatbot_id.present?
+    relation = relation.for_client(client_id) if client_id.present?
+    relation
+  }
+  scope :for_visitor, ->(scenario_id, user_input_id) { where(scenario_id: scenario_id, user_input_id: user_input_id) }
+  scope :stale_queued, ->(before) {
+    where(result: :running, last_step_description: "queued").where("updated_at < ?", before)
+  }
 
   def rpa_steps_array
     return [] if rpa_steps.blank?
@@ -35,11 +36,11 @@ class ScenarioUserResponseSeleniumResult < ApplicationRecord
   end
 
   def path_label
-    PATH_LABELS[path.to_s] || path
+    radio_label_for(%w[path order_path], path)
   end
 
   def payment_label
-    PAYMENT_LABELS[payment.to_s] || payment
+    radio_label_for(%w[payment_method], payment)
   end
 
   def token_failure?
@@ -60,5 +61,40 @@ class ScenarioUserResponseSeleniumResult < ApplicationRecord
 
   def chrome_slot_retry_count
     rpa_steps_array.count { |step| step["name"].to_s == "chrome_slot_retry" }
+  end
+
+  private
+
+  def radio_label_for(save_names, key)
+    return key if key.blank?
+
+    conversation_radio_text(save_names, key).presence || key
+  end
+
+  def conversation_radio_text(save_names, key)
+    data = parsed_conversation
+    messages = data.is_a?(Hash) ? Array(data["messages"]) : Array(data)
+    messages.each do |message|
+      Array(message["message_content"]).each do |content|
+        radio = content["radio_button"]
+        next if radio.blank?
+        next unless save_names.include?(radio["save_input_content"].to_s)
+
+        match = Array(radio["default"]).find { |option| option["value"].to_s == key.to_s }
+        text = match && match["text"]
+        return text if text.present?
+      end
+    end
+    nil
+  end
+
+  def parsed_conversation
+    raw = scenario&.conversation
+    return {} if raw.blank?
+    return raw if raw.is_a?(Hash) || raw.is_a?(Array)
+
+    JSON.parse(raw)
+  rescue JSON::ParserError
+    {}
   end
 end
