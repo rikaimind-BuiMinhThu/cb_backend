@@ -572,6 +572,60 @@ samples = [
     with_password: true,
     cv: false,
     finished: false
+  },
+  {
+    user_input_id: "mirai-sample-recaptcha",
+    result: :error,
+    path: "first_time",
+    payment: "gmo_atobarai",
+    last_step_description: "reCAPTCHA v3 試行 5/5",
+    last_step_no: 8,
+    email: "recaptcha@test.test",
+    end_time: now,
+    lexica_order_id: nil,
+    error_kind: "recaptcha",
+    error_message: "リキャプチャの検証に失敗しました",
+    masked_pan: nil,
+    card_expiry: nil,
+    card_holder: nil,
+    rpa_steps: [
+      { "name" => "fill_delivery", "description" => "お届け", "ok" => true, "url" => "#{CART_URL}order/signin" },
+      {
+        "name" => "recaptcha_v3_detect",
+        "description" => "reCAPTCHA v3 検出",
+        "ok" => true,
+        "url" => "#{CART_URL}order/signin",
+        "actions" => [
+          { "type" => "detect", "where" => "api.js?render=", "label" => "sitekey", "value" => "6LfZil0U…g5fE" }
+        ]
+      },
+      {
+        "name" => "recaptcha_v3",
+        "description" => "reCAPTCHA v3 試行 1/5",
+        "ok" => false,
+        "url" => "#{CART_URL}order/signin",
+        "error" => "リキャプチャの検証に失敗しました",
+        "actions" => [
+          { "type" => "2captcha", "where" => "in.php", "label" => "task_id", "value" => "2122988149" },
+          { "type" => "2captcha", "where" => "res.php", "label" => "reportbad", "value" => "2122988149" }
+        ]
+      },
+      {
+        "name" => "recaptcha_v3",
+        "description" => "reCAPTCHA v3 試行 5/5",
+        "ok" => false,
+        "url" => "#{CART_URL}order/signin",
+        "error" => "reCAPTCHA (2Captcha 5回失敗)",
+        "actions" => [
+          { "type" => "2captcha", "where" => "in.php", "label" => "task_id", "value" => "2122988150" },
+          { "type" => "2captcha", "where" => "res.php", "label" => "reportbad", "value" => "2122988150" }
+        ]
+      }
+    ],
+    answers: PROFILE_ANSWERS,
+    with_password: false,
+    cv: false,
+    finished: false
   }
 ]
 

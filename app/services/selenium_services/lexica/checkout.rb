@@ -1,5 +1,6 @@
 require "selenium-webdriver"
 require File.dirname(__FILE__) + "/../../log"
+require File.dirname(__FILE__) + "/../../captcha/two_captcha"
 
 module SeleniumServices
   module Lexica
@@ -7,6 +8,13 @@ module SeleniumServices
       S = Selectors
       PATH_NAME = nil
       RECAPTCHA_MARK = "リキャプチャ".freeze
+      RECAPTCHA_SOLVE_MAX_ATTEMPTS = 5
+      RECAPTCHA_FAIL_HINTS = [
+        RECAPTCHA_MARK,
+        "Fail to verify ReCaptcha",
+        "Fail to verify Recaptcha",
+        "fail to verify recaptcha",
+      ].freeze
 
       def process
         @log_tab_level += 1
@@ -406,36 +414,99 @@ module SeleniumServices
       end
 
       def submit_order
-        reached_recaptcha = false
-        step("submit_order", "注文確定") do
-          never_click_line
-          blocked = S::PURCHASE_BLOCKED_HINTS.find { |hint| page_contains?(hint) }
-          if blocked
-            raise LexicaStop.new(
-              "purchase_blocked",
-              "Lexicaが購入を拒否しました（#{blocked}）。SKU/在庫/限定条件を確認してください"
+        never_click_line
+        blocked = S::PURCHASE_BLOCKED_HINTS.find { |hint| page_contains?(hint) }
+        if blocked
+          raise LexicaStop.new(
+            "purchase_blocked",
+            "Lexicaが購入を拒否しました（#{blocked}）。SKU/在庫/限定条件を確認してください"
+          )
+        end
+
+        selector = preferred_submit_selector
+        selector = first_present_selector(S::SUBMIT_ORDER) || submit_button_by_text if selector.blank?
+        raise LexicaStop.new("missing_submit", "注文確定ボタンが見つかりません") if selector.blank?
+
+        v3_meta = nil
+        step("recaptcha_v3_detect", "reCAPTCHA v3 検出") do
+          v3_meta = detect_recaptcha_v3_meta
+          if v3_meta[:present]
+            record_action(
+              type: :detect,
+              where: "api.js?render=",
+              label: "sitekey",
+              value: truncate_sitekey(v3_meta[:sitekey])
             )
+            record_action(type: :detect, where: "grecaptcha.execute", label: "action", value: v3_meta[:action]) if v3_meta[:action].present?
+          else
+            record_action(type: :detect, where: "page", label: "recaptcha_v3", value: "なし → 2Captchaスキップ")
           end
+        end
 
-          selector = preferred_submit_selector
-          selector = first_present_selector(S::SUBMIT_ORDER) || submit_button_by_text if selector.blank?
-          raise LexicaStop.new("missing_submit", "注文確定ボタンが見つかりません") if selector.blank?
-
-          click selector, "submit order"
-          # Guest submit starts reCAPTCHA, then posts again. document.readyState is already complete.
-          wait_for_checkout_progress
-          reached_recaptcha = on_signin? && (recaptcha_page_message.present? || recaptcha_token_present?)
-          if !reached_recaptcha && on_signin?
-            errors = Array(visible_form_errors)
-            raise LexicaStop.new("form_invalid", errors.presence&.join(" / ") || "確認画面へ進めませんでした")
+        if v3_meta[:present]
+          submit_order_with_two_captcha!(selector, v3_meta)
+        else
+          step("submit_order", "注文確定") do
+            click selector, "submit order"
+            wait_for_checkout_progress
+            if on_signin?
+              errors = Array(visible_form_errors)
+              raise LexicaStop.new("form_invalid", errors.presence&.join(" / ") || "確認画面へ進めませんでした")
+            end
+            confirm_review_page
           end
-          confirm_review_page unless reached_recaptcha
         end
-        return unless reached_recaptcha
+      end
 
-        step("recaptcha", "reCAPTCHA") do
-          raise LexicaStop.new("recaptcha", recaptcha_stop_message)
+      def submit_order_with_two_captcha!(selector, v3_meta)
+        sitekey = v3_meta[:sitekey].to_s
+        raise LexicaStop.new("recaptcha", "reCAPTCHA v3 sitekey不明") if sitekey.blank?
+
+        action = v3_meta[:action].presence || "verify"
+        client = Captcha::TwoCaptcha.new(log_tab_level: @log_tab_level)
+        last_message = nil
+
+        RECAPTCHA_SOLVE_MAX_ATTEMPTS.times do |index|
+          attempt = index + 1
+          task_id = nil
+          begin
+            step("recaptcha_v3", "reCAPTCHA v3 試行 #{attempt}/#{RECAPTCHA_SOLVE_MAX_ATTEMPTS}") do
+              result = client.process_v3(
+                sitekey: sitekey,
+                page_url: @driver.current_url,
+                action: action,
+                min_score: 0.3
+              )
+              task_id = result[:id]
+              record_action(type: :"2captcha", where: "in.php", label: "task_id", value: task_id)
+              inject_recaptcha_token(result[:token])
+              click selector, "submit order 2captcha attempt #{attempt}"
+              wait_for_checkout_progress
+
+              if recaptcha_submit_failed?
+                client.report(task_id, good: false)
+                record_action(type: :"2captcha", where: "res.php", label: "reportbad", value: task_id)
+                last_message = recaptcha_stop_message
+                raise LexicaStop.new("recaptcha", last_message)
+              end
+
+              client.report(task_id, good: true)
+              record_action(type: :"2captcha", where: "res.php", label: "reportgood", value: task_id)
+              confirm_review_page
+            end
+            return
+          rescue LexicaStop, StandardError => e
+            last_message = e.message
+            client.report(task_id, good: false) if task_id.present? && e.is_a?(StandardError) && !e.is_a?(LexicaStop)
+            Log.info "reCAPTCHA v3 attempt #{attempt}/#{RECAPTCHA_SOLVE_MAX_ATTEMPTS} failed: #{e.message}", @log_tab_level
+            raise LexicaStop.new("recaptcha", last_message) if attempt >= RECAPTCHA_SOLVE_MAX_ATTEMPTS
+          end
         end
+
+        raise LexicaStop.new(
+          "recaptcha",
+          last_message.presence || "reCAPTCHA (2Captcha #{RECAPTCHA_SOLVE_MAX_ATTEMPTS}回失敗)"
+        )
       end
 
       def wait_for_checkout_progress
@@ -469,6 +540,107 @@ module SeleniumServices
         JS
       rescue
         false
+      end
+
+      def detect_recaptcha_v3_meta
+        meta = @driver.execute_script(<<~JS)
+          var result = { present: false, sitekey: null };
+          var scripts = document.querySelectorAll('script[src*="recaptcha/api.js"]');
+          for (var i = 0; i < scripts.length; i++) {
+            var src = scripts[i].src || '';
+            var m = src.match(/[?&]render=([^&]+)/);
+            if (m && m[1] && m[1] !== 'explicit') {
+              result.present = true;
+              result.sitekey = decodeURIComponent(m[1]);
+              break;
+            }
+          }
+          try {
+            if (window.___grecaptcha_cfg && ___grecaptcha_cfg.clients && ___grecaptcha_cfg.clients[100000]) {
+              result.present = true;
+            }
+          } catch (e) {}
+          var tokenField = document.querySelector('input[name="RECAPTCHA_TOKEN"], textarea[name="RECAPTCHA_TOKEN"]');
+          if (tokenField) result.present = true;
+          var dataEl = document.querySelector('[data-sitekey]');
+          if (dataEl && dataEl.getAttribute('data-sitekey')) {
+            result.present = true;
+            if (!result.sitekey) result.sitekey = dataEl.getAttribute('data-sitekey');
+          }
+          return result;
+        JS
+        meta = meta.is_a?(Hash) ? meta.stringify_keys : {}
+        sitekey = meta["sitekey"].to_s.presence
+        present = meta["present"] == true || sitekey.present?
+        {
+          present: present,
+          sitekey: sitekey,
+          action: extract_recaptcha_action
+        }
+      rescue StandardError => e
+        Log.error "detect_recaptcha_v3_meta: #{e.message}", @log_tab_level
+        { present: false, sitekey: nil, action: nil }
+      end
+
+      def extract_recaptcha_action
+        action = @driver.execute_script(<<~JS)
+          try {
+            var html = document.documentElement && document.documentElement.outerHTML || '';
+            var m = html.match(/grecaptcha\\.execute\\s*\\(\\s*['\"][^'\"]+['\"]\\s*,\\s*\\{\\s*action\\s*:\\s*['\"]([^'\"]+)['\"]/);
+            if (m) return m[1];
+            m = html.match(/action\\s*:\\s*['\"]([a-zA-Z0-9_/-]+)['\"]/);
+            return m ? m[1] : null;
+          } catch (e) { return null; }
+        JS
+        action.to_s.presence
+      rescue
+        nil
+      end
+
+      def inject_recaptcha_token(token)
+        @driver.execute_script(<<~JS, token)
+          var t = arguments[0];
+          window.grecaptcha = window.grecaptcha || {};
+          window.grecaptcha.ready = function(cb) { if (typeof cb === 'function') { cb(); } };
+          window.grecaptcha.execute = function() { return Promise.resolve(t); };
+          ['RECAPTCHA_TOKEN', 'g-recaptcha-response'].forEach(function(name) {
+            var el = document.querySelector('[name=\"' + name + '\"]');
+            if (!el) {
+              el = document.createElement(name === 'g-recaptcha-response' ? 'textarea' : 'input');
+              if (name !== 'g-recaptcha-response') el.type = 'hidden';
+              el.name = name;
+              el.id = name === 'g-recaptcha-response' ? 'g-recaptcha-response' : el.id;
+              var form = document.querySelector('form') || document.body;
+              form.appendChild(el);
+            }
+            el.value = t;
+            if (el.innerHTML !== undefined && name === 'g-recaptcha-response') el.innerHTML = t;
+          });
+        JS
+      end
+
+      def recaptcha_submit_failed?
+        return false unless on_signin?
+
+        return true if recaptcha_page_message.present?
+
+        source = @driver.page_source.to_s
+        return true if RECAPTCHA_FAIL_HINTS.any? { |hint| source.include?(hint) }
+
+        errors = Array(visible_form_errors)
+        return true if errors.any? { |error| RECAPTCHA_FAIL_HINTS.any? { |hint| error.to_s.include?(hint) } }
+
+        # Still on sign-in after 2Captcha submit — treat as failed attempt for retry.
+        true
+      rescue
+        on_signin?
+      end
+
+      def truncate_sitekey(sitekey)
+        text = sitekey.to_s
+        return text if text.length <= 16
+
+        "#{text[0, 8]}…#{text[-4, 4]}"
       end
 
       def confirm_review_page
