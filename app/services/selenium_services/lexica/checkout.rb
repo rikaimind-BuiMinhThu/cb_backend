@@ -1,4 +1,7 @@
 require "selenium-webdriver"
+require "base64"
+require "json"
+require "uri"
 require File.dirname(__FILE__) + "/../../log"
 require File.dirname(__FILE__) + "/../../captcha/two_captcha"
 
@@ -493,10 +496,32 @@ module SeleniumServices
                 response: result[:get_response]
               )
               inject_recaptcha_token(result[:token])
+              record_recaptcha_diag!(
+                "after_inject",
+                result[:token],
+                expected_action: action,
+                page_host: (URI.parse(@driver.current_url.to_s).host rescue nil)
+              )
+              record_action(
+                type: :detect,
+                where: "dom",
+                label: "pre_click",
+                request: recaptcha_field_snapshot
+              )
               click selector, "submit order 2captcha attempt #{attempt}"
               wait_for_checkout_progress
 
               if recaptcha_submit_failed?
+                record_action(
+                  type: :detect,
+                  where: (@driver.current_url rescue "unknown"),
+                  label: "reject",
+                  request: {
+                    "page_message" => recaptcha_page_message,
+                    "form_errors" => Array(visible_form_errors),
+                    "fields" => recaptcha_field_snapshot
+                  }
+                )
                 report_io = client.report(task_id, good: false)
                 record_two_captcha_report!("reportbad", report_io)
                 last_message = recaptcha_stop_message
@@ -645,6 +670,78 @@ module SeleniumServices
             if (el.innerHTML !== undefined && name === 'g-recaptcha-response') el.innerHTML = t;
           });
         JS
+      end
+
+      def record_recaptcha_diag!(label, raw_token, expected_action:, page_host:)
+        token = raw_token.to_s
+        claims = decode_recaptcha_token_claims(token)
+        record_action(
+          type: :detect,
+          where: "dom",
+          label: label,
+          request: {
+            "length" => token.length,
+            "preview" => token_preview(token),
+            "expected_action" => expected_action.to_s,
+            "page_host" => page_host.to_s,
+            "claims" => claims,
+            "action_match" => claims["action"].blank? || claims["action"].to_s == expected_action.to_s,
+            "hostname_match" => claims["hostname"].blank? || claims["hostname"].to_s == page_host.to_s,
+            "fields" => recaptcha_field_snapshot
+          }
+        )
+      end
+
+      def recaptcha_field_snapshot
+        snap = @driver.execute_script(<<~JS)
+          var out = { fields: {}, form_names: [] };
+          ['RECAPTCHA_TOKEN', 'g-recaptcha-response'].forEach(function(name) {
+            var els = document.querySelectorAll('[name=\"' + name + '\"]');
+            out.fields[name] = {
+              count: els.length,
+              lengths: Array.prototype.map.call(els, function(el) {
+                return (el.value || el.innerHTML || '').length;
+              })
+            };
+          });
+          var form = document.querySelector('form');
+          if (form) {
+            Array.prototype.forEach.call(form.elements || [], function(el) {
+              var n = el.name || '';
+              if (/recaptcha/i.test(n)) out.form_names.push(n);
+            });
+          }
+          return out;
+        JS
+        snap.is_a?(Hash) ? snap.stringify_keys : { "raw" => snap.to_s }
+      rescue StandardError => e
+        { "error" => e.message }
+      end
+
+      def decode_recaptcha_token_claims(token)
+        parts = token.to_s.split(".")
+        return { "shape" => "not_jwt", "parts" => parts.length } if parts.length < 2
+
+        payload = parts[1].to_s
+        padded = payload.ljust(payload.length + (4 - payload.length % 4) % 4, "=")
+        json = Base64.urlsafe_decode64(padded)
+        data = JSON.parse(json)
+        {
+          "shape" => "jwt_like",
+          "action" => data["action"],
+          "hostname" => data["hostname"] || data["host"],
+          "apk_package_name" => data["apk_package_name"],
+          "keys" => data.keys.first(20)
+        }
+      rescue StandardError => e
+        { "shape" => "decode_failed", "error" => e.message, "parts" => parts&.length }
+      end
+
+      def token_preview(token)
+        text = token.to_s
+        return text if text.length <= 28
+
+        "#{text[0, 12]}…#{text[-12, 12]}"
       end
 
       def recaptcha_submit_failed?
