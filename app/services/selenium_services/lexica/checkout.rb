@@ -482,8 +482,7 @@ module SeleniumServices
               result = client.process_v3(
                 sitekey: sitekey,
                 page_url: @driver.current_url,
-                action: action,
-                min_score: 0.9
+                action: action
               )
               task_id = result[:id]
               record_action(
@@ -500,6 +499,7 @@ module SeleniumServices
                 request: result[:get_request],
                 response: result[:get_response]
               )
+              apply_capsolver_identity!(result)
               inject_recaptcha_token(result[:token])
               record_recaptcha_diag!(
                 "after_inject",
@@ -587,6 +587,55 @@ module SeleniumServices
           label: label,
           request: report_io[:request],
           response: report_io[:response]
+        )
+      end
+
+      def apply_capsolver_identity!(result)
+        ua = result[:user_agent].to_s
+        sec_ch_ua = result[:sec_ch_ua].to_s
+        session_cookie = result[:session_cookie].to_s
+        cookie_set = false
+
+        if ua.present?
+          override = { "userAgent" => ua }
+          if sec_ch_ua.present?
+            # CDP accepts optional userAgentMetadata; sec-ch-ua string is logged for parity.
+            override["acceptLanguage"] = "ja-JP,ja;q=0.9,en-US;q=0.8,en;q=0.7"
+          end
+          @driver.execute_cdp("Network.setUserAgentOverride", override)
+        end
+
+        if session_cookie.present?
+          host = (URI.parse(@driver.current_url.to_s).host rescue nil)
+          if host.present?
+            @driver.manage.add_cookie(
+              name: "recaptcha-ca-t",
+              value: session_cookie,
+              domain: host,
+              path: "/"
+            )
+            cookie_set = true
+          end
+        end
+
+        record_action(
+          type: :detect,
+          where: "capsolver",
+          label: "capsolver_identity",
+          request: {
+            "user_agent" => ua.present? ? truncate_sitekey(ua) : nil,
+            "user_agent_length" => ua.length,
+            "sec_ch_ua_present" => sec_ch_ua.present?,
+            "session_cookie_set" => cookie_set
+          }
+        )
+      rescue StandardError => e
+        Log.info "CapSolver identity apply failed: #{e.message}", @log_tab_level
+        record_action(
+          type: :detect,
+          where: "capsolver",
+          label: "capsolver_identity",
+          request: { "error" => e.message.to_s.truncate(200) }
         )
       end
 

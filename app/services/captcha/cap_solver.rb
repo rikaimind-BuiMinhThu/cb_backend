@@ -22,10 +22,12 @@ module Captcha
 
     # Returns {
     #   token:, id:,
+    #   user_agent:, sec_ch_ua:, session_cookie:,
     #   create_request:, create_response:,
     #   get_request:, get_response:
     # }
-    def process_v3(sitekey:, page_url:, action: "verify", min_score: 0.9)
+    # min_score is accepted for caller compatibility but ignored (not in CapSolver v3 docs).
+    def process_v3(sitekey:, page_url:, action: "verify", min_score: nil)
       @log_tab_level += 1
       Log.info "CapSolver process_v3 sitekey=#{truncate(sitekey)} action=#{action}", @log_tab_level
 
@@ -38,7 +40,7 @@ module Captcha
         "websiteURL" => page_url,
         "websiteKey" => sitekey,
         "pageAction" => action.presence || "verify",
-        "minScore" => min_score.to_f
+        "isSession" => true
       }
       @last_task = task
       @last_result = nil
@@ -54,6 +56,9 @@ module Captcha
       {
         token: token,
         id: id.to_s,
+        user_agent: get[:user_agent],
+        sec_ch_ua: get[:sec_ch_ua],
+        session_cookie: get[:session_cookie],
         create_request: create[:request],
         create_response: create[:response],
         get_request: get[:request],
@@ -154,10 +159,14 @@ module Captcha
 
       raise "CapSolver getTaskResult unexpected status=#{status}" if status != "ready"
 
-      token = body.dig("solution", "gRecaptchaResponse").to_s
+      solution = body["solution"].is_a?(Hash) ? body["solution"] : {}
+      token = solution["gRecaptchaResponse"].to_s
       @last_result = body
       {
         token: token,
+        user_agent: solution["userAgent"].to_s.presence,
+        sec_ch_ua: solution["secChUa"].to_s.presence,
+        session_cookie: solution["recaptcha-ca-t"].to_s.presence,
         request: request_log,
         response: redact_token_in_response(body)
       }
