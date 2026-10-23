@@ -16,7 +16,9 @@ module SeleniumServices
     end
 
     def self.extract_path(conversations)
-      raw = conversations.detect { |c| %w[path order_path].include?(c.data_input_name.to_s) }&.value
+      # Prefer last non-blank path: earlier radio submits can persist empty rows.
+      path_rows = conversations.select { |c| %w[path order_path].include?(c.data_input_name.to_s) }
+      raw = path_rows.reverse_each.map { |c| c.value.to_s.strip }.find(&:present?)
       value = raw.to_s
       return value if PATHS.include?(value)
 
