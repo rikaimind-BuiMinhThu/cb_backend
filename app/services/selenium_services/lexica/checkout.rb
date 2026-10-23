@@ -478,7 +478,7 @@ module SeleniumServices
                 sitekey: sitekey,
                 page_url: @driver.current_url,
                 action: action,
-                min_score: 0.3
+                min_score: 0.7
               )
               task_id = result[:id]
               record_action(
