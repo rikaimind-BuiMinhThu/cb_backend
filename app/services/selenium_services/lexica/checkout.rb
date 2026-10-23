@@ -4,7 +4,7 @@ require "json"
 require "uri"
 require "net/http"
 require File.dirname(__FILE__) + "/../../log"
-require File.dirname(__FILE__) + "/../../captcha/two_captcha"
+require File.dirname(__FILE__) + "/../../captcha/cap_solver"
 
 module SeleniumServices
   module Lexica
@@ -447,12 +447,12 @@ module SeleniumServices
             )
             record_action(type: :detect, where: "grecaptcha.execute", label: "action", value: v3_meta[:action]) if v3_meta[:action].present?
           else
-            record_action(type: :detect, where: "page", label: "recaptcha_v3", value: "なし → 2Captchaスキップ")
+            record_action(type: :detect, where: "page", label: "recaptcha_v3", value: "なし → CapSolverスキップ")
           end
         end
 
         if v3_meta[:present]
-          submit_order_with_two_captcha!(selector, v3_meta)
+          submit_order_with_captcha!(selector, v3_meta)
         else
           step("submit_order", "注文確定") do
             click selector, "submit order"
@@ -466,12 +466,12 @@ module SeleniumServices
         end
       end
 
-      def submit_order_with_two_captcha!(selector, v3_meta)
+      def submit_order_with_captcha!(selector, v3_meta)
         sitekey = v3_meta[:sitekey].to_s
         raise LexicaStop.new("recaptcha", "reCAPTCHA v3 sitekey不明") if sitekey.blank?
 
         action = v3_meta[:action].presence || "verify"
-        client = Captcha::TwoCaptcha.new(log_tab_level: @log_tab_level)
+        client = Captcha::CapSolver.new(log_tab_level: @log_tab_level)
         last_message = nil
 
         RECAPTCHA_SOLVE_MAX_ATTEMPTS.times do |index|
@@ -487,15 +487,15 @@ module SeleniumServices
               )
               task_id = result[:id]
               record_action(
-                type: :"2captcha",
-                where: "in.php",
+                type: :capsolver,
+                where: "createTask",
                 label: "create",
                 request: result[:create_request],
                 response: result[:create_response]
               )
               record_action(
-                type: :"2captcha",
-                where: "res.php",
+                type: :capsolver,
+                where: "getTaskResult",
                 label: "get",
                 request: result[:get_request],
                 response: result[:get_response]
@@ -515,7 +515,7 @@ module SeleniumServices
               )
               # Lexica may mutate fields between inject and click; re-bind immediately before submit.
               inject_recaptcha_token(result[:token])
-              click selector, "submit order 2captcha attempt #{attempt}"
+              click selector, "submit order capsolver attempt #{attempt}"
               wait_for_checkout_progress
 
               form_errors = Array(visible_form_errors)
@@ -545,13 +545,13 @@ module SeleniumServices
                   }
                 )
                 report_io = client.report(task_id, good: false)
-                record_two_captcha_report!("reportbad", report_io)
+                record_captcha_report!("reportbad", report_io)
                 last_message = recaptcha_stop_message
                 raise LexicaStop.new("recaptcha", last_message)
               end
 
               report_io = client.report(task_id, good: true)
-              record_two_captcha_report!("reportgood", report_io)
+              record_captcha_report!("reportgood", report_io)
               confirm_review_page
             end
             return
@@ -565,7 +565,7 @@ module SeleniumServices
             last_message = e.message
             if task_id.present?
               report_io = client.report(task_id, good: false)
-              record_two_captcha_report!("reportbad", report_io)
+              record_captcha_report!("reportbad", report_io)
             end
             Log.info "reCAPTCHA v3 attempt #{attempt}/#{RECAPTCHA_SOLVE_MAX_ATTEMPTS} failed: #{e.message}", @log_tab_level
             raise LexicaStop.new("recaptcha", last_message) if attempt >= RECAPTCHA_SOLVE_MAX_ATTEMPTS
@@ -574,16 +574,16 @@ module SeleniumServices
 
         raise LexicaStop.new(
           "recaptcha",
-          last_message.presence || "reCAPTCHA (2Captcha #{RECAPTCHA_SOLVE_MAX_ATTEMPTS}回失敗)"
+          last_message.presence || "reCAPTCHA (CapSolver #{RECAPTCHA_SOLVE_MAX_ATTEMPTS}回失敗)"
         )
       end
 
-      def record_two_captcha_report!(label, report_io)
+      def record_captcha_report!(label, report_io)
         return if report_io.blank?
 
         record_action(
-          type: :"2captcha",
-          where: "res.php",
+          type: :capsolver,
+          where: "feedbackTask",
           label: label,
           request: report_io[:request],
           response: report_io[:response]
@@ -753,7 +753,7 @@ module SeleniumServices
       def selenium_egress_ip
         return @selenium_egress_ip if defined?(@selenium_egress_ip)
 
-        # STG Chrome shares the Sidekiq host egress; no in-app proxy exists for 2Captcha.
+        # STG Chrome shares the Sidekiq host egress; no in-app proxy exists for CapSolver.
         uri = URI("https://api.ipify.org")
         res = Net::HTTP.get_response(uri)
         @selenium_egress_ip = res.is_a?(Net::HTTPSuccess) ? res.body.to_s.strip.presence : nil
