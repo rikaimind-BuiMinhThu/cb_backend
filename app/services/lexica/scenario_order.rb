@@ -21,44 +21,66 @@ module Lexica
 
     def self.start!(scenario, _client, params)
       return nil if params[:user_id].blank?
-
-      result = ScenarioUserResponseSeleniumResult.for_visitor(scenario.id, params[:user_id]).first
-      if result.present? && !result.retryable?
-        return { json: { code: 1, data: result, message: "already started" } }
-      end
       if stored_pan?(scenario, params[:user_id])
         return { json: { code: 2, message: "card data rejected" } }
       end
 
-      attrs = {
-        scenario_id: scenario.id,
-        chatbot_id: scenario.chatbot_id,
-        client_id: scenario.chatbot&.user&.client_id,
-        user_input_id: params[:user_id],
-        last_step_no: 0,
-        last_step_description: "queued",
-        start_time: DateTime.now,
-        result: :running,
-        error_kind: nil,
-        error_message: nil
-      }
-      if result.present?
-        result.update!(attrs)
-      else
-        ScenarioUserResponseSeleniumResult.create!(attrs)
-      end
-      LexicaScenarioJob.perform_async(params[:scenario_id], params[:user_id])
-      {
-        json: {
-          code: 1,
-          message: "queued",
-          order_result_mode: scenario.order_result_mode.presence || "wait"
+      lock_name = "lexica_start:#{scenario.id}:#{params[:user_id]}"
+      conn = ScenarioUserResponseSeleniumResult.connection
+      got_lock = conn.select_value(
+        ActiveRecord::Base.sanitize_sql_array(["SELECT GET_LOCK(?, 10)", lock_name])
+      ).to_i == 1
+
+      begin
+        result = ScenarioUserResponseSeleniumResult
+          .for_visitor(scenario.id, params[:user_id])
+          .order(id: :desc)
+          .first
+
+        if result.present? && !result.retryable?
+          return { json: { code: 1, data: result, message: "already started" } }
+        end
+
+        attrs = {
+          scenario_id: scenario.id,
+          chatbot_id: scenario.chatbot_id,
+          client_id: scenario.chatbot&.user&.client_id,
+          user_input_id: params[:user_id],
+          last_step_no: 0,
+          last_step_description: "queued",
+          start_time: DateTime.now,
+          result: :running,
+          error_kind: nil,
+          error_message: nil
         }
-      }
+        if result.present?
+          result.update!(attrs)
+        else
+          ScenarioUserResponseSeleniumResult.create!(attrs)
+        end
+
+        LexicaScenarioJob.perform_async(params[:scenario_id], params[:user_id])
+        {
+          json: {
+            code: 1,
+            message: "queued",
+            order_result_mode: scenario.order_result_mode.presence || "wait"
+          }
+        }
+      ensure
+        if got_lock
+          conn.select_value(
+            ActiveRecord::Base.sanitize_sql_array(["SELECT RELEASE_LOCK(?)", lock_name])
+          )
+        end
+      end
     end
 
     def self.status(scenario, client, params)
-      result = ScenarioUserResponseSeleniumResult.for_visitor(params[:scenario_id] || scenario&.id, params[:user_id]).first
+      result = ScenarioUserResponseSeleniumResult
+        .for_visitor(params[:scenario_id] || scenario&.id, params[:user_id])
+        .order(id: :desc)
+        .first
       return { json: { code: 2, message: "not found" } } if result.blank?
 
       slot = SeleniumServices::ChromeSlot.new(client) if client&.lexica?
