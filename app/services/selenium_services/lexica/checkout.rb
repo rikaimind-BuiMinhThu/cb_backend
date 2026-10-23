@@ -2,6 +2,7 @@ require "selenium-webdriver"
 require "base64"
 require "json"
 require "uri"
+require "net/http"
 require File.dirname(__FILE__) + "/../../log"
 require File.dirname(__FILE__) + "/../../captcha/two_captcha"
 
@@ -720,6 +721,11 @@ module SeleniumServices
           // Lexica submits RECAPTCHA_TOKEN. Only create that if missing; never invent g-recaptcha-response.
           setNamed('RECAPTCHA_TOKEN', true);
           setNamed('g-recaptcha-response', false);
+          // Widget textarea often sits outside the signup form; fill existing nodes only.
+          Array.prototype.forEach.call(document.querySelectorAll('[name=\"g-recaptcha-response\"]'), function(el) {
+            el.value = t;
+            if (el.innerHTML !== undefined) el.innerHTML = t;
+          });
         JS
       end
 
@@ -738,9 +744,21 @@ module SeleniumServices
             "claims" => claims,
             "action_match" => claims["action"].blank? || claims["action"].to_s == expected_action.to_s,
             "hostname_match" => claims["hostname"].blank? || claims["hostname"].to_s == page_host.to_s,
+            "egress_ip" => selenium_egress_ip,
             "fields" => recaptcha_field_snapshot
           }
         )
+      end
+
+      def selenium_egress_ip
+        return @selenium_egress_ip if defined?(@selenium_egress_ip)
+
+        # STG Chrome shares the Sidekiq host egress; no in-app proxy exists for 2Captcha.
+        uri = URI("https://api.ipify.org")
+        res = Net::HTTP.get_response(uri)
+        @selenium_egress_ip = res.is_a?(Net::HTTPSuccess) ? res.body.to_s.strip.presence : nil
+      rescue StandardError
+        @selenium_egress_ip = nil
       end
 
       def recaptcha_field_snapshot
