@@ -597,12 +597,10 @@ module SeleniumServices
         cookie_set = false
 
         if ua.present?
-          override = { "userAgent" => ua }
-          if sec_ch_ua.present?
-            # CDP accepts optional userAgentMetadata; sec-ch-ua string is logged for parity.
-            override["acceptLanguage"] = "ja-JP,ja;q=0.9,en-US;q=0.8,en;q=0.7"
-          end
-          @driver.execute_cdp("Network.setUserAgentOverride", override)
+          # Selenium CDP kwargs match Network.setUserAgentOverride field names.
+          cdp_args = { userAgent: ua }
+          cdp_args[:acceptLanguage] = "ja-JP,ja;q=0.9,en-US;q=0.8,en;q=0.7" if sec_ch_ua.present?
+          @driver.execute_cdp("Network.setUserAgentOverride", **cdp_args)
         end
 
         if session_cookie.present?
