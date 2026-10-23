@@ -61,11 +61,15 @@ module SeleniumServices
         @user_email = find_response_by_data_input_name("user_email").presence || find_response_by_data_input_name("email")
         @last_name = split_name(find_response_by_data_input_name("user_name"), :left) || find_response_by_data_input_name("last_name")
         @first_name = split_name(find_response_by_data_input_name("user_name"), :right) || find_response_by_data_input_name("first_name")
-        @last_name_kana = split_name(find_response_by_data_input_name("user_name_kana"), :left) || find_response_by_data_input_name("last_name_kana")
-        @first_name_kana = split_name(find_response_by_data_input_name("user_name_kana"), :right) || find_response_by_data_input_name("first_name_kana")
-        # I'm PINCH path B has no kana step; Lexica signup requires kana — reuse name when katakana/テスト.
-        @last_name_kana = @last_name if @last_name_kana.blank? && @last_name.present?
-        @first_name_kana = @first_name if @first_name_kana.blank? && @first_name.present?
+        # I'm PINCH has no kana step; Lexica requires katakana. Hiragana→katakana only; never copy kanji.
+        @last_name_kana = usable_katakana(
+          split_name(find_response_by_data_input_name("user_name_kana"), :left) ||
+            find_response_by_data_input_name("last_name_kana")
+        ).presence || usable_katakana(@last_name)
+        @first_name_kana = usable_katakana(
+          split_name(find_response_by_data_input_name("user_name_kana"), :right) ||
+            find_response_by_data_input_name("first_name_kana")
+        ).presence || usable_katakana(@first_name)
         @data_address = parse_json_value(find_response_by_data_input_name("zip_code_address"))
         @phone_number = parse_phone(find_response_by_data_input_name("phone_number") || find_response_by_data_input_name("phone"))
         @birth_date = parse_json_value(find_response_by_data_input_name("birth_date"))
@@ -511,6 +515,21 @@ module SeleniumServices
               click selector, "submit order 2captcha attempt #{attempt}"
               wait_for_checkout_progress
 
+              form_errors = Array(visible_form_errors)
+              if on_signin? && non_recaptcha_form_errors?(form_errors)
+                record_action(
+                  type: :detect,
+                  where: (@driver.current_url rescue "unknown"),
+                  label: "form_invalid",
+                  request: {
+                    "page_message" => recaptcha_page_message,
+                    "form_errors" => form_errors,
+                    "fields" => recaptcha_field_snapshot
+                  }
+                )
+                raise LexicaStop.new("form_invalid", form_errors.join(" / "))
+              end
+
               if recaptcha_submit_failed?
                 record_action(
                   type: :detect,
@@ -518,7 +537,7 @@ module SeleniumServices
                   label: "reject",
                   request: {
                     "page_message" => recaptcha_page_message,
-                    "form_errors" => Array(visible_form_errors),
+                    "form_errors" => form_errors,
                     "fields" => recaptcha_field_snapshot
                   }
                 )
@@ -533,9 +552,15 @@ module SeleniumServices
               confirm_review_page
             end
             return
-          rescue LexicaStop, StandardError => e
+          rescue LexicaStop => e
+            raise unless e.error_kind.to_s == "recaptcha"
+
             last_message = e.message
-            if task_id.present? && e.is_a?(StandardError) && !e.is_a?(LexicaStop)
+            Log.info "reCAPTCHA v3 attempt #{attempt}/#{RECAPTCHA_SOLVE_MAX_ATTEMPTS} failed: #{e.message}", @log_tab_level
+            raise if attempt >= RECAPTCHA_SOLVE_MAX_ATTEMPTS
+          rescue StandardError => e
+            last_message = e.message
+            if task_id.present?
               report_io = client.report(task_id, good: false)
               record_two_captcha_report!("reportbad", report_io)
             end
@@ -753,12 +778,43 @@ module SeleniumServices
         return true if RECAPTCHA_FAIL_HINTS.any? { |hint| source.include?(hint) }
 
         errors = Array(visible_form_errors)
-        return true if errors.any? { |error| RECAPTCHA_FAIL_HINTS.any? { |hint| error.to_s.include?(hint) } }
+        return true if errors.any? { |error| recaptcha_error_text?(error) }
+        # Non-recaptcha form errors are handled before this (form_invalid).
+        return false if errors.any?
 
-        # Still on sign-in after 2Captcha submit — treat as failed attempt for retry.
+        # Still on sign-in with no form errors — unknown reject; retry as recaptcha.
         true
       rescue
         on_signin?
+      end
+
+      def non_recaptcha_form_errors?(errors = visible_form_errors)
+        list = Array(errors).map(&:to_s).reject(&:blank?)
+        return false if list.empty?
+        return false if list.any? { |error| recaptcha_error_text?(error) }
+
+        true
+      end
+
+      def recaptcha_error_text?(error)
+        text = error.to_s
+        return true if text.include?(RECAPTCHA_MARK)
+
+        RECAPTCHA_FAIL_HINTS.any? { |hint| text.include?(hint) }
+      end
+
+      def hiragana_to_katakana(value)
+        value.to_s.tr("ぁ-ゖ", "ァ-ヶ")
+      end
+
+      # Lexica furigana fields reject kanji. Convert hiragana; drop values that are not katakana-only.
+      def usable_katakana(value)
+        return nil if value.blank?
+
+        converted = hiragana_to_katakana(value.to_s.strip)
+        return converted if converted.match?(/\A[\p{Katakana}ー\s　]+\z/)
+
+        nil
       end
 
       def truncate_sitekey(sitekey)
