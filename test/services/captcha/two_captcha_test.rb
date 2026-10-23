@@ -49,7 +49,7 @@ class CaptchaTwoCaptchaTest < ActiveSupport::TestCase
     @client = TestClient.new
   end
 
-  def test_process_v3_returns_token_and_id
+  def test_process_v3_returns_token_id_and_io_payloads
     captured_in_query = nil
     @client.http_queue = [
       lambda { |uri|
@@ -57,7 +57,7 @@ class CaptchaTwoCaptchaTest < ActiveSupport::TestCase
         FakeResponse.new({ status: 1, request: "2122988149" }.to_json)
       },
       lambda { |_uri| FakeResponse.new({ status: 1, request: "CAPCHA_NOT_READY" }.to_json) },
-      lambda { |_uri| FakeResponse.new({ status: 1, request: "03AHJ_token_sample" }.to_json) },
+      lambda { |_uri| FakeResponse.new({ status: 1, request: "03AHJ_token_sample_long_enough" }.to_json) },
     ]
 
     result = @client.process_v3(
@@ -67,7 +67,7 @@ class CaptchaTwoCaptchaTest < ActiveSupport::TestCase
       min_score: 0.3
     )
 
-    assert_equal "03AHJ_token_sample", result[:token]
+    assert_equal "03AHJ_token_sample_long_enough", result[:token]
     assert_equal "2122988149", result[:id]
     assert_equal "userrecaptcha", captured_in_query["method"]
     assert_equal "v3", captured_in_query["version"]
@@ -75,9 +75,24 @@ class CaptchaTwoCaptchaTest < ActiveSupport::TestCase
     assert_equal "https://cart.mirai-japan.co.jp/order/signin", captured_in_query["pageurl"]
     assert_equal "verify", captured_in_query["action"]
     assert_equal "0.3", captured_in_query["min_score"]
+
+    create_request = result[:create_request]
+    assert_equal Captcha::TwoCaptcha::IN_URL, create_request["url"]
+    assert_equal "userrecaptcha", create_request["parameters"]["method"]
+    assert_nil create_request["parameters"]["key"]
+    refute_includes JSON.generate(create_request), "test-api-key"
+    assert_equal 1, result[:create_response]["status"]
+    assert_equal "2122988149", result[:create_response]["request"]
+
+    get_request = result[:get_request]
+    assert_equal Captcha::TwoCaptcha::RES_URL, get_request["url"]
+    assert_equal "get", get_request["parameters"]["action"]
+    assert_equal "2122988149", get_request["parameters"]["id"]
+    assert_nil get_request["parameters"]["key"]
+    assert_equal Captcha::TwoCaptcha::TOKEN_PLACEHOLDER, result[:get_response]["request"]
   end
 
-  def test_report_good_hits_reportgood
+  def test_report_good_returns_request_response_without_key
     captured = nil
     @client.http_queue = [
       lambda { |uri|
@@ -86,11 +101,16 @@ class CaptchaTwoCaptchaTest < ActiveSupport::TestCase
       },
     ]
 
-    @client.report("2122988149", good: true)
+    result = @client.report("2122988149", good: true)
 
     assert_equal "reportgood", captured["action"]
     assert_equal "2122988149", captured["id"]
     assert_equal "test-api-key", captured["key"]
+    assert_equal Captcha::TwoCaptcha::RES_URL, result[:request]["url"]
+    assert_equal "reportgood", result[:request]["parameters"]["action"]
+    assert_nil result[:request]["parameters"]["key"]
+    refute_includes JSON.generate(result[:request]), "test-api-key"
+    assert_equal "OK_REPORT_RECORDED", result[:response]["request"]
   end
 
   def test_report_bad_hits_reportbad
@@ -102,9 +122,10 @@ class CaptchaTwoCaptchaTest < ActiveSupport::TestCase
       },
     ]
 
-    @client.report("2122988149", good: false)
+    result = @client.report("2122988149", good: false)
 
     assert_equal "reportbad", captured["action"]
+    assert_equal "reportbad", result[:request]["parameters"]["action"]
   end
 
   def test_process_v3_raises_when_sitekey_blank

@@ -11,12 +11,17 @@ module Captcha
     INITIAL_WAIT_SECONDS = 15
     POLL_INTERVAL_SECONDS = 5
     MAX_POLLS = 30
+    TOKEN_PLACEHOLDER = "[token]"
 
     def initialize(log_tab_level: 0)
       @log_tab_level = log_tab_level
     end
 
-    # Returns { token: String, id: String }
+    # Returns {
+    #   token:, id:,
+    #   create_request:, create_response:,
+    #   get_request:, get_response:
+    # }
     def process_v3(sitekey:, page_url:, action: "verify", min_score: 0.3)
       @log_tab_level += 1
       Log.info "TwoCaptcha process_v3 sitekey=#{truncate(sitekey)} action=#{action}", @log_tab_level
@@ -25,7 +30,7 @@ module Captcha
       raise "sitekey is blank" if sitekey.to_s.strip.empty?
       raise "page_url is blank" if page_url.to_s.strip.empty?
 
-      id = create_task(
+      create = create_task(
         method: "userrecaptcha",
         version: "v3",
         googlekey: sitekey,
@@ -34,16 +39,26 @@ module Captcha
         min_score: min_score,
         json: 1
       )
+      id = create[:id]
       raise "2Captcha in.php returned no task id" if id.blank?
 
-      token = poll_result(id)
+      get = poll_result(id)
+      token = get[:token]
       raise "2Captcha returned empty token for id=#{id}" if token.blank?
 
-      { token: token, id: id.to_s }
+      {
+        token: token,
+        id: id.to_s,
+        create_request: create[:request],
+        create_response: create[:response],
+        get_request: get[:request],
+        get_response: get[:response]
+      }
     ensure
       @log_tab_level -= 1 if @log_tab_level.positive?
     end
 
+    # Returns { request:, response: } or nil
     def report(id, good:)
       return if id.blank?
 
@@ -55,11 +70,13 @@ module Captcha
         id: id,
         json: 1
       }
+      request_log = build_request_log(RES_URL, params)
       uri = URI(RES_URL)
       uri.query = URI.encode_www_form(params)
       res = http_get(uri)
       Log.info "TwoCaptcha report response: #{res&.body}", @log_tab_level
-      res
+      body = parse_json_body(res&.body)
+      { request: request_log, response: body }
     rescue StandardError => e
       Log.error "TwoCaptcha report failed: #{e.message}", @log_tab_level
       nil
@@ -70,6 +87,7 @@ module Captcha
     def create_task(**params)
       Log.info "TwoCaptcha create_task", @log_tab_level
       query = params.merge(key: api_key)
+      request_log = build_request_log(IN_URL, query)
       uri = URI(IN_URL)
       uri.query = URI.encode_www_form(query)
       res = http_get(uri)
@@ -79,7 +97,11 @@ module Captcha
       Log.info "TwoCaptcha in.php body: #{body.inspect}", @log_tab_level
       raise "2Captcha in.php error: #{body['request']}" if body["status"].to_i != 1
 
-      body["request"].to_s
+      {
+        id: body["request"].to_s,
+        request: request_log,
+        response: body
+      }
     end
 
     def poll_result(id)
@@ -88,27 +110,29 @@ module Captcha
 
       try_count = 1
       while try_count <= MAX_POLLS
-        response = fetch_result(id)
-        if response == :retry_again
+        result = fetch_result(id)
+        if result == :retry_again
           Log.info "TwoCaptcha CAPCHA_NOT_READY #{try_count}/#{MAX_POLLS}", @log_tab_level
           sleep POLL_INTERVAL_SECONDS
           try_count += 1
           next
         end
-        return response
+        return result
       end
 
       raise "2Captcha timeout waiting for id=#{id}"
     end
 
     def fetch_result(id)
-      uri = URI(RES_URL)
-      uri.query = URI.encode_www_form(
+      params = {
         key: api_key,
         action: "get",
         id: id,
         json: 1
-      )
+      }
+      request_log = build_request_log(RES_URL, params)
+      uri = URI(RES_URL)
+      uri.query = URI.encode_www_form(params)
       res = http_get(uri)
       raise "2Captcha res.php HTTP failure id=#{id}" unless res.is_a?(Net::HTTPSuccess)
 
@@ -117,7 +141,46 @@ module Captcha
       return :retry_again if request == "CAPCHA_NOT_READY"
       raise "2Captcha res.php error: #{request}" if body["status"].to_i != 1
 
-      request
+      {
+        token: request,
+        request: request_log,
+        response: redact_token_in_response(body)
+      }
+    end
+
+    def build_request_log(url, params)
+      {
+        "url" => url,
+        "parameters" => sanitize_parameters(params)
+      }
+    end
+
+    def sanitize_parameters(params)
+      params.each_with_object({}) do |(key, value), out|
+        name = key.to_s
+        next if name == "key"
+
+        out[name] = value.is_a?(Numeric) ? value : value.to_s
+      end
+    end
+
+    def redact_token_in_response(body)
+      return body unless body.is_a?(Hash)
+
+      redacted = body.dup
+      token = redacted["request"].to_s
+      if token.present? && token != "CAPCHA_NOT_READY" && token.length > 20
+        redacted["request"] = TOKEN_PLACEHOLDER
+      end
+      redacted
+    end
+
+    def parse_json_body(raw)
+      return {} if raw.blank?
+
+      JSON.parse(raw)
+    rescue JSON::ParserError
+      { "raw" => raw.to_s }
     end
 
     def http_get(uri)

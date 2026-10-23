@@ -478,26 +478,42 @@ module SeleniumServices
                 min_score: 0.3
               )
               task_id = result[:id]
-              record_action(type: :"2captcha", where: "in.php", label: "task_id", value: task_id)
+              record_action(
+                type: :"2captcha",
+                where: "in.php",
+                label: "create",
+                request: result[:create_request],
+                response: result[:create_response]
+              )
+              record_action(
+                type: :"2captcha",
+                where: "res.php",
+                label: "get",
+                request: result[:get_request],
+                response: result[:get_response]
+              )
               inject_recaptcha_token(result[:token])
               click selector, "submit order 2captcha attempt #{attempt}"
               wait_for_checkout_progress
 
               if recaptcha_submit_failed?
-                client.report(task_id, good: false)
-                record_action(type: :"2captcha", where: "res.php", label: "reportbad", value: task_id)
+                report_io = client.report(task_id, good: false)
+                record_two_captcha_report!("reportbad", report_io)
                 last_message = recaptcha_stop_message
                 raise LexicaStop.new("recaptcha", last_message)
               end
 
-              client.report(task_id, good: true)
-              record_action(type: :"2captcha", where: "res.php", label: "reportgood", value: task_id)
+              report_io = client.report(task_id, good: true)
+              record_two_captcha_report!("reportgood", report_io)
               confirm_review_page
             end
             return
           rescue LexicaStop, StandardError => e
             last_message = e.message
-            client.report(task_id, good: false) if task_id.present? && e.is_a?(StandardError) && !e.is_a?(LexicaStop)
+            if task_id.present? && e.is_a?(StandardError) && !e.is_a?(LexicaStop)
+              report_io = client.report(task_id, good: false)
+              record_two_captcha_report!("reportbad", report_io)
+            end
             Log.info "reCAPTCHA v3 attempt #{attempt}/#{RECAPTCHA_SOLVE_MAX_ATTEMPTS} failed: #{e.message}", @log_tab_level
             raise LexicaStop.new("recaptcha", last_message) if attempt >= RECAPTCHA_SOLVE_MAX_ATTEMPTS
           end
@@ -506,6 +522,18 @@ module SeleniumServices
         raise LexicaStop.new(
           "recaptcha",
           last_message.presence || "reCAPTCHA (2Captcha #{RECAPTCHA_SOLVE_MAX_ATTEMPTS}回失敗)"
+        )
+      end
+
+      def record_two_captcha_report!(label, report_io)
+        return if report_io.blank?
+
+        record_action(
+          type: :"2captcha",
+          where: "res.php",
+          label: label,
+          request: report_io[:request],
+          response: report_io[:response]
         )
       end
 
@@ -818,6 +846,7 @@ module SeleniumServices
 
       MAX_STEP_ACTIONS = 80
       MAX_ACTION_VALUE_LEN = 500
+      MAX_ACTION_PAYLOAD_LEN = 4000
 
       def step(name, description)
         @current_step_actions = []
@@ -847,7 +876,7 @@ module SeleniumServices
         @selenium_result&.update!(last_step_description: description, last_step_no: @step)
       end
 
-      def record_action(type:, where:, label: nil, value: nil)
+      def record_action(type:, where:, label: nil, value: nil, request: nil, response: nil)
         return unless @current_step_actions.is_a?(Array)
         return if @current_step_actions.length >= MAX_STEP_ACTIONS
 
@@ -857,7 +886,34 @@ module SeleniumServices
           "label" => label.to_s
         }
         entry["value"] = redact_action_value(label, value) unless value.nil?
+        entry["request"] = sanitize_action_payload(request) unless request.nil?
+        entry["response"] = sanitize_action_payload(response) unless response.nil?
         @current_step_actions << entry
+      end
+
+      def sanitize_action_payload(payload)
+        cleaned =
+          case payload
+          when Hash
+            payload.each_with_object({}) do |(key, value), out|
+              name = key.to_s
+              next if name == "key"
+
+              out[name] = sanitize_action_payload(value)
+            end
+          when Array
+            payload.map { |item| sanitize_action_payload(item) }
+          else
+            sanitize_error(payload.to_s)
+          end
+
+        json = cleaned.is_a?(String) ? cleaned : JSON.generate(cleaned)
+        return cleaned if json.bytesize <= MAX_ACTION_PAYLOAD_LEN
+
+        truncated = json.byteslice(0, MAX_ACTION_PAYLOAD_LEN)
+        { "truncated" => true, "preview" => truncated }
+      rescue StandardError
+        sanitize_error(payload.to_s).to_s.slice(0, MAX_ACTION_VALUE_LEN)
       end
 
       def redact_action_value(label, value)
