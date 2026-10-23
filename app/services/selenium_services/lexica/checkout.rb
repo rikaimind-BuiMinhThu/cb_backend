@@ -512,6 +512,8 @@ module SeleniumServices
                 label: "pre_click",
                 request: recaptcha_field_snapshot
               )
+              # Lexica may mutate fields between inject and click; re-bind immediately before submit.
+              inject_recaptcha_token(result[:token])
               click selector, "submit order 2captcha attempt #{attempt}"
               wait_for_checkout_progress
 
@@ -678,22 +680,46 @@ module SeleniumServices
       def inject_recaptcha_token(token)
         @driver.execute_script(<<~JS, token)
           var t = arguments[0];
-          window.grecaptcha = window.grecaptcha || {};
-          window.grecaptcha.ready = function(cb) { if (typeof cb === 'function') { cb(); } };
-          window.grecaptcha.execute = function() { return Promise.resolve(t); };
-          ['RECAPTCHA_TOKEN', 'g-recaptcha-response'].forEach(function(name) {
-            var el = document.querySelector('[name=\"' + name + '\"]');
-            if (!el) {
-              el = document.createElement(name === 'g-recaptcha-response' ? 'textarea' : 'input');
+          var g = window.grecaptcha;
+          if (!g) {
+            window.grecaptcha = {
+              ready: function(cb) { if (typeof cb === 'function') { cb(); } },
+              execute: function() { return Promise.resolve(t); }
+            };
+          } else {
+            g.execute = function() { return Promise.resolve(t); };
+          }
+
+          // Prefer the guest/signup form Lexica posts; avoid document-wide duplicates.
+          var form = document.querySelector('.form-order-signup') ||
+            document.querySelector('#signup-form') ||
+            document.querySelector('form') ||
+            document.body;
+
+          function setNamed(name, createIfMissing) {
+            var els = form.querySelectorAll('[name=\"' + name + '\"]');
+            if (!els.length && createIfMissing) {
+              var el = document.createElement(name === 'g-recaptcha-response' ? 'textarea' : 'input');
               if (name !== 'g-recaptcha-response') el.type = 'hidden';
               el.name = name;
-              el.id = name === 'g-recaptcha-response' ? 'g-recaptcha-response' : el.id;
-              var form = document.querySelector('form') || document.body;
+              if (name === 'g-recaptcha-response') el.id = 'g-recaptcha-response';
               form.appendChild(el);
+              els = form.querySelectorAll('[name=\"' + name + '\"]');
             }
-            el.value = t;
-            if (el.innerHTML !== undefined && name === 'g-recaptcha-response') el.innerHTML = t;
-          });
+            Array.prototype.forEach.call(els, function(el) {
+              el.value = t;
+              if (el.innerHTML !== undefined && name === 'g-recaptcha-response') el.innerHTML = t;
+              try {
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+              } catch (e) {}
+            });
+            return els.length;
+          }
+
+          // Lexica submits RECAPTCHA_TOKEN. Only create that if missing; never invent g-recaptcha-response.
+          setNamed('RECAPTCHA_TOKEN', true);
+          setNamed('g-recaptcha-response', false);
         JS
       end
 
