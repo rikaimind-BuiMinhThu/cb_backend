@@ -98,10 +98,12 @@ module Captcha
       }
       request_log = build_request_log(CREATE_URL, payload)
       res = http_post(CREATE_URL, payload)
-      raise "CapSolver createTask HTTP failure" unless res.is_a?(Net::HTTPSuccess)
-
-      body = JSON.parse(res.body)
+      body = parse_json_body(res&.body)
       Log.info "CapSolver createTask body: #{body.inspect}", @log_tab_level
+      unless res.is_a?(Net::HTTPSuccess)
+        detail = body["errorDescription"].presence || body["errorCode"].presence || res&.body.to_s.truncate(200)
+        raise "CapSolver createTask HTTP #{res&.code}: #{detail}"
+      end
       raise "CapSolver createTask error: #{body['errorDescription'] || body['errorCode']}" if body["errorId"].to_i != 0
 
       id = body["taskId"].to_s
@@ -140,9 +142,11 @@ module Captcha
       }
       request_log = build_request_log(GET_URL, payload)
       res = http_post(GET_URL, payload)
-      raise "CapSolver getTaskResult HTTP failure taskId=#{id}" unless res.is_a?(Net::HTTPSuccess)
-
-      body = JSON.parse(res.body)
+      body = parse_json_body(res&.body)
+      unless res.is_a?(Net::HTTPSuccess)
+        detail = body["errorDescription"].presence || body["errorCode"].presence || res&.body.to_s.truncate(200)
+        raise "CapSolver getTaskResult HTTP #{res&.code} taskId=#{id}: #{detail}"
+      end
       raise "CapSolver getTaskResult error: #{body['errorDescription'] || body['errorCode']}" if body["errorId"].to_i != 0
 
       status = body["status"].to_s
