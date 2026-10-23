@@ -8,7 +8,7 @@ module Captcha
     CREATE_URL = "https://api.capsolver.com/createTask"
     GET_URL = "https://api.capsolver.com/getTaskResult"
     FEEDBACK_URL = "https://api.capsolver.com/feedbackTask"
-    TASK_TYPE = "ReCaptchaV3TaskProxyLess"
+    TASK_TYPE = "ReCaptchaV3M1TaskProxyLess"
     INITIAL_WAIT_SECONDS = 5
     POLL_INTERVAL_SECONDS = 3
     MAX_POLLS = 40

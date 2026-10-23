@@ -92,6 +92,7 @@ class CaptchaCapSolverTest < ActiveSupport::TestCase
     assert_equal "\"Google Chrome\";v=\"149\"", result[:sec_ch_ua]
     assert_equal "AbEM_session_cookie_sample", result[:session_cookie]
     assert_equal "test-client-key", captured_create["clientKey"]
+    assert_equal "ReCaptchaV3M1TaskProxyLess", Captcha::CapSolver::TASK_TYPE
     assert_equal Captcha::CapSolver::TASK_TYPE, captured_create["task"]["type"]
     assert_equal "6LcBNZ8qAAAAAOcUa_sample_sitekey", captured_create["task"]["websiteKey"]
     assert_equal "https://cart.mirai-japan.co.jp/order/signin", captured_create["task"]["websiteURL"]
@@ -101,7 +102,7 @@ class CaptchaCapSolverTest < ActiveSupport::TestCase
 
     create_request = result[:create_request]
     assert_equal Captcha::CapSolver::CREATE_URL, create_request["url"]
-    assert_equal Captcha::CapSolver::TASK_TYPE, create_request["parameters"]["task"]["type"]
+    assert_equal "ReCaptchaV3M1TaskProxyLess", create_request["parameters"]["task"]["type"]
     assert_equal true, create_request["parameters"]["task"]["isSession"]
     assert_nil create_request["parameters"]["task"]["minScore"]
     assert_nil create_request["parameters"]["clientKey"]
