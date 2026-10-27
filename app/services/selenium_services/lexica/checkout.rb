@@ -873,6 +873,7 @@ module SeleniumServices
         source = @driver.page_source.to_s
         return if thanks_page?(url_before, source)
         return unless url_before.include?("/order/entry") || url_before.include?("/order/confirm")
+        return if url_before.include?("/order/confirm") && purchase_blocked_banner.present?
 
         selector = submit_button_by_text
         return if selector.blank?
@@ -933,10 +934,30 @@ module SeleniumServices
           url = @driver.current_url.to_s
           source = @driver.page_source.to_s
           complete = thanks_page?(url, source)
-          raise LexicaStop.new("thanks_unconfirmed", "完了ページを確認できませんでした") unless complete
+          unless complete
+            banner = purchase_blocked_banner
+            raise LexicaStop.new("purchase_blocked", banner) if banner.present?
+
+            raise LexicaStop.new("thanks_unconfirmed", "完了ページを確認できませんでした")
+          end
 
           @lexica_order_id = extract_order_id(source, url)
         end
+      end
+
+      def purchase_blocked_banner
+        visible = Array(visible_form_errors).map { |text| text.to_s.gsub(/\s+/, " ").strip }
+        hit = visible.find { |text| purchase_blocked_text?(text) }
+        return hit if hit.present?
+
+        source = @driver.page_source.to_s.gsub(/\s+/, " ")
+        match = source.match(/[^。]{0,80}(?:配送条件|購入いただけません)[^。]{0,80}。?/)
+        match && match[0].strip.presence
+      end
+
+      def purchase_blocked_text?(text)
+        value = text.to_s
+        value.include?("配送条件") || value.include?("購入いただけません")
       end
 
       def thanks_page?(url, source)
