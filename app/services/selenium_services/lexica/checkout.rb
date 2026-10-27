@@ -382,14 +382,42 @@ module SeleniumServices
           raise LexicaStop.new("missing_token", "カード番号のフォームが見つかりません")
         end
 
-        result = @driver.execute_script(<<~JS, @token_key.to_s)
+        month, year = card_expiry_parts
+        result = @driver.execute_script(
+          <<~JS,
           var token = arguments[0];
+          var masked = arguments[1];
+          var month = arguments[2];
+          var year = arguments[3];
+          var holder = arguments[4];
           var label = document.evaluate(
             "//*[contains(normalize-space(.), 'カード番号') and not(./*[contains(normalize-space(.), 'カード番号')])]",
             document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null
           ).singleNodeValue;
           var form = label && (label.closest('form') || label.closest('#order__payment') || label.parentElement);
           if (!form) return { ok: false, names: [] };
+          form.setAttribute('data-ecch-card-form', '1');
+
+          var invalid = [];
+          Array.prototype.forEach.call(form.querySelectorAll('input, select, textarea'), function(control) {
+            if (typeof control.checkValidity === 'function' && !control.checkValidity()) {
+              invalid.push(control.name || control.id || control.type);
+            }
+          });
+          var button = document.querySelector('[data-ecch-guest-submit="1"]');
+          if (!button) {
+            var nodes = document.querySelectorAll('button');
+            var i;
+            for (i = 0; i < nodes.length; i += 1) {
+              var oc = nodes[i].getAttribute('onclick') || '';
+              var text = (nodes[i].innerText || '').replace(/\\s+/g, '');
+              if (text.indexOf('ご注文内容の確認へ') === -1) continue;
+              if (oc.indexOf('flg-guest') === -1 || oc.indexOf('true') === -1) continue;
+              button = nodes[i];
+              break;
+            }
+          }
+          var onclick = button ? String(button.getAttribute('onclick') || '').slice(0, 300) : '';
 
           var el = form.querySelector('input[name="token_key"], input[name="TOKEN_KEY"], input#token_key');
           if (!el) {
@@ -460,20 +488,61 @@ module SeleniumServices
             });
           });
 
+          function setNamed(name, value) {
+            if (!value) return false;
+            var node = form.querySelector('[name="' + name + '"]');
+            if (!node) return false;
+            node.disabled = false;
+            node.value = value;
+            return true;
+          }
+          var filled = [];
+          if (setNamed('zeus_token_masked_card_no', masked)) filled.push('zeus_token_masked_card_no');
+          if (setNamed('zeus_token_return_card_expires_month', month)) filled.push('zeus_token_return_card_expires_month');
+          if (setNamed('zeus_token_return_card_expires_year', year)) filled.push('zeus_token_return_card_expires_year');
+          if (setNamed('zeus_token_return_card_name', holder)) filled.push('zeus_token_return_card_name');
+
+          form.noValidate = true;
+          form.checkValidity = function() { return true; };
+          form.reportValidity = function() { return true; };
+
           var names = Array.prototype.map.call(form.querySelectorAll('input, select, textarea'), function(control) {
             return control.name || control.id || control.type;
           }).filter(Boolean);
-          return { ok: !!(el.value && zeus.value), names: names.slice(0, 40), disabled: disabled };
+          return {
+            ok: !!(el.value && zeus.value),
+            names: names.slice(0, 40),
+            disabled: disabled,
+            filled: filled,
+            onclick: onclick,
+            invalid: invalid.slice(0, 40)
+          };
         JS
+          @token_key.to_s,
+          masked_pan_from_card.to_s,
+          month,
+          year,
+          card_holder_from_card.to_s
+        )
 
         names = Array(result.is_a?(Hash) ? (result["names"] || result[:names]) : nil)
         disabled = Array(result.is_a?(Hash) ? (result["disabled"] || result[:disabled]) : nil)
+        filled = Array(result.is_a?(Hash) ? (result["filled"] || result[:filled]) : nil)
+        invalid = Array(result.is_a?(Hash) ? (result["invalid"] || result[:invalid]) : nil)
+        onclick = (result.is_a?(Hash) ? (result["onclick"] || result[:onclick]) : nil).to_s.slice(0, 300)
         record_action(
           type: "fill",
           where: "form:カード番号",
           label: "token_key",
           value: "[token]",
-          request: { "inputs" => names, "zeus_token_value" => "set", "disabled" => disabled }
+          request: {
+            "inputs" => names,
+            "zeus_token_value" => "set",
+            "disabled" => disabled,
+            "return_fields" => filled,
+            "onclick" => onclick,
+            "invalid" => invalid
+          }
         )
         return if result.is_a?(Hash) && (result["ok"] || result[:ok])
 
@@ -542,6 +611,7 @@ module SeleniumServices
           step("submit_order", "注文確定") do
             inject_token_key if @payment_method == "credit"
             click selector, "submit order"
+            submit_card_form_directly if @payment_method == "credit" && on_signin? && Array(visible_form_errors).empty?
             wait_for_checkout_progress
             if on_signin?
               errors = Array(visible_form_errors)
@@ -1437,6 +1507,32 @@ module SeleniumServices
         return "cod" if value.match?(/cod|代引|引換/i)
 
         raise LexicaStop.new("unknown_payment", "支払い方法が不正です: #{value.inspect}")
+      end
+
+      def submit_card_form_directly
+        return false if @card_form_submitted
+
+        @card_form_submitted = true
+        posted = @driver.execute_script(<<~JS)
+          var form = document.querySelector('[data-ecch-card-form="1"]');
+          if (!form) return false;
+          form.noValidate = true;
+          HTMLFormElement.prototype.submit.call(form);
+          return true;
+        JS
+        record_action(type: "submit", where: "form:カード番号", label: "form.submit", value: posted ? "posted" : "missing")
+        posted
+      rescue StandardError => error
+        record_action(type: "submit", where: "form:カード番号", label: "form.submit", value: "missing")
+        Log.error "card form submit failed: #{sanitize_error(error.message)}", @log_tab_level
+        false
+      end
+
+      def card_expiry_parts
+        digits = card_expiry_from_card.to_s.gsub(/\D/, "")
+        return ["", ""] if digits.length < 4
+
+        [digits[0, 2], digits[-2, 2]]
       end
 
       def masked_pan_from_card
