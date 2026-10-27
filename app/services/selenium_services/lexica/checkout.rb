@@ -4,7 +4,7 @@ require "json"
 require "uri"
 require "net/http"
 require File.dirname(__FILE__) + "/../../log"
-require File.dirname(__FILE__) + "/../../captcha/cap_solver"
+require File.dirname(__FILE__) + "/../../captcha/two_captcha"
 
 module SeleniumServices
   module Lexica
@@ -447,12 +447,12 @@ module SeleniumServices
             )
             record_action(type: :detect, where: "grecaptcha.execute", label: "action", value: v3_meta[:action]) if v3_meta[:action].present?
           else
-            record_action(type: :detect, where: "page", label: "recaptcha_v3", value: "なし → CapSolverスキップ")
+            record_action(type: :detect, where: "page", label: "recaptcha_v3", value: "なし → 2Captchaスキップ")
           end
         end
 
         if v3_meta[:present]
-          submit_order_with_captcha!(selector, v3_meta)
+          submit_order_with_two_captcha!(selector, v3_meta)
         else
           step("submit_order", "注文確定") do
             click selector, "submit order"
@@ -466,12 +466,12 @@ module SeleniumServices
         end
       end
 
-      def submit_order_with_captcha!(selector, v3_meta)
+      def submit_order_with_two_captcha!(selector, v3_meta)
         sitekey = v3_meta[:sitekey].to_s
         raise LexicaStop.new("recaptcha", "reCAPTCHA v3 sitekey不明") if sitekey.blank?
 
         action = v3_meta[:action].presence || "verify"
-        client = Captcha::CapSolver.new(log_tab_level: @log_tab_level)
+        client = Captcha::TwoCaptcha.new(log_tab_level: @log_tab_level)
         last_message = nil
 
         RECAPTCHA_SOLVE_MAX_ATTEMPTS.times do |index|
@@ -482,24 +482,24 @@ module SeleniumServices
               result = client.process_v3(
                 sitekey: sitekey,
                 page_url: @driver.current_url,
-                action: action
+                action: action,
+                min_score: 0.9
               )
               task_id = result[:id]
               record_action(
-                type: :capsolver,
-                where: "createTask",
+                type: :"2captcha",
+                where: "in.php",
                 label: "create",
                 request: result[:create_request],
                 response: result[:create_response]
               )
               record_action(
-                type: :capsolver,
-                where: "getTaskResult",
+                type: :"2captcha",
+                where: "res.php",
                 label: "get",
                 request: result[:get_request],
                 response: result[:get_response]
               )
-              apply_capsolver_identity!(result)
               inject_recaptcha_token(result[:token])
               record_recaptcha_diag!(
                 "after_inject",
@@ -515,7 +515,7 @@ module SeleniumServices
               )
               # Lexica may mutate fields between inject and click; re-bind immediately before submit.
               inject_recaptcha_token(result[:token])
-              click selector, "submit order capsolver attempt #{attempt}"
+              click selector, "submit order 2captcha attempt #{attempt}"
               wait_for_checkout_progress
 
               form_errors = Array(visible_form_errors)
@@ -545,13 +545,13 @@ module SeleniumServices
                   }
                 )
                 report_io = client.report(task_id, good: false)
-                record_captcha_report!("reportbad", report_io)
+                record_two_captcha_report!("reportbad", report_io)
                 last_message = recaptcha_stop_message
                 raise LexicaStop.new("recaptcha", last_message)
               end
 
               report_io = client.report(task_id, good: true)
-              record_captcha_report!("reportgood", report_io)
+              record_two_captcha_report!("reportgood", report_io)
               confirm_review_page
             end
             return
@@ -565,7 +565,7 @@ module SeleniumServices
             last_message = e.message
             if task_id.present?
               report_io = client.report(task_id, good: false)
-              record_captcha_report!("reportbad", report_io)
+              record_two_captcha_report!("reportbad", report_io)
             end
             Log.info "reCAPTCHA v3 attempt #{attempt}/#{RECAPTCHA_SOLVE_MAX_ATTEMPTS} failed: #{e.message}", @log_tab_level
             raise LexicaStop.new("recaptcha", last_message) if attempt >= RECAPTCHA_SOLVE_MAX_ATTEMPTS
@@ -574,66 +574,19 @@ module SeleniumServices
 
         raise LexicaStop.new(
           "recaptcha",
-          last_message.presence || "reCAPTCHA (CapSolver #{RECAPTCHA_SOLVE_MAX_ATTEMPTS}回失敗)"
+          last_message.presence || "reCAPTCHA (2Captcha #{RECAPTCHA_SOLVE_MAX_ATTEMPTS}回失敗)"
         )
       end
 
-      def record_captcha_report!(label, report_io)
+      def record_two_captcha_report!(label, report_io)
         return if report_io.blank?
 
         record_action(
-          type: :capsolver,
-          where: "feedbackTask",
+          type: :"2captcha",
+          where: "res.php",
           label: label,
           request: report_io[:request],
           response: report_io[:response]
-        )
-      end
-
-      def apply_capsolver_identity!(result)
-        ua = result[:user_agent].to_s
-        sec_ch_ua = result[:sec_ch_ua].to_s
-        session_cookie = result[:session_cookie].to_s
-        cookie_set = false
-
-        if ua.present?
-          # Selenium CDP kwargs match Network.setUserAgentOverride field names.
-          cdp_args = { userAgent: ua }
-          cdp_args[:acceptLanguage] = "ja-JP,ja;q=0.9,en-US;q=0.8,en;q=0.7" if sec_ch_ua.present?
-          @driver.execute_cdp("Network.setUserAgentOverride", **cdp_args)
-        end
-
-        if session_cookie.present?
-          host = (URI.parse(@driver.current_url.to_s).host rescue nil)
-          if host.present?
-            @driver.manage.add_cookie(
-              name: "recaptcha-ca-t",
-              value: session_cookie,
-              domain: host,
-              path: "/"
-            )
-            cookie_set = true
-          end
-        end
-
-        record_action(
-          type: :detect,
-          where: "capsolver",
-          label: "capsolver_identity",
-          request: {
-            "user_agent" => ua.present? ? truncate_sitekey(ua) : nil,
-            "user_agent_length" => ua.length,
-            "sec_ch_ua_present" => sec_ch_ua.present?,
-            "session_cookie_set" => cookie_set
-          }
-        )
-      rescue StandardError => e
-        Log.info "CapSolver identity apply failed: #{e.message}", @log_tab_level
-        record_action(
-          type: :detect,
-          where: "capsolver",
-          label: "capsolver_identity",
-          request: { "error" => e.message.to_s.truncate(200) }
         )
       end
 
@@ -800,7 +753,7 @@ module SeleniumServices
       def selenium_egress_ip
         return @selenium_egress_ip if defined?(@selenium_egress_ip)
 
-        # STG Chrome shares the Sidekiq host egress; no in-app proxy exists for CapSolver.
+        # STG Chrome shares the Sidekiq host egress; no in-app proxy exists for 2Captcha.
         uri = URI("https://api.ipify.org")
         res = Net::HTTP.get_response(uri)
         @selenium_egress_ip = res.is_a?(Net::HTTPSuccess) ? res.body.to_s.strip.presence : nil
