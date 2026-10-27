@@ -376,23 +376,82 @@ module SeleniumServices
       def inject_token_key
         raise LexicaStop.new("missing_token", "カードトークンがありません") if @token_key.blank?
 
-        if element_present?(S::TOKEN_KEY_INPUT)
-          fill_to_text_input S::TOKEN_KEY_INPUT, @token_key, "token_key"
-        else
-          execute_script(<<~JS)
-            (function() {
-              var el = document.querySelector('input[name="token_key"]') || document.querySelector('input[name="TOKEN_KEY"]');
-              if (!el) {
-                el = document.createElement('input');
-                el.type = 'hidden';
-                el.name = 'token_key';
-                var form = document.querySelector('form') || document.body;
-                form.appendChild(el);
-              }
-              el.value = #{@token_key.to_json};
-            })();
-          JS
+        begin
+          Selenium::WebDriver::Wait.new(timeout: 10).until { page_contains?("カード番号") }
+        rescue Selenium::WebDriver::Error::TimeoutError
+          raise LexicaStop.new("missing_token", "カード番号のフォームが見つかりません")
         end
+
+        result = @driver.execute_script(<<~JS, @token_key.to_s)
+          var token = arguments[0];
+          var label = document.evaluate(
+            "//*[contains(normalize-space(.), 'カード番号') and not(./*[contains(normalize-space(.), 'カード番号')])]",
+            document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null
+          ).singleNodeValue;
+          var form = label && (label.closest('form') || label.closest('#order__payment') || label.parentElement);
+          if (!form) return { ok: false, names: [] };
+
+          var el = form.querySelector('input[name="token_key"], input[name="TOKEN_KEY"], input#token_key');
+          if (!el) {
+            el = document.createElement('input');
+            el.type = 'hidden';
+            el.name = 'token_key';
+            form.appendChild(el);
+          }
+          el.value = token;
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+
+          var hints = ['カード番号', '有効期限', 'カード名義'];
+          function nearText(control) {
+            var bits = [];
+            var node = control;
+            var depth;
+            for (depth = 0; depth < 4 && node; depth += 1) {
+              var prev = node.previousElementSibling;
+              if (prev) bits.push(prev.textContent || '');
+              var parent = node.parentElement;
+              if (parent) {
+                Array.prototype.forEach.call(parent.childNodes, function(child) {
+                  if (child.nodeType === 3) bits.push(child.textContent || '');
+                });
+              }
+              node = parent;
+            }
+            return bits.join(' ').replace(/\\s+/g, '');
+          }
+          function blank(control) {
+            var value = (control.value || '').trim();
+            return value === '' || value === '--' || value === '-';
+          }
+          Array.prototype.forEach.call(form.querySelectorAll('input, select, textarea'), function(control) {
+            if (control === el) return;
+            if (!blank(control)) return;
+            var around = nearText(control);
+            var hit = hints.some(function(hint) { return around.indexOf(hint) !== -1; });
+            if (!hit) return;
+            control.required = false;
+            control.removeAttribute('required');
+            control.removeAttribute('aria-required');
+          });
+
+          var names = Array.prototype.map.call(form.querySelectorAll('input, select, textarea'), function(control) {
+            return control.name || control.id || control.type;
+          }).filter(Boolean);
+          return { ok: !!el.value, names: names.slice(0, 40) };
+        JS
+
+        names = Array(result.is_a?(Hash) ? (result["names"] || result[:names]) : nil)
+        record_action(
+          type: "fill",
+          where: "form:カード番号",
+          label: "token_key",
+          value: "[token]",
+          request: { "inputs" => names }
+        )
+        return if result.is_a?(Hash) && (result["ok"] || result[:ok])
+
+        raise LexicaStop.new("missing_token", "カード番号のフォームにトークンを置けませんでした")
       end
 
       def apply_delivery
