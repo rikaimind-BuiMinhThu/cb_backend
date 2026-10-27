@@ -55,7 +55,6 @@ module SeleniumServices
         @driver.execute_cdp(
           "Network.setBlockedURLs",
           urls: [
-            "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp", "*.svg", "*.ico",
             "*google-analytics*", "*googletagmanager*", "*doubleclick*",
             "*facebook.net*", "*hotjar*",
           ]
@@ -72,8 +71,16 @@ module SeleniumServices
       end
 
       def capture(is_capture = true)
-        sleep 0.2
         @step += 1
+        return unless is_capture
+        return unless @driver
+
+        FileUtils.mkdir_p(@screenshot_path)
+        path = File.join(@screenshot_path, "#{@scenario.id}_#{@user_input_id}_#{@step}.png")
+        write_png(path)
+        Log.info "#{@step}: capture #{path}", @log_tab_level
+      rescue StandardError => error
+        Log.error "#{@step}: capture failed: #{error.message}", @log_tab_level
       end
 
       private

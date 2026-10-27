@@ -1082,6 +1082,7 @@ module SeleniumServices
       def log_step(name, description, ok: nil, error: nil)
         actions = Array(@current_step_actions)
         @current_step_actions = nil
+        capture
         @selenium_result&.append_rpa_step(
           "name" => name,
           "description" => description,
