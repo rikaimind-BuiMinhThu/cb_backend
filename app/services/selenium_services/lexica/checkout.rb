@@ -402,6 +402,18 @@ module SeleniumServices
           el.dispatchEvent(new Event('input', { bubbles: true }));
           el.dispatchEvent(new Event('change', { bubbles: true }));
 
+          var zeus = form.querySelector('input[name="zeus_token_value"]');
+          if (!zeus) {
+            zeus = document.createElement('input');
+            zeus.type = 'hidden';
+            zeus.name = 'zeus_token_value';
+            form.appendChild(zeus);
+          }
+          zeus.disabled = false;
+          zeus.value = token;
+          zeus.dispatchEvent(new Event('input', { bubbles: true }));
+          zeus.dispatchEvent(new Event('change', { bubbles: true }));
+
           var hints = ['カード番号', '有効期限', 'カード名義'];
           function nearText(control) {
             var bits = [];
@@ -435,19 +447,33 @@ module SeleniumServices
             control.removeAttribute('aria-required');
           });
 
+          var cardNames = ['zeus_token_card_number', 'zeus_token_card_expires_month', 'zeus_token_card_expires_year', 'zeus_token_card_name'];
+          var disabled = [];
+          cardNames.forEach(function(name) {
+            Array.prototype.forEach.call(form.querySelectorAll('[name="' + name + '"]'), function(control) {
+              if (!blank(control)) return;
+              control.required = false;
+              control.removeAttribute('required');
+              control.removeAttribute('aria-required');
+              control.disabled = true;
+              disabled.push(name);
+            });
+          });
+
           var names = Array.prototype.map.call(form.querySelectorAll('input, select, textarea'), function(control) {
             return control.name || control.id || control.type;
           }).filter(Boolean);
-          return { ok: !!el.value, names: names.slice(0, 40) };
+          return { ok: !!(el.value && zeus.value), names: names.slice(0, 40), disabled: disabled };
         JS
 
         names = Array(result.is_a?(Hash) ? (result["names"] || result[:names]) : nil)
+        disabled = Array(result.is_a?(Hash) ? (result["disabled"] || result[:disabled]) : nil)
         record_action(
           type: "fill",
           where: "form:カード番号",
           label: "token_key",
           value: "[token]",
-          request: { "inputs" => names }
+          request: { "inputs" => names, "zeus_token_value" => "set", "disabled" => disabled }
         )
         return if result.is_a?(Hash) && (result["ok"] || result[:ok])
 
@@ -514,6 +540,7 @@ module SeleniumServices
           submit_order_with_two_captcha!(selector, v3_meta)
         else
           step("submit_order", "注文確定") do
+            inject_token_key if @payment_method == "credit"
             click selector, "submit order"
             wait_for_checkout_progress
             if on_signin?
@@ -574,6 +601,7 @@ module SeleniumServices
               )
               # Lexica may mutate fields between inject and click; re-bind immediately before submit.
               inject_recaptcha_token(result[:token])
+              inject_token_key if @payment_method == "credit"
               click selector, "submit order 2captcha attempt #{attempt}"
               wait_for_checkout_progress
 
