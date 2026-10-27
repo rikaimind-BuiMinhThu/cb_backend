@@ -25,9 +25,9 @@ PINCH_IMG = {
 PINCH_CARD_BRAND_URLS = [
   ["VISA", "https://app2.blob.core.windows.net/botchan/images/card_type/visa.png"],
   ["JCB", "https://app2.blob.core.windows.net/botchan/images/card_type/jcb.png"],
-  ["Mastercard", "https://app2.blob.core.windows.net/botchan/images/card_type/mastercard.png"],
-  ["AMEX", "https://app2.blob.core.windows.net/botchan/images/card_type/amex.png"],
-  ["Diners", "https://app2.blob.core.windows.net/botchan/images/card_type/diners.png"]
+  ["Mastercard", "https://app2.blob.core.windows.net/botchan/images/card_type/master_card.png"],
+  ["AMEX", "https://app2.blob.core.windows.net/botchan/images/card_type/american_express.png"],
+  ["Diners", "https://app2.blob.core.windows.net/botchan/images/card_type/diner_club.png"]
 ].freeze
 PINCH_CARD_BRANDS_HTML = %(<div class="pinch-card-brands">#{PINCH_CARD_BRAND_URLS.map { |alt, src| %(<img src="#{src}" alt="#{alt}" />) }.join}</div>)
 PINCH_CONFIRM_HTML = <<~HTML
