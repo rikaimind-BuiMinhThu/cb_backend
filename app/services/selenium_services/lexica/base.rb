@@ -1,3 +1,4 @@
+require "base64"
 require "selenium-webdriver"
 require File.dirname(__FILE__) + "/../../log"
 
@@ -87,11 +88,32 @@ module SeleniumServices
 
       def write_png(path)
         2.times do |attempt|
-          @driver.save_screenshot(path)
+          bytes = full_page_png
+          File.binwrite(path, bytes) if bytes && bytes.bytesize >= 32
+          @driver.save_screenshot(path) unless File.file?(path) && File.size(path) >= 32
           return if File.file?(path) && File.size(path) >= 32
 
           sleep 1 if attempt.zero?
         end
+      end
+
+      def full_page_png
+        metrics = @driver.execute_cdp("Page.getLayoutMetrics")
+        size = metrics["cssContentSize"] || metrics["contentSize"] || {}
+        width = size["width"].to_f
+        height = [size["height"].to_f, 16_000].min
+        return nil if width < 1 || height < 1
+
+        shot = @driver.execute_cdp(
+          "Page.captureScreenshot",
+          format: "png",
+          captureBeyondViewport: true,
+          clip: { x: 0, y: 0, width: width, height: height, scale: 1 }
+        )
+        Base64.decode64(shot["data"].to_s)
+      rescue StandardError => error
+        Log.error "full page capture failed: #{error.message}", @log_tab_level
+        nil
       end
 
       def desktop_user_agent
