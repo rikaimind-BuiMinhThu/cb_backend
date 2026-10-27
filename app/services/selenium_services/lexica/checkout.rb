@@ -391,6 +391,45 @@ module SeleniumServices
           var year = arguments[3];
           var holder = arguments[4];
           var phone = arguments[5];
+          (function tapOrderPost() {
+            if (window.__ecchXhrTapped) return;
+            window.__ecchXhrTapped = true;
+            window.__ecchPosts = [];
+            var open = XMLHttpRequest.prototype.open;
+            var send = XMLHttpRequest.prototype.send;
+            XMLHttpRequest.prototype.open = function(method, url) {
+              this.__ecchUrl = String(url || '');
+              this.__ecchMethod = String(method || '');
+              return open.apply(this, arguments);
+            };
+            XMLHttpRequest.prototype.send = function(body) {
+              var xhr = this;
+              if (xhr.__ecchUrl.indexOf('/ps/op/') !== -1) {
+                var fields = [];
+                try {
+                  String(body || '').split('&').forEach(function(pair) {
+                    var kv = pair.split('=');
+                    var key = decodeURIComponent(kv[0] || '');
+                    var val = decodeURIComponent((kv[1] || '').replace(/\\+/g, ' '));
+                    if (!key) return;
+                    var shown = val;
+                    if (/token|TOKEN|card|CARD|PASSWORD/i.test(key)) shown = val ? ('len' + val.length) : '';
+                    fields.push(key + '=' + shown.slice(0, 40));
+                  });
+                } catch (e) {}
+                xhr.addEventListener('loadend', function() {
+                  window.__ecchPosts.push({
+                    method: xhr.__ecchMethod,
+                    url: xhr.__ecchUrl.slice(0, 200),
+                    status: xhr.status,
+                    response: String(xhr.responseText || '').slice(0, 3000),
+                    fields: fields.slice(0, 60)
+                  });
+                });
+              }
+              return send.apply(this, arguments);
+            };
+          })();
           var telno = (function fillTelno() {
             var state = [];
             if (window.jQuery) {
@@ -674,6 +713,7 @@ module SeleniumServices
               click selector, "submit order"
             end
             wait_for_checkout_progress
+            record_order_posts if @payment_method == "credit"
             if on_signin?
               errors = Array(visible_form_errors)
               errors = [@card_alert_text] if errors.empty? && @card_alert_text.present?
@@ -1610,6 +1650,24 @@ module SeleniumServices
         Log.error "guest onsubmit failed: #{sanitize_error(error.message)}", @log_tab_level
         accept_card_alert
         true
+      end
+
+      def record_order_posts
+        posts = @driver.execute_script("return window.__ecchPosts || [];")
+        Array(posts).last(3).each do |post|
+          next unless post.is_a?(Hash)
+
+          record_action(
+            type: "detect",
+            where: post["url"].to_s,
+            label: "order_post",
+            value: "#{post["method"]} #{post["status"]}",
+            request: { "fields" => post["fields"] },
+            response: post["response"].to_s
+          )
+        end
+      rescue StandardError => error
+        Log.error "order post capture failed: #{sanitize_error(error.message)}", @log_tab_level
       end
 
       def accept_card_alert
