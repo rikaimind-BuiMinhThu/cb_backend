@@ -383,6 +383,7 @@ module SeleniumServices
         end
 
         month, year = card_expiry_parts
+        install_zeus_get_token_stub(month, year)
         result = @driver.execute_script(
           <<~JS,
           var token = arguments[0];
@@ -1512,27 +1513,92 @@ module SeleniumServices
         raise LexicaStop.new("unknown_payment", "支払い方法が不正です: #{value.inspect}")
       end
 
+      def install_zeus_get_token_stub(month, year)
+        @driver.execute_script(
+          <<~JS,
+          var token = arguments[0];
+          var masked = arguments[1];
+          var month = arguments[2];
+          var year = arguments[3];
+          var holder = arguments[4];
+          window.zeusToken = window.zeusToken || {};
+          window.zeusToken.getToken = function(a, b) {
+            var callback = typeof b === 'function' ? b : a;
+            var payload = {
+              result: 1,
+              status: 'success',
+              token_key: token,
+              masked_card_number: masked,
+              masked_card_no: masked,
+              card_expires_month: month,
+              card_expires_year: year,
+              card_name: holder
+            };
+            if (typeof callback === 'function') callback(payload);
+            return payload;
+          };
+          return true;
+          JS
+          @token_key.to_s,
+          masked_pan_from_card.to_s,
+          month.to_s,
+          year.to_s,
+          card_holder_from_card.to_s
+        )
+      end
+
       def submit_guest_onsubmit
         return false if @card_form_submitted
 
         @card_form_submitted = true
+        month, year = card_expiry_parts
+        install_zeus_get_token_stub(month, year)
         result = @driver.execute_script(<<~JS)
           var button = document.querySelector('[data-ecch-guest-submit="1"]');
-          var form = button && button.form;
-          if (!form || typeof form.onsubmit !== 'function') return { called: false };
-          var guest = document.querySelector('#flg-guest');
-          if (guest) guest.value = 'true';
-          form.noValidate = true;
-          var returned = form.onsubmit();
-          return { called: true, returned: returned !== false };
+          if (!button) {
+            var nodes = document.querySelectorAll('button');
+            var i;
+            for (i = 0; i < nodes.length; i += 1) {
+              var oc = nodes[i].getAttribute('onclick') || '';
+              var text = (nodes[i].innerText || '').replace(/\\s+/g, '');
+              if (text.indexOf('ご注文内容の確認へ') === -1) continue;
+              if (oc.indexOf('flg-guest') === -1 || oc.indexOf('true') === -1) continue;
+              button = nodes[i];
+              break;
+            }
+          }
+          if (!button || typeof button.onclick !== 'function') return { called: false };
+          try {
+            button.onclick.call(button);
+            return { called: 'onclick' };
+          } catch (error) {
+            return { called: false, reason: String(error && error.message || error).slice(0, 200) };
+          }
         JS
-        called = result.is_a?(Hash) && (result["called"] || result[:called])
-        record_action(type: "submit", where: "form:カード番号", label: "onsubmit", value: called ? "called" : "missing")
-        called
+        called = result.is_a?(Hash) ? (result["called"] || result[:called]) : nil
+        record_action(
+          type: "submit",
+          where: "form:カード番号",
+          label: "onsubmit",
+          value: called.to_s == "onclick" ? "onclick" : "missing"
+        )
+        record_open_alert
+        called.to_s == "onclick"
       rescue StandardError => error
-        record_action(type: "submit", where: "form:カード番号", label: "onsubmit", value: "called")
+        record_action(type: "submit", where: "form:カード番号", label: "onsubmit", value: "onclick")
+        record_open_alert
         Log.error "guest onsubmit failed: #{sanitize_error(error.message)}", @log_tab_level
         true
+      end
+
+      def record_open_alert
+        alert = @driver.switch_to.alert
+        text = sanitize_error(alert.text.to_s).slice(0, 300)
+        alert.accept
+        record_action(type: "detect", where: "alert", label: "alert", value: text) if text.present?
+        text
+      rescue Selenium::WebDriver::Error::NoSuchAlertError
+        nil
       end
 
       def redact_step_url(url)
