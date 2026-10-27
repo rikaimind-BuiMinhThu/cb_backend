@@ -390,6 +390,20 @@ module SeleniumServices
           var month = arguments[2];
           var year = arguments[3];
           var holder = arguments[4];
+          var phone = arguments[5];
+          var telno = (function fillTelno() {
+            var state = [];
+            if (window.jQuery) {
+              try { window.jQuery('input[name$="PHONE_NUMBER"]').trigger('change'); } catch (e) {}
+            }
+            Array.prototype.forEach.call(document.querySelectorAll('input[name="TELNO"]'), function(node) {
+              if (node.value) { state.push('had'); return; }
+              if (!phone) { state.push('empty'); return; }
+              node.value = phone;
+              state.push('set');
+            });
+            return state;
+          })();
           var stubbed = (function installZeusStub() {
             var payload = {
               result: 1,
@@ -553,14 +567,16 @@ module SeleniumServices
             filled: filled,
             onclick: onclick,
             invalid: invalid.slice(0, 40),
-            stubbed: stubbed
+            stubbed: stubbed,
+            telno: telno
           };
         JS
           @token_key.to_s,
           masked_pan_from_card.to_s,
           month,
           year,
-          card_holder_from_card.to_s
+          card_holder_from_card.to_s,
+          @phone_number.to_s.gsub(/\D/, "")
         )
 
         names = Array(result.is_a?(Hash) ? (result["names"] || result[:names]) : nil)
@@ -569,6 +585,7 @@ module SeleniumServices
         invalid = Array(result.is_a?(Hash) ? (result["invalid"] || result[:invalid]) : nil)
         onclick = (result.is_a?(Hash) ? (result["onclick"] || result[:onclick]) : nil).to_s.slice(0, 300)
         stubbed = Array(result.is_a?(Hash) ? (result["stubbed"] || result[:stubbed]) : nil)
+        telno = Array(result.is_a?(Hash) ? (result["telno"] || result[:telno]) : nil)
         record_action(
           type: "fill",
           where: "form:カード番号",
@@ -581,7 +598,8 @@ module SeleniumServices
             "return_fields" => filled,
             "onclick" => onclick,
             "invalid" => invalid,
-            "getToken_stub" => stubbed
+            "getToken_stub" => stubbed,
+            "telno" => telno
           }
         )
         return if result.is_a?(Hash) && (result["ok"] || result[:ok])
