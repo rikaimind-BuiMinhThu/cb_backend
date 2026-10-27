@@ -383,7 +383,6 @@ module SeleniumServices
         end
 
         month, year = card_expiry_parts
-        install_zeus_get_token_stub(month, year)
         result = @driver.execute_script(
           <<~JS,
           var token = arguments[0];
@@ -391,6 +390,43 @@ module SeleniumServices
           var month = arguments[2];
           var year = arguments[3];
           var holder = arguments[4];
+          var stubbed = (function installZeusStub() {
+            var payload = {
+              result: 1,
+              status: 'success',
+              token_key: token,
+              masked_card_number: masked,
+              card_expires_month: month,
+              card_expires_year: year,
+              card_name: holder
+            };
+            var stub = function() {
+              var cb = null;
+              var i;
+              for (i = 0; i < arguments.length; i += 1) {
+                if (typeof arguments[i] === 'function') cb = arguments[i];
+              }
+              if (cb) {
+                try { cb(payload); } catch (e) {}
+              }
+              return payload;
+            };
+            var installed = [];
+            window.__ecchZeusStub = stub;
+            if (window.zeusToken && typeof window.zeusToken === 'object') {
+              window.zeusToken.getToken = stub;
+              installed.push('zeusToken');
+            }
+            if (window.zeusTokenClass && window.zeusTokenClass.prototype) {
+              window.zeusTokenClass.prototype.getToken = stub;
+              installed.push('zeusTokenClass');
+            }
+            if (window.ZeusToken && window.ZeusToken.prototype) {
+              window.ZeusToken.prototype.getToken = stub;
+              installed.push('ZeusToken');
+            }
+            return installed;
+          })();
           var label = document.evaluate(
             "//*[contains(normalize-space(.), 'カード番号') and not(./*[contains(normalize-space(.), 'カード番号')])]",
             document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null
@@ -516,7 +552,8 @@ module SeleniumServices
             disabled: disabled,
             filled: filled,
             onclick: onclick,
-            invalid: invalid.slice(0, 40)
+            invalid: invalid.slice(0, 40),
+            stubbed: stubbed
           };
         JS
           @token_key.to_s,
@@ -531,6 +568,7 @@ module SeleniumServices
         filled = Array(result.is_a?(Hash) ? (result["filled"] || result[:filled]) : nil)
         invalid = Array(result.is_a?(Hash) ? (result["invalid"] || result[:invalid]) : nil)
         onclick = (result.is_a?(Hash) ? (result["onclick"] || result[:onclick]) : nil).to_s.slice(0, 300)
+        stubbed = Array(result.is_a?(Hash) ? (result["stubbed"] || result[:stubbed]) : nil)
         record_action(
           type: "fill",
           where: "form:カード番号",
@@ -542,7 +580,8 @@ module SeleniumServices
             "disabled" => disabled,
             "return_fields" => filled,
             "onclick" => onclick,
-            "invalid" => invalid
+            "invalid" => invalid,
+            "getToken_stub" => stubbed
           }
         )
         return if result.is_a?(Hash) && (result["ok"] || result[:ok])
@@ -619,6 +658,7 @@ module SeleniumServices
             wait_for_checkout_progress
             if on_signin?
               errors = Array(visible_form_errors)
+              errors = [@card_alert_text] if errors.empty? && @card_alert_text.present?
               raise LexicaStop.new("form_invalid", errors.presence&.join(" / ") || "確認画面へ進めませんでした")
             end
             confirm_review_page
@@ -756,6 +796,9 @@ module SeleniumServices
           !on_signin? || visible_form_errors.any? || recaptcha_page_message.present? || recaptcha_token_present?
         end
       rescue Selenium::WebDriver::Error::TimeoutError
+        nil
+      rescue Selenium::WebDriver::Error::UnexpectedAlertOpenError
+        accept_card_alert
         nil
       end
 
@@ -1513,91 +1556,54 @@ module SeleniumServices
         raise LexicaStop.new("unknown_payment", "支払い方法が不正です: #{value.inspect}")
       end
 
-      def install_zeus_get_token_stub(month, year)
-        @driver.execute_script(
-          <<~JS,
-          var token = arguments[0];
-          var masked = arguments[1];
-          var month = arguments[2];
-          var year = arguments[3];
-          var holder = arguments[4];
-          window.zeusToken = window.zeusToken || {};
-          window.zeusToken.getToken = function(a, b) {
-            var callback = typeof b === 'function' ? b : a;
-            var payload = {
-              result: 1,
-              status: 'success',
-              token_key: token,
-              masked_card_number: masked,
-              masked_card_no: masked,
-              card_expires_month: month,
-              card_expires_year: year,
-              card_name: holder
-            };
-            if (typeof callback === 'function') callback(payload);
-            return payload;
-          };
-          return true;
-          JS
-          @token_key.to_s,
-          masked_pan_from_card.to_s,
-          month.to_s,
-          year.to_s,
-          card_holder_from_card.to_s
-        )
-      end
-
       def submit_guest_onsubmit
         return false if @card_form_submitted
 
         @card_form_submitted = true
-        month, year = card_expiry_parts
-        install_zeus_get_token_stub(month, year)
         result = @driver.execute_script(<<~JS)
           var button = document.querySelector('[data-ecch-guest-submit="1"]');
-          if (!button) {
-            var nodes = document.querySelectorAll('button');
-            var i;
-            for (i = 0; i < nodes.length; i += 1) {
-              var oc = nodes[i].getAttribute('onclick') || '';
-              var text = (nodes[i].innerText || '').replace(/\\s+/g, '');
-              if (text.indexOf('ご注文内容の確認へ') === -1) continue;
-              if (oc.indexOf('flg-guest') === -1 || oc.indexOf('true') === -1) continue;
-              button = nodes[i];
-              break;
-            }
+          if (!button) return { called: 'missing' };
+          var form = button.form || button.closest('form');
+          var guest = document.querySelector('#flg-guest');
+          if (guest) guest.value = 'true';
+          if (form) form.noValidate = true;
+          if (typeof button.onclick === 'function') {
+            button.onclick.call(button, new MouseEvent('click', { bubbles: true, cancelable: true }));
+            return { called: 'onclick', form: !!form, onsubmit: !!(form && typeof form.onsubmit === 'function') };
           }
-          if (!button || typeof button.onclick !== 'function') return { called: false };
-          try {
-            button.onclick.call(button);
-            return { called: 'onclick' };
-          } catch (error) {
-            return { called: false, reason: String(error && error.message || error).slice(0, 200) };
-          }
+          button.click();
+          return { called: 'click', form: !!form, onsubmit: !!(form && typeof form.onsubmit === 'function') };
         JS
-        called = result.is_a?(Hash) ? (result["called"] || result[:called]) : nil
+        called = result.is_a?(Hash) ? (result["called"] || result[:called]).to_s : "missing"
         record_action(
           type: "submit",
           where: "form:カード番号",
           label: "onsubmit",
-          value: called.to_s == "onclick" ? "onclick" : "missing"
+          value: called,
+          request: { "form" => (result.is_a?(Hash) ? result["form"] : nil), "onsubmit" => (result.is_a?(Hash) ? result["onsubmit"] : nil) }
         )
-        record_open_alert
-        called.to_s == "onclick"
+        accept_card_alert
+        called != "missing"
+      rescue Selenium::WebDriver::Error::UnexpectedAlertOpenError
+        accept_card_alert
+        true
       rescue StandardError => error
-        record_action(type: "submit", where: "form:カード番号", label: "onsubmit", value: "onclick")
-        record_open_alert
+        record_action(type: "submit", where: "form:カード番号", label: "onsubmit", value: "error")
         Log.error "guest onsubmit failed: #{sanitize_error(error.message)}", @log_tab_level
+        accept_card_alert
         true
       end
 
-      def record_open_alert
+      def accept_card_alert
         alert = @driver.switch_to.alert
-        text = sanitize_error(alert.text.to_s).slice(0, 300)
+        text = alert.text.to_s
         alert.accept
-        record_action(type: "detect", where: "alert", label: "alert", value: text) if text.present?
+        record_action(type: "detect", where: "alert", label: "card_alert", value: sanitize_error(text).slice(0, 300))
+        @card_alert_text = text
         text
       rescue Selenium::WebDriver::Error::NoSuchAlertError
+        nil
+      rescue StandardError
         nil
       end
 
@@ -1611,7 +1617,7 @@ module SeleniumServices
         digits = card_expiry_from_card.to_s.gsub(/\D/, "")
         return ["", ""] if digits.length < 4
 
-        [digits[0, 2], digits[-2, 2]]
+        [digits[0, 2], "20#{digits[-2, 2]}"]
       end
 
       def masked_pan_from_card
