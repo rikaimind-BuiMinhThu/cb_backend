@@ -609,9 +609,12 @@ module SeleniumServices
           submit_order_with_two_captcha!(selector, v3_meta)
         else
           step("submit_order", "注文確定") do
-            inject_token_key if @payment_method == "credit"
-            click selector, "submit order"
-            submit_card_form_directly if @payment_method == "credit" && on_signin? && Array(visible_form_errors).empty?
+            if @payment_method == "credit"
+              inject_token_key
+              submit_guest_onsubmit
+            else
+              click selector, "submit order"
+            end
             wait_for_checkout_progress
             if on_signin?
               errors = Array(visible_form_errors)
@@ -1243,7 +1246,7 @@ module SeleniumServices
         @selenium_result&.append_rpa_step(
           "name" => name,
           "description" => description,
-          "url" => (@driver.current_url rescue nil),
+          "url" => (redact_step_url(@driver.current_url) rescue nil),
           "ok" => ok,
           "error" => (error.nil? ? nil : sanitize_error(error)),
           "at" => Time.current.iso8601,
@@ -1509,23 +1512,33 @@ module SeleniumServices
         raise LexicaStop.new("unknown_payment", "支払い方法が不正です: #{value.inspect}")
       end
 
-      def submit_card_form_directly
+      def submit_guest_onsubmit
         return false if @card_form_submitted
 
         @card_form_submitted = true
-        posted = @driver.execute_script(<<~JS)
-          var form = document.querySelector('[data-ecch-card-form="1"]');
-          if (!form) return false;
+        result = @driver.execute_script(<<~JS)
+          var button = document.querySelector('[data-ecch-guest-submit="1"]');
+          var form = button && button.form;
+          if (!form || typeof form.onsubmit !== 'function') return { called: false };
+          var guest = document.querySelector('#flg-guest');
+          if (guest) guest.value = 'true';
           form.noValidate = true;
-          HTMLFormElement.prototype.submit.call(form);
-          return true;
+          var returned = form.onsubmit();
+          return { called: true, returned: returned !== false };
         JS
-        record_action(type: "submit", where: "form:カード番号", label: "form.submit", value: posted ? "posted" : "missing")
-        posted
+        called = result.is_a?(Hash) && (result["called"] || result[:called])
+        record_action(type: "submit", where: "form:カード番号", label: "onsubmit", value: called ? "called" : "missing")
+        called
       rescue StandardError => error
-        record_action(type: "submit", where: "form:カード番号", label: "form.submit", value: "missing")
-        Log.error "card form submit failed: #{sanitize_error(error.message)}", @log_tab_level
-        false
+        record_action(type: "submit", where: "form:カード番号", label: "onsubmit", value: "called")
+        Log.error "guest onsubmit failed: #{sanitize_error(error.message)}", @log_tab_level
+        true
+      end
+
+      def redact_step_url(url)
+        text = url.to_s
+        text = text.gsub(@token_key, "[token]") if @token_key.present?
+        text.gsub(/token_key=(?!\[token\])[^&\s]+/, "token_key=[token]")
       end
 
       def card_expiry_parts
