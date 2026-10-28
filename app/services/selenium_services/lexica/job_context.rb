@@ -1,7 +1,7 @@
 module SeleniumServices
   module Lexica
     class JobContext
-      Conversation = Struct.new(:data_input_name, :value, :user_input_id, keyword_init: true)
+      Conversation = Struct.new(:id, :data_input_name, :value, :user_input_id, keyword_init: true)
 
       class ScenarioContext
         def initialize(attrs)
@@ -35,6 +35,7 @@ module SeleniumServices
         conversations = Array(rows).map do |row|
           item = row.respond_to?(:to_h) ? row.to_h : row
           Conversation.new(
+            id: item["id"] || item[:id],
             data_input_name: item["data_input_name"] || item[:data_input_name],
             value: item.key?("value") ? item["value"] : item[:value],
             user_input_id: item["user_input_id"] || item[:user_input_id] || user_input_id

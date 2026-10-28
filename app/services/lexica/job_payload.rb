@@ -65,6 +65,7 @@ module Lexica
           row.value
         end
       {
+        "id" => row.id,
         "data_input_name" => name,
         "value" => value,
         "user_input_id" => row.user_input_id
