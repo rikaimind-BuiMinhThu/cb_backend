@@ -1,4 +1,5 @@
 require "base64"
+require "fileutils"
 require "selenium-webdriver"
 require File.dirname(__FILE__) + "/../../log"
 
@@ -43,30 +44,30 @@ module SeleniumServices
           end
         Selenium::WebDriver.logger.level = :debug
         Log.info "Init selenium driver for chrome", @log_tab_level
-        options = Selenium::WebDriver::Chrome::Options.new(
-          args: [
-            "--lang=ja",
-            "--headless=new",
-            "--no-sandbox",
-            "--disable-gpu",
-            "--disable-dev-shm-usage",
-            "--window-size=#{WINDOW_SIZE}",
-            "--disable-extensions",
-            "--disable-background-networking",
-            "--disable-sync",
-            "--disable-default-apps",
-            "--no-first-run",
-            "--mute-audio",
-            "--disable-hang-monitor",
-            "--disable-popup-blocking",
-            "--disable-prompt-on-repost",
-            "--disable-component-update",
-            "--metrics-recording-only",
-            "--disable-features=TranslateUI",
-            "--disable-blink-features=AutomationControlled",
-            "--user-agent=#{desktop_user_agent}",
-          ],
-        )
+        chrome_args = [
+          "--lang=ja",
+          "--headless=new",
+          "--no-sandbox",
+          "--disable-gpu",
+          "--disable-dev-shm-usage",
+          "--window-size=#{WINDOW_SIZE}",
+          "--disable-extensions",
+          "--disable-background-networking",
+          "--disable-sync",
+          "--disable-default-apps",
+          "--no-first-run",
+          "--mute-audio",
+          "--disable-hang-monitor",
+          "--disable-popup-blocking",
+          "--disable-prompt-on-repost",
+          "--disable-component-update",
+          "--metrics-recording-only",
+          "--disable-features=TranslateUI",
+          "--disable-blink-features=AutomationControlled",
+          "--user-agent=#{desktop_user_agent}",
+        ]
+        chrome_args.concat(lambda_chrome_args) if lambda_runtime?
+        options = Selenium::WebDriver::Chrome::Options.new(args: chrome_args)
         options.exclude_switches = ["enable-automation"]
         chrome_bin = ENV["CHROME_BIN"].to_s.strip
         options.binary = chrome_bin if chrome_bin.present?
@@ -74,7 +75,9 @@ module SeleniumServices
         driver_path = ENV["CHROMEDRIVER_PATH"].to_s.strip
         service =
           if driver_path.present?
-            Selenium::WebDriver::Chrome::Service.new(path: driver_path)
+            Selenium::WebDriver::Chrome::Service.new(path: driver_path, args: chromedriver_log_args)
+          elsif lambda_runtime?
+            Selenium::WebDriver::Chrome::Service.new(args: chromedriver_log_args)
           end
 
         @driver =
@@ -148,6 +151,46 @@ module SeleniumServices
 
       def desktop_user_agent
         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36"
+      end
+
+      def lambda_runtime?
+        ENV["AWS_LAMBDA_FUNCTION_NAME"].to_s != ""
+      end
+
+      # Chrome 136+ ignores the DevTools port on the default profile, and crashpad
+      # aborts the tab when it cannot write. Lambda can only write under /tmp.
+      def lambda_chrome_args
+        stamp = "#{Process.pid}-#{Time.now.to_i}"
+        home = "/tmp/chrome-home-#{stamp}"
+        profile = "/tmp/chrome-profile-#{stamp}"
+        cache = "/tmp/chrome-cache-#{stamp}"
+        crashes = "/tmp/chrome-crashes-#{stamp}"
+        [home, profile, cache, crashes].each { |dir| FileUtils.mkdir_p(dir) }
+        ENV["HOME"] = home
+        ENV["XDG_CONFIG_HOME"] = home
+        ENV["XDG_CACHE_HOME"] = cache
+        ENV["CHROME_LOG_FILE"] = "/tmp/chrome.log"
+        [
+          "--user-data-dir=#{profile}",
+          "--disk-cache-dir=#{cache}",
+          "--crash-dumps-dir=#{crashes}",
+          "--disable-crash-reporter",
+          "--disable-breakpad",
+          "--no-report-upload",
+          "--single-process",
+          "--no-zygote",
+          "--disable-setuid-sandbox",
+          "--disable-gpu-sandbox",
+          "--in-process-gpu",
+          "--disable-software-rasterizer",
+          "--disable-features=VizDisplayCompositor,AudioServiceOutOfProcess,IsolateOrigins,site-per-process,TranslateUI",
+        ]
+      end
+
+      def chromedriver_log_args
+        return [] unless lambda_runtime?
+
+        ["--log-path=/tmp/chromedriver.log", "--log-level=INFO"]
       end
     end
   end

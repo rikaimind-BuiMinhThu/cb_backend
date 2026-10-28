@@ -5,6 +5,7 @@ require "fileutils"
 require "ostruct"
 require "active_support"
 require "active_support/core_ext/object/blank"
+require "active_support/core_ext/time/calculations"
 
 module Rails
   class ApplicationShim

@@ -32,6 +32,7 @@ class Handler
       handle_record(record)
     rescue StandardError => error
       warn "lexica rpa record failed: #{error.class}: #{error.message}"
+      warn_chromedriver_failure
       failures << { "itemIdentifier" => record["messageId"] }
     end
     { "batchItemFailures" => failures }
@@ -41,6 +42,22 @@ class Handler
 
   def records
     Array(@event["Records"])
+  end
+
+  def warn_chromedriver_failure
+    ["/tmp/chromedriver.log", "/tmp/chrome.log"].each do |path|
+      next unless File.file?(path)
+
+      lines = File.readlines(path, chomp: true).last(30).filter_map { |line|
+        snippet = line[0, 180]
+        next if snippet.match?(/\d{13,}/)
+
+        snippet
+      }
+      warn "#{path}:\n#{lines.join("\n")}" unless lines.empty?
+    end
+  rescue StandardError
+    nil
   end
 
   def handle_record(record)
