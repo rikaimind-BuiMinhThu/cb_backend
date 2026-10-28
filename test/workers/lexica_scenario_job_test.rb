@@ -14,7 +14,8 @@ class LexicaScenarioJobTest < ActiveSupport::TestCase
         error_message: nil,
         end_time: nil,
         scenario_id: 101,
-        user_input_id: "uid-chrome-slot-test"
+        user_input_id: "uid-chrome-slot-test",
+        id: 55
       }.merge(overrides)
     end
 
@@ -44,6 +45,10 @@ class LexicaScenarioJobTest < ActiveSupport::TestCase
 
     def scenario_id
       @attrs[:scenario_id]
+    end
+
+    def id
+      @attrs[:id]
     end
 
     def user_input_id
@@ -114,6 +119,25 @@ class LexicaScenarioJobTest < ActiveSupport::TestCase
     end
   end
 
+  def with_lambda_env
+    previous_runtime = ENV["LEXICA_RPA_RUNTIME"]
+    previous_queue = ENV["LEXICA_RPA_QUEUE_URL"]
+    ENV["LEXICA_RPA_RUNTIME"] = "lambda"
+    ENV["LEXICA_RPA_QUEUE_URL"] = "https://sqs.ap-northeast-1.amazonaws.com/860950001203/staging-lexica-rpa"
+    yield
+  ensure
+    if previous_runtime.nil?
+      ENV.delete("LEXICA_RPA_RUNTIME")
+    else
+      ENV["LEXICA_RPA_RUNTIME"] = previous_runtime
+    end
+    if previous_queue.nil?
+      ENV.delete("LEXICA_RPA_QUEUE_URL")
+    else
+      ENV["LEXICA_RPA_QUEUE_URL"] = previous_queue
+    end
+  end
+
   def build_scenario_stub
     responses = Object.new
     responses.define_singleton_method(:where) { |*| [] }
@@ -161,6 +185,32 @@ class LexicaScenarioJobTest < ActiveSupport::TestCase
     assert_equal "queued", @result.last_step_description
   end
 
+  def test_perform_lambda_enqueues_result_id_only
+    job = LexicaScenarioJob.new
+    scenario = build_scenario_stub
+    enqueued = nil
+    with_lambda_env do
+      Scenario.stub(:find, scenario) do
+        job.stub(:find_result, @result) do
+          stub_offer_resolver do
+            SeleniumServices::ChromeSlot.stub(:new, ->(*) { flunk "chrome started" }) do
+              Lexica::RpaQueue.stub(:enqueue, ->(id, delay_seconds: 0) { enqueued = [id, delay_seconds] }) do
+                job.perform(@scenario_id, @user_id, 0, Time.now.to_i)
+              end
+            end
+          end
+        end
+      end
+    end
+
+    assert_equal [55, 0], enqueued
+    body = Lexica::RpaQueue.message_body(55)
+    assert_equal({ "selenium_result_id" => 55 }, JSON.parse(body))
+    refute_includes body, "token"
+    refute_includes body, "password"
+    refute_includes body, "card_number"
+  end
+
   def test_perform_wall_timeout_schedules_chrome_slot_retry
     job = LexicaScenarioJob.new
     scenario = build_scenario_stub
@@ -204,6 +254,27 @@ class LexicaScenarioJobTest < ActiveSupport::TestCase
 end
 
 class LexicaChromeSlotOrphanReaperJobTest < ActiveSupport::TestCase
+  def test_reaper_skips_when_lambda_runtime
+    previous_runtime = ENV["LEXICA_RPA_RUNTIME"]
+    previous_queue = ENV["LEXICA_RPA_QUEUE_URL"]
+    ENV["LEXICA_RPA_RUNTIME"] = "lambda"
+    ENV["LEXICA_RPA_QUEUE_URL"] = "https://sqs.example/staging-lexica-rpa"
+    ScenarioUserResponseSeleniumResult.stub(:stale_queued, ->(*) { flunk "reaper queried rows" }) do
+      LexicaChromeSlotOrphanReaperJob.new.perform
+    end
+  ensure
+    if previous_runtime.nil?
+      ENV.delete("LEXICA_RPA_RUNTIME")
+    else
+      ENV["LEXICA_RPA_RUNTIME"] = previous_runtime
+    end
+    if previous_queue.nil?
+      ENV.delete("LEXICA_RPA_QUEUE_URL")
+    else
+      ENV["LEXICA_RPA_QUEUE_URL"] = previous_queue
+    end
+  end
+
   def test_reaper_recovers_stale_queued_rows
     stale = Object.new
     stale.define_singleton_method(:id) { 99 }

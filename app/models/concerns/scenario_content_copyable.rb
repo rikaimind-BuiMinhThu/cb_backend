@@ -13,6 +13,8 @@ module ScenarioContentCopyable
     execution_policy
     is_used_custom_css
     custom_css_content
+    is_used_thanks_message
+    thanks_message_html
     is_used_custom_js_code
     head_custom_js_code
     top_body_custom_js_code

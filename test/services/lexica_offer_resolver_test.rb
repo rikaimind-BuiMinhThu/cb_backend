@@ -42,12 +42,26 @@ class LexicaOfferResolverTest < ActiveSupport::TestCase
     assert_equal "missing_upsell_product", error.error_kind
   end
 
-  def test_raises_when_cross_sell_selected_and_url_blank
-    @scenario.lexica_cross_sell_product_url = ""
+  def test_raises_when_cross_sell_selected_and_sku_blank
+    @scenario.lexica_cross_sell_sku = ""
     error = assert_raises(SeleniumServices::Lexica::OfferError) do
       resolve!(row("cross_sell", "xs1"))
     end
     assert_equal "missing_cross_sell_product", error.error_kind
+  end
+
+  def test_upsell_blank_url_falls_back_to_landing_page
+    @scenario.lexica_upsell_product_url = ""
+    resolved = resolve!(row("upsell", "up1"))
+    assert_equal "SAMPLE-UPSELL-SKU", resolved.sku
+    assert_equal "https://lp.example.test/10ml", resolved.product_url
+  end
+
+  def test_cross_sell_blank_url_falls_back_to_landing_page
+    @scenario.lexica_cross_sell_product_url = ""
+    resolved = resolve!(row("cross_sell", "xs1"))
+    assert_equal "https://lp.example.test/10ml", resolved.cross_sell_url
+    assert_includes resolved.cart_skus, "SAMPLE-XSELL-SKU"
   end
 
   private

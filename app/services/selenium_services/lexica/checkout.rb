@@ -708,8 +708,10 @@ module SeleniumServices
           step("submit_order", "注文確定") do
             if @payment_method == "credit"
               inject_token_key
+              mark_order_submitted!
               submit_guest_onsubmit
             else
+              mark_order_submitted!
               click selector, "submit order"
             end
             wait_for_checkout_progress
@@ -774,6 +776,7 @@ module SeleniumServices
               # Lexica may mutate fields between inject and click; re-bind immediately before submit.
               inject_recaptcha_token(result[:token])
               inject_token_key if @payment_method == "credit"
+              mark_order_submitted!
               click selector, "submit order 2captcha attempt #{attempt}"
               wait_for_checkout_progress
 
@@ -1405,35 +1408,31 @@ module SeleniumServices
         sanitize_error(text).to_s.slice(0, MAX_ACTION_VALUE_LEN)
       end
 
+      def mark_order_submitted!
+        return if @order_submitted_marked
+
+        @order_submitted_marked = true
+        @selenium_result&.mark_submitted!
+      end
+
       def mark_done
-        Order.create!(
-          client_id: @selenium_result.client_id,
-          scenario_id: @scenario.id,
-          user_input_id: @user_input_id,
-          bot_type: :web
-        )
-        @selenium_result.update!(
-          result: :done,
-          end_time: DateTime.now,
+        @selenium_result&.mark_done!(
+          lexica_order_id: @lexica_order_id,
           last_step_no: @step,
-          last_step_description: "完了を確認",
-          lexica_order_id: @lexica_order_id
+          last_step_description: "完了を確認"
         )
         @is_error = false
       end
 
       def fail_result(kind, message)
         @is_error = true
-        @selenium_result&.update!(
-          result: :error,
-          end_time: DateTime.now,
+        @selenium_result&.mark_failed!(
+          kind: kind,
+          message: sanitize_error(message),
           last_step_no: @step,
-          last_step_description: @selenium_result.last_step_description,
-          error_kind: kind,
-          error_message: sanitize_error(message),
+          last_step_description: @selenium_result&.last_step_description,
           screenshot_path: failure_screenshot_key
         )
-        notify_failure(kind, message)
       end
 
       def failure_screenshot_key
@@ -1442,14 +1441,9 @@ module SeleniumServices
         FileUtils.mkdir_p(@screenshot_path)
         path = File.join(@screenshot_path, "#{@scenario.id}_#{@user_input_id}_fail.png")
         write_png(path)
-        AmazonWebServices::RpaScreenshotS3.call(
-          path,
-          client_id: @selenium_result.client_id,
-          scenario_id: @scenario.id,
-          bot_order_id: @selenium_result.id
-        )
+        @selenium_result.upload_failure_screenshot(path, scenario_id: @scenario.id)
       rescue => error
-        Log.error "RpaScreenshotS3 failed: #{error.message}"
+        Log.error "failure screenshot failed: #{error.message}"
         nil
       ensure
         delete_local_png(path)
@@ -1461,27 +1455,6 @@ module SeleniumServices
         File.delete(path)
       rescue
         nil
-      end
-
-      def notify_failure(kind, message)
-        client = @scenario.chatbot&.user&.client
-        email = client&.email.presence || @scenario.chatbot&.user&.email
-        return if email.blank?
-
-        OrderFailedMailer.send_email(
-          email,
-          email,
-          {
-            shop_name: client&.name,
-            user_email: @user_email,
-            path: @path,
-            error_kind: kind,
-            error_message: sanitize_error(message),
-            user_input_id: @user_input_id
-          }
-        ).deliver_later
-      rescue => e
-        Log.error "OrderFailedMailer failed: #{e.message}"
       end
 
       def sanitize_error(message)

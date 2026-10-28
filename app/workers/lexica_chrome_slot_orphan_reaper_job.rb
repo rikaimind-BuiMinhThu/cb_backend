@@ -5,6 +5,8 @@ class LexicaChromeSlotOrphanReaperJob
   STALE_AFTER = 2.minutes
 
   def perform
+    return if Lexica::RpaQueue.lambda_runtime?
+
     scope = ScenarioUserResponseSeleniumResult.stale_queued(STALE_AFTER.ago)
 
     scope.find_each do |row|

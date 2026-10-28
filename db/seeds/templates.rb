@@ -37,6 +37,8 @@ Seeds::Templates::Catalog.scenario_rows.each do |row|
     product_id_cross_sell: nil,
     is_used_custom_css: false,
     custom_css_content: nil,
+    is_used_thanks_message: false,
+    thanks_message_html: nil,
     is_used_custom_js_code: false,
     head_custom_js_code: nil,
     top_body_custom_js_code: nil,

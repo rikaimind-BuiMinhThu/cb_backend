@@ -24,6 +24,11 @@ class LexicaScenarioJob
       return
     end
 
+    if Lexica::RpaQueue.lambda_runtime?
+      Lexica::RpaQueue.enqueue(result.id) if result&.id
+      return
+    end
+
     if Time.now.to_i - slot_wait_started_at >= SeleniumServices::ChromeSlot::WAIT_SECONDS
       self.class.schedule_chrome_slot_retry_or_fail(
         scenario_id,

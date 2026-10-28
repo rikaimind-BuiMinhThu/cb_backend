@@ -52,6 +52,8 @@ class ScenarioUserResponseSeleniumResult < ApplicationRecord
   end
 
   def retryable?
+    return false if order_submitted_at.present?
+
     error? && (token_failure? || !submitted_to_cart?)
   end
 

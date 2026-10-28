@@ -65,6 +65,8 @@ module ScenarioContentPersistence
     apply_execution_policy!(record)
     record.is_used_custom_css = params[:is_used_custom_css]
     record.custom_css_content = params[:custom_css_content]
+    record.is_used_thanks_message = params[:is_used_thanks_message]
+    record.thanks_message_html = params[:thanks_message_html]
     record.is_used_err_msg_by_js = params[:is_used_err_msg_by_js]
     record.err_msg_js_code = params[:err_msg_js_code]
     record.err_msg_setting_mode = params[:err_msg_setting_mode] if params[:err_msg_setting_mode].present?

@@ -70,6 +70,8 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         withdrawal_prevention_image_url: chatbot.withdrawal_prevention_image_url,
         is_used_custom_css: scenario.is_used_custom_css,
         custom_css_content: scenario.custom_css_content,
+        is_used_thanks_message: scenario.is_used_thanks_message,
+        thanks_message_html: scenario.thanks_message_html,
         is_used_err_msg_by_js: scenario.is_used_err_msg_by_js,
         err_msg_js_code: scenario.err_msg_js_code,
         err_msg_setting_mode: scenario.err_msg_setting_mode,
@@ -205,6 +207,8 @@ class Api::V1::Managements::ScenariosController < ApplicationController
       apply_execution_policy!(@scenario)
       @scenario.is_used_custom_css = params[:is_used_custom_css]
       @scenario.custom_css_content = params[:custom_css_content]
+      @scenario.is_used_thanks_message = params[:is_used_thanks_message]
+      @scenario.thanks_message_html = params[:thanks_message_html]
       @scenario.is_used_err_msg_by_js = params[:is_used_err_msg_by_js]
       @scenario.err_msg_js_code = params[:err_msg_js_code]
       @scenario.err_msg_setting_mode = params[:err_msg_setting_mode] if params.key?(:err_msg_setting_mode)
@@ -342,9 +346,13 @@ class Api::V1::Managements::ScenariosController < ApplicationController
   end
 
   def assign_lexica_offers!
-    @scenario.lexica_upsell_product_url = params[:lexica_upsell_product_url]
+    if params.key?(:lexica_upsell_product_url)
+      @scenario.lexica_upsell_product_url = params[:lexica_upsell_product_url]
+    end
     @scenario.lexica_upsell_sku = params[:lexica_upsell_sku]
-    @scenario.lexica_cross_sell_product_url = params[:lexica_cross_sell_product_url]
+    if params.key?(:lexica_cross_sell_product_url)
+      @scenario.lexica_cross_sell_product_url = params[:lexica_cross_sell_product_url]
+    end
     @scenario.lexica_cross_sell_sku = params[:lexica_cross_sell_sku]
     bool = ActiveModel::Type::Boolean.new
     assign_lexica_flag(:lexica_offer_chat, bool, true)

@@ -26,18 +26,18 @@ module SeleniumServices
         cross_sell_url = nil
 
         if selected?("upsell")
-          raise_missing!("missing_upsell_product", "アップセル商品URLまたは商品コードが未設定です") if upsell_incomplete?
+          raise_missing!("missing_upsell_product", "アップセル商品コードが未設定です") if upsell_incomplete?
           sku = @scenario.lexica_upsell_sku.to_s
-          product_url = @scenario.lexica_upsell_product_url.to_s
+          product_url = @scenario.lexica_upsell_product_url.to_s.presence || @scenario.landing_page_product_url.to_s
           surfaces << "chat_upsell"
         end
 
         cart_skus = [sku].reject(&:blank?)
 
         if selected?("cross_sell")
-          raise_missing!("missing_cross_sell_product", "クロスセル商品URLまたは商品コードが未設定です") if cross_sell_incomplete?
+          raise_missing!("missing_cross_sell_product", "クロスセル商品コードが未設定です") if cross_sell_incomplete?
           cross_sell_sku = @scenario.lexica_cross_sell_sku.to_s
-          cross_sell_url = @scenario.lexica_cross_sell_product_url.to_s
+          cross_sell_url = @scenario.lexica_cross_sell_product_url.to_s.presence || @scenario.landing_page_product_url.to_s
           cart_skus << cross_sell_sku unless cart_skus.include?(cross_sell_sku)
           surfaces << "chat_cross_sell"
         end
@@ -67,11 +67,11 @@ module SeleniumServices
       end
 
       def upsell_incomplete?
-        @scenario.lexica_upsell_sku.to_s.blank? || @scenario.lexica_upsell_product_url.to_s.blank?
+        @scenario.lexica_upsell_sku.to_s.blank?
       end
 
       def cross_sell_incomplete?
-        @scenario.lexica_cross_sell_sku.to_s.blank? || @scenario.lexica_cross_sell_product_url.to_s.blank?
+        @scenario.lexica_cross_sell_sku.to_s.blank?
       end
 
       def raise_missing!(kind, message)

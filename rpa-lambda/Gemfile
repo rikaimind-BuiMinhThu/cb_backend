@@ -1,0 +1,8 @@
+source "https://rubygems.org"
+
+gem "selenium-webdriver", "4.8.1"
+gem "jwt"
+gem "aws-sdk-sqs", "~> 1.62"
+gem "aws-sdk-s3", "~> 1.117"
+gem "activesupport", "~> 7.0.2"
+gem "colorize"

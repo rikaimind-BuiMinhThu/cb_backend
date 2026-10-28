@@ -153,5 +153,9 @@ Rails.application.routes.draw do
       post '/shopify/cart_lines_add', to: 'shopify#cart_lines_add'
       post '/shopify/webhook', to: 'shopify#webhook'
     end
+    namespace :internal do
+      post "rpa/jobs/:id/claim", to: "rpa_jobs#claim"
+      post "rpa/jobs/:id/events", to: "rpa_jobs#events"
+    end
   end
 end

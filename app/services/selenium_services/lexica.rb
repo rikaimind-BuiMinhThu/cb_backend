@@ -2,7 +2,7 @@ module SeleniumServices
   module Lexica
     PATHS = %w[first_time new existing].freeze
 
-    def self.build(scenario, conversations)
+    def self.build(scenario, conversations, sink: nil)
       path = extract_path(conversations)
       klass =
         case path
@@ -12,7 +12,7 @@ module SeleniumServices
         else
           raise ArgumentError, "unknown lexica path: #{path.inspect}"
         end
-      klass.new(scenario, conversations)
+      klass.new(scenario, conversations, sink: sink)
     end
 
     def self.extract_path(conversations)

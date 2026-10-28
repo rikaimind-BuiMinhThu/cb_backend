@@ -6,10 +6,41 @@ module SeleniumServices
   module Lexica
     class Base < SeleniumServices::Base
       TIMEOUT = 45
+      WINDOW_SIZE = "1280,720"
+      BLOCKED_URLS = [
+        "*google-analytics*", "*googletagmanager*", "*doubleclick*",
+        "*facebook.net*", "*hotjar*",
+        "*.png*", "*.jpg*", "*.jpeg*", "*.gif*", "*.webp*", "*.svg*", "*.ico*", "*.avif*"
+      ].freeze
+
+      def initialize(scenario, conversations, sink: nil)
+        conversation_ids = conversations.map { |row| row.respond_to?(:id) ? row.id : row.data_input_name }
+        Log.info "Start selenium service for: \n\tscenario: #{scenario.id}\n\tconversations: #{conversation_ids.inspect}"
+        @scenario = scenario
+        @conversations = conversations.to_a
+        @user_input_id = @conversations.first&.user_input_id.presence || "sample"
+        @tamago_repeat_config = @scenario.respond_to?(:tamago_repeat_config) ? @scenario.tamago_repeat_config : nil
+        @screenshot_path = ENV["SELENIUM_SCREENSHOT_DIR"].to_s.strip
+        @screenshot_path = File.join(Rails.root.to_s, "tmp", "selenium") if @screenshot_path.empty?
+        @step = 1
+        @current_frame = nil
+        @log_tab_level = 0
+        @is_error = nil
+        @order_submitted_marked = false
+        @selenium_result = sink || ActiveRecordResultSink.for_user_input(@user_input_id)
+        extract_conversions_data
+        init_selenium_driver
+      end
 
       def init_selenium_driver
         @log_tab_level += 1
-        Selenium::WebDriver.logger.output = File.join("#{Rails.root}/log", "selenium.log")
+        selenium_log = ENV["SELENIUM_LOG"].to_s.strip
+        Selenium::WebDriver.logger.output =
+          if selenium_log.empty?
+            File.join(Rails.root.to_s, "log", "selenium.log")
+          else
+            selenium_log
+          end
         Selenium::WebDriver.logger.level = :debug
         Log.info "Init selenium driver for chrome", @log_tab_level
         options = Selenium::WebDriver::Chrome::Options.new(
@@ -19,7 +50,7 @@ module SeleniumServices
             "--no-sandbox",
             "--disable-gpu",
             "--disable-dev-shm-usage",
-            "--window-size=2560,1440",
+            "--window-size=#{WINDOW_SIZE}",
             "--disable-extensions",
             "--disable-background-networking",
             "--disable-sync",
@@ -55,10 +86,7 @@ module SeleniumServices
         @driver.execute_cdp("Network.enable")
         @driver.execute_cdp(
           "Network.setBlockedURLs",
-          urls: [
-            "*google-analytics*", "*googletagmanager*", "*doubleclick*",
-            "*facebook.net*", "*hotjar*",
-          ]
+          urls: BLOCKED_URLS
         )
         @driver.execute_cdp(
           "Page.addScriptToEvaluateOnNewDocument",

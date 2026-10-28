@@ -11,6 +11,8 @@ json.data do
   json.execution_policy @scenario_template.execution_policy
   json.custom_css_content @scenario_template.custom_css_content
   json.is_used_custom_css @scenario_template.is_used_custom_css
+  json.is_used_thanks_message @scenario_template.is_used_thanks_message
+  json.thanks_message_html @scenario_template.thanks_message_html
   json.is_used_err_msg_by_js @scenario_template.is_used_err_msg_by_js
   json.err_msg_js_code @scenario_template.err_msg_js_code
   json.err_msg_setting_mode @scenario_template.err_msg_setting_mode
