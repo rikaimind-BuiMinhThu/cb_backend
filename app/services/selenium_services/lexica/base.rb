@@ -67,6 +67,10 @@ module SeleniumServices
             "--user-agent=#{desktop_user_agent}",
           ],
         )
+        if ENV["AWS_LAMBDA_FUNCTION_NAME"].to_s != ""
+          options.add_argument("--single-process")
+          options.add_argument("--no-zygote")
+        end
         options.exclude_switches = ["enable-automation"]
         chrome_bin = ENV["CHROME_BIN"].to_s.strip
         options.binary = chrome_bin if chrome_bin.present?
