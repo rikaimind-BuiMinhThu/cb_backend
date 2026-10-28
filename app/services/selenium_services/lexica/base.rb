@@ -67,10 +67,6 @@ module SeleniumServices
             "--user-agent=#{desktop_user_agent}",
           ],
         )
-        if ENV["AWS_LAMBDA_FUNCTION_NAME"].to_s != ""
-          options.add_argument("--single-process")
-          options.add_argument("--no-zygote")
-        end
         options.exclude_switches = ["enable-automation"]
         chrome_bin = ENV["CHROME_BIN"].to_s.strip
         options.binary = chrome_bin if chrome_bin.present?
@@ -87,15 +83,17 @@ module SeleniumServices
           else
             Selenium::WebDriver.for(:chrome, options: options)
           end
-        @driver.execute_cdp("Network.enable")
-        @driver.execute_cdp(
-          "Network.setBlockedURLs",
-          urls: BLOCKED_URLS
-        )
-        @driver.execute_cdp(
-          "Page.addScriptToEvaluateOnNewDocument",
-          source: "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
-        )
+        if ENV["AWS_LAMBDA_FUNCTION_NAME"].to_s == ""
+          @driver.execute_cdp("Network.enable")
+          @driver.execute_cdp(
+            "Network.setBlockedURLs",
+            urls: BLOCKED_URLS
+          )
+          @driver.execute_cdp(
+            "Page.addScriptToEvaluateOnNewDocument",
+            source: "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+          )
+        end
         Log.info @driver.execute_script("return navigator.userAgent"), @log_tab_level
         @driver.manage.timeouts.implicit_wait = 0
         @driver.manage.delete_all_cookies
