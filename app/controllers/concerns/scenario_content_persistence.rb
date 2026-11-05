@@ -93,6 +93,10 @@ module ScenarioContentPersistence
       tag_firing: params[:tag_firing],
     }.compact
 
+    if params.key?(:param_security) || params.key?("param_security")
+      incoming[:param_security] = ParamSecurity.validate_config!(params[:param_security])
+    end
+
     extra = record.extra_config_hash.merge(incoming)
     record.extra_config = extra.present? ? JSON.generate(extra.as_json) : nil
   end

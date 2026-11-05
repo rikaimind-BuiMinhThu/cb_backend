@@ -92,7 +92,8 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         opening_bot_icon: chatbot.opening_bot_icon,
         closing_bot_icon: chatbot.closing_bot_icon,
         use_fullwidth_chatbot_mobile: scenario.use_fullwidth_chatbot_mobile,
-        tag_firing: scenario.extra_config_hash["tag_firing"] || {}
+        tag_firing: scenario.extra_config_hash["tag_firing"] || {},
+        param_security: ParamSecurity.config_for(scenario)
       },
       all_variables: all_variables,
       design_settings: chatbot.design_settings ? JSON.parse(chatbot.design_settings) : ""
@@ -224,6 +225,8 @@ class Api::V1::Managements::ScenariosController < ApplicationController
       @scenario.is_clear_landing_page_session = params[:is_clear_landing_page_session]
       apply_extra_config!(@scenario)
       @scenario.save!
+    rescue ParamSecurity::Error => error
+      return render json: { code: 0, error: error.code, message: error.message }, status: 422
     rescue StandardError => error
       Rails.logger.debug(error)
       return render json: {code: 2, message: error}, status: 500
@@ -286,6 +289,7 @@ class Api::V1::Managements::ScenariosController < ApplicationController
         lp_integration_mode: extra["lp_integration_mode"],
         amazon_pay_config: extra["amazon_pay_config"] || {},
         tag_firing: extra["tag_firing"] || {},
+        param_security: ParamSecurity.normalize(extra["param_security"]),
       },
       cart_system: bot.user&.client&.cart_system
     }

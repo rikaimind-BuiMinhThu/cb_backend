@@ -38,18 +38,25 @@ class ScenarioUserResponse < ApplicationRecord
     payload = {
       exp: (Time.current + 72.hours).to_i,
     }
+    security = ParamSecurity.config_for(scenario)
+    covered = ParamSecurity.covers?(security, data_input_name)
+    if covered && ParamSecurity.encrypt_mode?(security) && ParamSecurity.ciphertext?(value)
+      value = ParamSecurity.decrypt!(value, security)
+    end
+    skip_jwt = covered
+
     if self.class.list[self.data_input_name&.to_sym]
       case self.class.list[self.data_input_name.to_sym][:value_type]
       when :boolean
         self.boolean_value = value || false
       when :string
-        if self.class.list[self.data_input_name.to_sym][:is_encrypt]
+        if !skip_jwt && self.class.list[self.data_input_name.to_sym][:is_encrypt]
           payload[:data] = value
           value = JWT.encode payload, SECRET_KEY
         end
         self.string_value = value
       when :text
-        if self.class.list[self.data_input_name.to_sym][:is_encrypt]
+        if !skip_jwt && self.class.list[self.data_input_name.to_sym][:is_encrypt]
           payload[:data] = value
           value = JWT.encode payload, SECRET_KEY
         end

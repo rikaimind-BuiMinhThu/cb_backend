@@ -5,12 +5,24 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
 
   def create
     if !!@client && params[:user_id].present?
+      security = ParamSecurity.config_for(@scenario)
+      if ParamSecurity.encrypt_mode?(security) && params[:message].present?
+        message = params[:message]
+        message_hash = message.respond_to?(:to_unsafe_h) ? message.to_unsafe_h : message
+        decrypted = ParamSecurity.decrypt_tree!(message_hash.deep_dup, security)
+        params[:message] = decrypted.with_indifferent_access
+      end
       scenario_user_responses = ScenarioUserResponse.build_record(params)
       scenario_user_responses.each(&:save!) if scenario_user_responses.present?
-      render json: { code: 1, data: scenario_user_responses }
+      render json: {
+        code: 1,
+        data: ParamSecurity.outbound_records(scenario_user_responses, security),
+      }
     else
       render json: { code: 0, data: [] }
     end
+  rescue ParamSecurity::Error => error
+    render json: { code: 0, error: error.code, message: error.message }, status: 422
   end
 
   def create_order

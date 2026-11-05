@@ -249,6 +249,19 @@ module SeleniumServices
       @conversations.detect { |c| c.data_input_name == data_input_name }&.value
     end
 
+    def reveal_secured_value(stored_value)
+      ParamSecurity.reveal(stored_value, secret_key: SECRET_KEY)
+    end
+
+    def reveal_secured_json(stored_value)
+      revealed = reveal_secured_value(stored_value)
+      return nil if revealed.blank?
+
+      revealed.is_a?(String) ? JSON.parse(revealed) : revealed
+    rescue JSON::ParserError
+      revealed
+    end
+
     def user_agents
       [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36",

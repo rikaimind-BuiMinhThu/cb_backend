@@ -335,14 +335,14 @@ module SeleniumServices
       @quantity_value = find_response_by_data_input_name("quantity")
       @payment_method = find_response_by_data_input_name("payment_method")
       @credit_card_payment = find_response_by_data_input_name("credit_card_payment")
-      @card_data = JSON.parse(JWT.decode(@credit_card_payment, SECRET_KEY)[0]["data"]) if @credit_card_payment.present?
+      @card_data = reveal_secured_json(@credit_card_payment) if @credit_card_payment.present?
       @np_delivery_payment = find_response_by_data_input_name("np_delivery_payment")
       @has_account = find_response_by_data_input_name("has_account")
       @delivery_time = find_response_by_data_input_name("delivery_time")
       @delivery_date = find_response_by_data_input_name("delivery_date")
       @sent_message = find_response_by_data_input_name("sent_message")
       encrypted_password_value = find_response_by_data_input_name("password")
-      @password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"] if encrypted_password_value.present?
+      @password_value = reveal_secured_value(encrypted_password_value) if encrypted_password_value.present?
       @coupon = JSON.parse(scenario.conversation)['coupon']
       @is_use_coupon = find_response_by_data_input_name("is_use_coupon")
     end

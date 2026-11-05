@@ -428,7 +428,7 @@ module SeleniumServices
       @quantity_value = quantity_value.zero? ? 1 : quantity_value
       @user_email = find_response_by_data_input_name("user_email")
       encrypted_password_value = find_response_by_data_input_name("user_password")
-      @password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"] if encrypted_password_value.present?
+      @password_value = reveal_secured_value(encrypted_password_value) if encrypted_password_value.present?
       @country = find_response_by_data_input_name("country") || "JP"
       @last_name = find_response_by_data_input_name("last_name")
       @first_name = find_response_by_data_input_name("first_name")
@@ -442,11 +442,11 @@ module SeleniumServices
         @value_building_name = '/'
       end
       @credit_card_payment = find_response_by_data_input_name("credit_card_payment")
-      @card_data = JSON.parse(JWT.decode(@credit_card_payment, SECRET_KEY)[0]["data"]) if @credit_card_payment.present?
+      @card_data = reveal_secured_json(@credit_card_payment) if @credit_card_payment.present?
       @paypal_payment = find_response_by_data_input_name("paypal_payment")
-      @paypal_data = JSON.parse(JWT.decode(@paypal_payment, SECRET_KEY)[0]["data"]) if @paypal_payment.present?
+      @paypal_data = reveal_secured_json(@paypal_payment) if @paypal_payment.present?
       @komoju_payment = find_response_by_data_input_name("komoju_payment")
-      @komoju_data = JSON.parse(JWT.decode(@komoju_payment, SECRET_KEY)[0]["data"]) if @komoju_payment.present?
+      @komoju_data = reveal_secured_json(@komoju_payment) if @komoju_payment.present?
       @paidy_payment = find_response_by_data_input_name("paidy_payment")
       @paidy_data = JSON.parse(@paidy_payment) if @paidy_payment.present?
     end

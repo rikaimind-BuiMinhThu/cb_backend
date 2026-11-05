@@ -379,7 +379,7 @@ module SeleniumServices
       end
       @user_email = find_response_by_data_input_name("user_email")
       encrypted_password_value = find_response_by_data_input_name("password")
-      @password_value = JWT.decode(encrypted_password_value, SECRET_KEY)[0]["data"]
+      @password_value = reveal_secured_value(encrypted_password_value)
 
       @coupons_code = find_response_by_data_input_name("coupons_code")
       @user_name = JSON.parse find_response_by_data_input_name("user_name")
@@ -401,7 +401,7 @@ module SeleniumServices
       @phone_number = find_response_by_data_input_name("phone_number")
       @credit_card_payment = find_response_by_data_input_name("credit_card_payment")
 
-      @card_data = JSON.parse(JWT.decode(@credit_card_payment, SECRET_KEY)[0]["data"]) if @credit_card_payment.present?
+      @card_data = reveal_secured_json(@credit_card_payment) if @credit_card_payment.present?
 
       @np_delivery_payment = find_response_by_data_input_name("np_delivery_payment")
 

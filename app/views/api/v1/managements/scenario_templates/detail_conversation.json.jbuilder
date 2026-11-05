@@ -36,4 +36,5 @@ json.data do
   json.lp_integration_mode extra["lp_integration_mode"]
   json.amazon_pay_config extra["amazon_pay_config"]
   json.tag_firing extra["tag_firing"]
+  json.param_security ParamSecurity.normalize(extra["param_security"])
 end
