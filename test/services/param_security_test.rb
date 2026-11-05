@@ -3,6 +3,9 @@
 require "test_helper"
 
 class ParamSecurityTest < ActiveSupport::TestCase
+  # Pure service unit tests — do not inherit fixtures :all (broken empty selenium fixture).
+  self.fixture_table_names = []
+
   test "encrypt roundtrip" do
     config = ParamSecurity.validate_config!(
       mode: "encrypt",
