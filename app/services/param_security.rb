@@ -70,9 +70,7 @@ class ParamSecurity
 
     return config if mode == "none"
 
-    if config["params"].blank?
-      raise Error.new("param_security_invalid_config", "params required for #{mode}")
-    end
+    # params list is unused: when mode is hash/encrypt, all fields are covered.
 
     if mode == "encrypt"
       if config["key"].blank? || config["key"].length < MIN_KEY_LEN
@@ -98,11 +96,9 @@ class ParamSecurity
     default_config
   end
 
-  def self.covers?(config, data_input_name)
+  def self.covers?(config, _data_input_name = nil)
     config = normalize(config)
-    return false if config["mode"] == "none"
-
-    config["params"].include?(data_input_name.to_s)
+    config["mode"] != "none"
   end
 
   def self.encrypt_mode?(config)

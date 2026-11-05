@@ -9,7 +9,7 @@ class ParamSecurityTest < ActiveSupport::TestCase
   test "encrypt roundtrip" do
     config = ParamSecurity.validate_config!(
       mode: "encrypt",
-      params: ["password"],
+      params: [],
       key: "secretkey123",
     )
     cipher = ParamSecurity.encrypt("plain-secret", config)
@@ -20,7 +20,7 @@ class ParamSecurityTest < ActiveSupport::TestCase
   test "hash config stores bcrypt algorithm and does not decode" do
     config = ParamSecurity.validate_config!(
       mode: "hash",
-      params: ["password"],
+      params: [],
       salt: "pepper",
     )
     assert_equal "hash", config["mode"]
@@ -32,7 +32,7 @@ class ParamSecurityTest < ActiveSupport::TestCase
   test "bad ciphertext rejected" do
     config = ParamSecurity.validate_config!(
       mode: "encrypt",
-      params: ["password"],
+      params: [],
       key: "secretkey123",
     )
     assert_raises(ParamSecurity::Error) do
@@ -40,11 +40,22 @@ class ParamSecurityTest < ActiveSupport::TestCase
     end
   end
 
-  test "encrypt requires key and params" do
+  test "encrypt requires key" do
     error = assert_raises(ParamSecurity::Error) do
       ParamSecurity.validate_config!(mode: "encrypt", params: [], key: "short")
     end
     assert_equal "param_security_invalid_config", error.code
+  end
+
+  test "enabled mode covers all fields without params list" do
+    config = ParamSecurity.validate_config!(
+      mode: "encrypt",
+      params: [],
+      key: "secretkey123",
+    )
+    assert ParamSecurity.covers?(config, "password")
+    assert ParamSecurity.covers?(config, "user_email")
+    assert ParamSecurity.covers?(config, "any_field")
   end
 
   test "reveal returns jwt payload data and skips bcrypt" do
