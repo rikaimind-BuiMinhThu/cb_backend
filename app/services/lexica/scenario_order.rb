@@ -30,6 +30,7 @@ module Lexica
       got_lock = conn.select_value(
         ActiveRecord::Base.sanitize_sql_array(["SELECT GET_LOCK(?, 10)", lock_name])
       ).to_i == 1
+      return { json: { code: 2, message: "busy" } } unless got_lock
 
       begin
         result = ScenarioUserResponseSeleniumResult
@@ -68,11 +69,9 @@ module Lexica
           }
         }
       ensure
-        if got_lock
-          conn.select_value(
-            ActiveRecord::Base.sanitize_sql_array(["SELECT RELEASE_LOCK(?)", lock_name])
-          )
-        end
+        conn.select_value(
+          ActiveRecord::Base.sanitize_sql_array(["SELECT RELEASE_LOCK(?)", lock_name])
+        )
       end
     end
 
@@ -103,11 +102,15 @@ module Lexica
     def self.token_failure(scenario, client, params)
       return { json: { code: 2, message: "not lexica" } } unless client&.lexica?
 
-      result = ScenarioUserResponseSeleniumResult.for_visitor(scenario.id, params[:user_id]).first_or_initialize
-      result.assign_attributes(
+      latest = ScenarioUserResponseSeleniumResult
+        .for_visitor(scenario.id, params[:user_id])
+        .order(id: :desc)
+        .first
+      attrs = {
         scenario_id: scenario.id,
         chatbot_id: scenario.chatbot_id,
         client_id: scenario.chatbot&.user&.client_id,
+        user_input_id: params[:user_id],
         last_step_no: 0,
         last_step_description: "token_failure",
         start_time: DateTime.now,
@@ -118,8 +121,15 @@ module Lexica
         masked_pan: params[:masked_pan],
         path: params[:path],
         payment: "credit"
-      )
-      result.save!
+      }
+      result = if latest&.done?
+        ScenarioUserResponseSeleniumResult.create!(attrs)
+      else
+        row = latest || ScenarioUserResponseSeleniumResult.new
+        row.assign_attributes(attrs)
+        row.save!
+        row
+      end
       { json: { code: 1, data: { id: result.id } } }
     end
 

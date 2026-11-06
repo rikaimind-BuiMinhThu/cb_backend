@@ -61,7 +61,12 @@ class LexicaScenarioJob
 
     begin
       result&.update!(last_step_description: "running", start_time: Time.current)
-      service = SeleniumServices::Lexica.build(scenario, conversations)
+      sink = if result
+        SeleniumServices::Lexica::ActiveRecordResultSink.for_result(result)
+      else
+        SeleniumServices::Lexica::ActiveRecordResultSink.for_user_input(user_id, scenario_id: scenario_id)
+      end
+      service = SeleniumServices::Lexica.build(scenario, conversations, sink: sink)
       service.process
     rescue Selenium::WebDriver::Error::UnexpectedAlertOpenError => e
       mark_error(scenario_id, user_id, "alert", e.message)

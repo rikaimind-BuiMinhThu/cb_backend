@@ -1,11 +1,20 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+# Minimal valid rows so fixtures :all can load (client_id/chatbot_id/scenario_id/user_input_id NOT NULL).
+one:
+  client_id: 1
+  chatbot_id: 1
+  scenario_id: 1
+  user_input_id: fixture-user-one
+  last_step_no: 1
+  last_step_description: fixture
+  result: 0
+  rpa_attempt: 0
 
-# This model initially had no columns defined. If you add columns to the
-# model remove the "{}" from the fixture names and add the columns immediately
-# below each fixture, per the syntax in the comments below
-#
-one: {}
-# column: value
-#
-two: {}
-# column: value
+two:
+  client_id: 1
+  chatbot_id: 1
+  scenario_id: 1
+  user_input_id: fixture-user-two
+  last_step_no: 1
+  last_step_description: fixture
+  result: 0
+  rpa_attempt: 0

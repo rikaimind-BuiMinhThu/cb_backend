@@ -117,13 +117,7 @@ class Api::V1::Managements::ClientsController < ApplicationController
   end
 
   def clamp_lexica_max_chrome(permitted)
-    if permitted[:lexica_max_chrome].present?
-      global = SystemSetting.lexica_max_chrome
-      permitted[:lexica_max_chrome] = [SystemSetting.clamp_chrome(permitted[:lexica_max_chrome]), global].min
-    elsif permitted.key?(:lexica_max_chrome) && permitted[:lexica_max_chrome].blank?
-      permitted[:lexica_max_chrome] = nil
-    end
-    permitted
+    Lexica::ClientChromeLimit.clamp_permitted!(permitted)
   end
 
   def strip_blank_reply_smtp_password(permitted)

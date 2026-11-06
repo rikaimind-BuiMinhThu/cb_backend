@@ -28,7 +28,10 @@ module SeleniumServices
         @log_tab_level = 0
         @is_error = nil
         @order_submitted_marked = false
-        @selenium_result = sink || ActiveRecordResultSink.for_user_input(@user_input_id)
+        @selenium_result = sink || ActiveRecordResultSink.for_user_input(
+          @user_input_id,
+          scenario_id: @scenario.id
+        )
         extract_conversions_data
         init_selenium_driver
       end

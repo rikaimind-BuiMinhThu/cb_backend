@@ -7,7 +7,7 @@ class Api::V1::Managements::SystemSettingsController < ApplicationController
     render json: {
       code: 1,
       data: {
-        lexica_max_chrome: SystemSetting.lexica_max_chrome
+        lexica_max_chrome: Lexica::ClientChromeLimit.read_global
       }
     }
   end
@@ -15,7 +15,7 @@ class Api::V1::Managements::SystemSettingsController < ApplicationController
   def update
     return render json: { code: 2, message: "No permission" } unless current_user.admin_deel?
 
-    value = SystemSetting.lexica_max_chrome = params[:lexica_max_chrome]
+    value = Lexica::ClientChromeLimit.write_global(params[:lexica_max_chrome])
     render json: { code: 1, data: { lexica_max_chrome: value } }
   end
 end

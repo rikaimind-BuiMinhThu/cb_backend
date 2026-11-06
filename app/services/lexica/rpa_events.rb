@@ -125,17 +125,16 @@ module Lexica
     end
 
     def ensure_order_row!
-      return if Order.exists?(
+      Order.create_with(bot_type: :web).find_or_create_by!(
         client_id: @result.client_id,
         scenario_id: @result.scenario_id,
         user_input_id: @result.user_input_id
       )
-
-      Order.create!(
-        client_id: @result.client_id,
-        scenario_id: @result.scenario_id,
-        user_input_id: @result.user_input_id,
-        bot_type: :web
+    rescue ActiveRecord::RecordNotUnique => error
+      Rails.logger.error(
+        "Lexica::RpaEvents.ensure_order_row! client_id=#{@result.client_id} " \
+        "scenario_id=#{@result.scenario_id} user_input_id=#{@result.user_input_id}: " \
+        "#{error.message}\n#{Array(error.backtrace).first(15).join("\n")}"
       )
     end
   end

@@ -78,7 +78,12 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
   private
 
   def set_scenario
-    @scenario = Scenario.find_by_id(params[:scenario_id])
+    @scenario = Scenario.find_by(id: params[:scenario_id])
+    if @scenario.blank?
+      render json: { code: 2, message: "not found" }, status: :not_found
+      return
+    end
+
     @client = @scenario.chatbot&.user&.client
   end
 end

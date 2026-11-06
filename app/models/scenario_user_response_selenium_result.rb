@@ -12,6 +12,10 @@ class ScenarioUserResponseSeleniumResult < ApplicationRecord
     relation
   }
   scope :for_visitor, ->(scenario_id, user_input_id) { where(scenario_id: scenario_id, user_input_id: user_input_id) }
+  scope :with_result, ->(value) { where(result: value) }
+  scope :with_path, ->(value) { where(path: value) }
+  scope :created_on_or_after, ->(date) { where("DATE(created_at) >= ?", date) }
+  scope :created_on_or_before, ->(date) { where("DATE(created_at) <= ?", date) }
   scope :stale_queued, ->(before) {
     where(result: :running, last_step_description: "queued").where("updated_at < ?", before)
   }

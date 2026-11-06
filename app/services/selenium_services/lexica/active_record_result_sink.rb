@@ -3,9 +3,16 @@ module SeleniumServices
     class ActiveRecordResultSink
       TRACKED = %i[resolved_sku resolved_product_url offer_surfaces].freeze
 
-      def self.for_user_input(user_input_id)
-        record = ScenarioUserResponseSeleniumResult.find_by(user_input_id: user_input_id)
+      def self.for_result(record)
         new(record)
+      end
+
+      def self.for_user_input(user_input_id, scenario_id:, result_id: nil)
+        raise ArgumentError, "scenario_id required" if scenario_id.blank?
+
+        scope = ScenarioUserResponseSeleniumResult.for_visitor(scenario_id, user_input_id)
+        scope = scope.where(id: result_id) if result_id.present?
+        new(scope.order(id: :desc).first)
       end
 
       def initialize(record)
@@ -143,17 +150,17 @@ module SeleniumServices
       private
 
       def ensure_order_row!
-        return if Order.exists?(
+        Order.create_with(bot_type: :web).find_or_create_by!(
           client_id: @record.client_id,
           scenario_id: @record.scenario_id,
           user_input_id: @record.user_input_id
         )
-
-        Order.create!(
-          client_id: @record.client_id,
-          scenario_id: @record.scenario_id,
-          user_input_id: @record.user_input_id,
-          bot_type: :web
+      rescue ActiveRecord::RecordNotUnique => error
+        Rails.logger.error(
+          "SeleniumServices::Lexica::ActiveRecordResultSink.ensure_order_row! " \
+          "client_id=#{@record.client_id} scenario_id=#{@record.scenario_id} " \
+          "user_input_id=#{@record.user_input_id}: #{error.message}\n" \
+          "#{Array(error.backtrace).first(15).join("\n")}"
         )
       end
     end

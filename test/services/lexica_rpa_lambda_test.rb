@@ -153,7 +153,22 @@ class LexicaJobPayloadCardTest < ActiveSupport::TestCase
   end
 end
 
+module LexicaOrderCreateStub
+  module_function
+
+  def stub_order_create_with(created)
+    relation = Object.new
+    relation.define_singleton_method(:find_or_create_by!) do |attrs|
+      created << attrs.merge(bot_type: :web)
+      created.last
+    end
+    Order.stub(:create_with, ->(**_opts) { relation }) { yield }
+  end
+end
+
 class LexicaActiveRecordResultSinkTest < ActiveSupport::TestCase
+  include LexicaOrderCreateStub
+
   class FakeRecord
     attr_reader :attrs
 
@@ -222,11 +237,9 @@ class LexicaActiveRecordResultSinkTest < ActiveSupport::TestCase
     record = FakeRecord.new
     sink = SeleniumServices::Lexica::ActiveRecordResultSink.new(record)
     created = []
-    Order.stub(:exists?, false) do
-      Order.stub(:create!, ->(**attrs) { created << attrs }) do
-        sink.mark_done!(lexica_order_id: "L-1", last_step_no: 4, last_step_description: "完了を確認")
-        sink.mark_done!(lexica_order_id: "L-1", last_step_no: 4, last_step_description: "完了を確認")
-      end
+    stub_order_create_with(created) do
+      sink.mark_done!(lexica_order_id: "L-1", last_step_no: 4, last_step_description: "完了を確認")
+      sink.mark_done!(lexica_order_id: "L-1", last_step_no: 4, last_step_description: "完了を確認")
     end
 
     assert_equal 1, created.length
@@ -254,16 +267,14 @@ class LexicaActiveRecordResultSinkTest < ActiveSupport::TestCase
     ]
     sink = SeleniumServices::Lexica::ActiveRecordResultSink.new(record)
     created = []
-    Order.stub(:exists?, false) do
-      Order.stub(:create!, ->(**attrs) { created << attrs }) do
-        sink.mark_failed!(
-          kind: "rpa_error",
-          message: "Net::ReadTimeout",
-          last_step_no: 9,
-          last_step_description: "注文確定",
-          screenshot_path: nil
-        )
-      end
+    stub_order_create_with(created) do
+      sink.mark_failed!(
+        kind: "rpa_error",
+        message: "Net::ReadTimeout",
+        last_step_no: 9,
+        last_step_description: "注文確定",
+        screenshot_path: nil
+      )
     end
 
     assert_equal 1, created.length
@@ -274,6 +285,8 @@ class LexicaActiveRecordResultSinkTest < ActiveSupport::TestCase
 end
 
 class LexicaCompleteOrderSalvageTest < ActiveSupport::TestCase
+  include LexicaOrderCreateStub
+
   def test_code_from_url_and_steps
     url = "https://cart.mirai-japan.co.jp/order/complete/00900685"
     assert_equal "00900685", SeleniumServices::Lexica::CompleteOrderSalvage.code_from_url(url)
@@ -299,14 +312,12 @@ class LexicaCompleteOrderSalvageTest < ActiveSupport::TestCase
     record.define_singleton_method(:last_step_no) { @attrs[:last_step_no] }
 
     created = []
-    Order.stub(:exists?, false) do
-      Order.stub(:create!, ->(**attrs) { created << attrs }) do
-        assert SeleniumServices::Lexica::CompleteOrderSalvage.promote_record!(
-          record,
-          lexica_order_id: "abc-99",
-          last_step_no: 3
-        )
-      end
+    stub_order_create_with(created) do
+      assert SeleniumServices::Lexica::CompleteOrderSalvage.promote_record!(
+        record,
+        lexica_order_id: "abc-99",
+        last_step_no: 3
+      )
     end
     assert_equal "done", record.attrs[:result].to_s
     assert_equal "abc-99", record.attrs[:lexica_order_id]
