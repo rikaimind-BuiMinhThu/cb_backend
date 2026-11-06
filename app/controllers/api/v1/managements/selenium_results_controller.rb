@@ -40,10 +40,33 @@ class Api::V1::Managements::SeleniumResultsController < ApplicationController
     send_data AmazonWebServices::RpaScreenshotS3.read(row.screenshot_path), type: "image/png", disposition: "inline"
   end
 
+  def step_screenshot
+    return render json: { code: 2, message: "No permission" } unless current_user&.admin_deel? || current_user&.admin_client?
+    return render json: { code: 2, message: "not lexica" }, status: 403 unless lexica_client?
+
+    row = base_scope.find_by(id: params[:id])
+    key = step_screenshot_key(row, params[:screenshot_path])
+    return render json: { code: 2, message: "not found" }, status: :not_found if row.blank? || key.blank?
+
+    send_data AmazonWebServices::RpaScreenshotS3.read(key), type: "image/png", disposition: "inline"
+  end
+
   private
 
   def screenshot_available?(row)
     AmazonWebServices::RpaScreenshotS3.s3_key?(row.screenshot_path)
+  end
+
+  def step_screenshot_key(row, requested)
+    return nil if row.blank?
+
+    key = requested.to_s
+    return nil unless AmazonWebServices::RpaScreenshotS3.s3_key?(key)
+    return nil unless row.rpa_steps_array.any? { |step|
+      step.is_a?(Hash) && step["screenshot_path"].to_s == key
+    }
+
+    key
   end
 
   def lexica_client?

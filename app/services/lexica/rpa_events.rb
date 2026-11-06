@@ -63,24 +63,27 @@ module Lexica
     def mark_done
       return { ok: true, duplicate: true } if @result.done?
 
-      Order.create!(
-        client_id: @result.client_id,
-        scenario_id: @result.scenario_id,
-        user_input_id: @result.user_input_id,
-        bot_type: :web
-      )
+      ensure_order_row!
       @result.update!(
         result: :done,
         end_time: Time.current,
         last_step_no: @params[:last_step_no],
         last_step_description: @params[:last_step_description].presence || "完了を確認",
-        lexica_order_id: @params[:lexica_order_id]
+        lexica_order_id: @params[:lexica_order_id],
+        error_kind: nil,
+        error_message: nil
       )
       { ok: true }
     end
 
     def mark_failed
       return { ok: true, duplicate: true } if @result.done?
+
+      # Lambda may post fail after a dead-socket timeout even when /order/complete is in steps.
+      complete_code = SeleniumServices::Lexica::CompleteOrderSalvage.code_from_steps(@result.rpa_steps_array)
+      if complete_code.present?
+        return mark_done_with_id(complete_code)
+      end
 
       @result.update!(
         result: :error,
@@ -94,6 +97,29 @@ module Lexica
       Lexica::FailureMail.deliver(@result, @params[:error_kind], @params[:error_message])
       self.class.requeue_if_retryable(@result)
       { ok: true }
+    end
+
+    def mark_done_with_id(lexica_order_id)
+      @params = @params.merge(
+        lexica_order_id: lexica_order_id,
+        last_step_description: @params[:last_step_description].presence || "完了を確認"
+      )
+      mark_done
+    end
+
+    def ensure_order_row!
+      return if Order.exists?(
+        client_id: @result.client_id,
+        scenario_id: @result.scenario_id,
+        user_input_id: @result.user_input_id
+      )
+
+      Order.create!(
+        client_id: @result.client_id,
+        scenario_id: @result.scenario_id,
+        user_input_id: @result.user_input_id,
+        bot_type: :web
+      )
     end
   end
 end

@@ -70,6 +70,24 @@ module SeleniumServices
       end
 
       def upload_failure_screenshot(path, scenario_id:)
+        upload_screenshot(path, scenario_id: scenario_id, kind: "fail")
+      end
+
+      def upload_step_screenshot(path, scenario_id:, step_no:)
+        upload_screenshot(path, scenario_id: scenario_id, kind: "step#{step_no}")
+      end
+
+      def reload
+        self
+      end
+
+      def rpa_steps_array
+        []
+      end
+
+      private
+
+      def upload_screenshot(path, scenario_id:, kind:)
         bucket = ENV["RPA_SCREENSHOT_BUCKET"].to_s
         return nil if bucket.empty? || id.blank? || client_id.blank?
 
@@ -78,7 +96,7 @@ module SeleniumServices
           "rpa-screenshots",
           client_id,
           scenario_id,
-          "#{id}_#{Time.now.utc.strftime("%Y%m%dT%H%M%SZ")}_fail.png"
+          "#{id}_#{Time.now.utc.strftime("%Y%m%dT%H%M%SZ")}_#{kind}.png"
         ].join("/")
         File.open(path, "rb") do |file|
           Aws::S3::Resource.new(region: ENV.fetch("AWS_REGION", "ap-northeast-1"))
@@ -88,8 +106,6 @@ module SeleniumServices
         end
         key
       end
-
-      private
 
       def stringify(value)
         case value

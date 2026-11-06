@@ -62,6 +62,7 @@ Rails.application.routes.draw do
         resources :selenium_results, only: [:index, :show] do
           member do
             get :screenshot
+            get :step_screenshot
           end
         end
         resource :system_settings, only: [:show, :update]

@@ -159,12 +159,22 @@ class LexicaActiveRecordResultSinkTest < ActiveSupport::TestCase
 
     def initialize
       @attrs = {
+        id: 1,
         client_id: 4,
         scenario_id: 8,
         user_input_id: "visitor",
         result: "running",
-        order_submitted_at: nil
+        order_submitted_at: nil,
+        rpa_steps: [],
+        last_step_no: 0,
+        lexica_order_id: nil,
+        error_kind: nil,
+        error_message: nil
       }
+    end
+
+    def id
+      @attrs[:id]
     end
 
     def client_id
@@ -187,6 +197,22 @@ class LexicaActiveRecordResultSinkTest < ActiveSupport::TestCase
       @attrs[:order_submitted_at]
     end
 
+    def lexica_order_id
+      @attrs[:lexica_order_id]
+    end
+
+    def last_step_no
+      @attrs[:last_step_no]
+    end
+
+    def rpa_steps_array
+      Array(@attrs[:rpa_steps])
+    end
+
+    def reload
+      self
+    end
+
     def update!(hash)
       @attrs.merge!(hash.transform_keys(&:to_sym))
     end
@@ -196,9 +222,11 @@ class LexicaActiveRecordResultSinkTest < ActiveSupport::TestCase
     record = FakeRecord.new
     sink = SeleniumServices::Lexica::ActiveRecordResultSink.new(record)
     created = []
-    Order.stub(:create!, ->(**attrs) { created << attrs }) do
-      sink.mark_done!(lexica_order_id: "L-1", last_step_no: 4, last_step_description: "完了を確認")
-      sink.mark_done!(lexica_order_id: "L-1", last_step_no: 4, last_step_description: "完了を確認")
+    Order.stub(:exists?, false) do
+      Order.stub(:create!, ->(**attrs) { created << attrs }) do
+        sink.mark_done!(lexica_order_id: "L-1", last_step_no: 4, last_step_description: "完了を確認")
+        sink.mark_done!(lexica_order_id: "L-1", last_step_no: 4, last_step_description: "完了を確認")
+      end
     end
 
     assert_equal 1, created.length
@@ -217,5 +245,71 @@ class LexicaActiveRecordResultSinkTest < ActiveSupport::TestCase
     first = record.order_submitted_at
     sink.mark_submitted!
     assert_equal first, record.order_submitted_at
+  end
+
+  def test_mark_failed_promotes_complete_url_to_done
+    record = FakeRecord.new
+    record.attrs[:rpa_steps] = [
+      { "name" => "submit_order", "url" => "https://cart.mirai-japan.co.jp/order/complete/00900685", "ok" => false }
+    ]
+    sink = SeleniumServices::Lexica::ActiveRecordResultSink.new(record)
+    created = []
+    Order.stub(:exists?, false) do
+      Order.stub(:create!, ->(**attrs) { created << attrs }) do
+        sink.mark_failed!(
+          kind: "rpa_error",
+          message: "Net::ReadTimeout",
+          last_step_no: 9,
+          last_step_description: "注文確定",
+          screenshot_path: nil
+        )
+      end
+    end
+
+    assert_equal 1, created.length
+    assert_equal "done", record.attrs[:result].to_s
+    assert_equal "00900685", record.attrs[:lexica_order_id]
+    assert_nil record.attrs[:error_kind]
+  end
+end
+
+class LexicaCompleteOrderSalvageTest < ActiveSupport::TestCase
+  def test_code_from_url_and_steps
+    url = "https://cart.mirai-japan.co.jp/order/complete/00900685"
+    assert_equal "00900685", SeleniumServices::Lexica::CompleteOrderSalvage.code_from_url(url)
+    assert_equal(
+      "00900685",
+      SeleniumServices::Lexica::CompleteOrderSalvage.code_from_steps(
+        [{ "url" => "https://cart.mirai-japan.co.jp/order/signin" }, { "url" => url }]
+      )
+    )
+  end
+
+  def test_salvage_job_promotes_via_sink
+    record = LexicaActiveRecordResultSinkTest::FakeRecord.new
+    record.attrs[:id] = 909
+    record.attrs[:result] = "error"
+    record.attrs[:error_kind] = "rpa_error"
+    record.attrs[:rpa_steps] = [
+      { "url" => "https://cart.mirai-japan.co.jp/order/complete/abc-99" }
+    ]
+    record.define_singleton_method(:reload) { self }
+    record.define_singleton_method(:rpa_steps_array) { @attrs[:rpa_steps] }
+    record.define_singleton_method(:lexica_order_id) { @attrs[:lexica_order_id] }
+    record.define_singleton_method(:last_step_no) { @attrs[:last_step_no] }
+
+    created = []
+    Order.stub(:exists?, false) do
+      Order.stub(:create!, ->(**attrs) { created << attrs }) do
+        assert SeleniumServices::Lexica::CompleteOrderSalvage.promote_record!(
+          record,
+          lexica_order_id: "abc-99",
+          last_step_no: 3
+        )
+      end
+    end
+    assert_equal "done", record.attrs[:result].to_s
+    assert_equal "abc-99", record.attrs[:lexica_order_id]
+    assert_equal 1, created.length
   end
 end

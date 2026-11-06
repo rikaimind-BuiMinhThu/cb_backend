@@ -2,8 +2,14 @@ module AmazonWebServices
   class RpaScreenshotS3
     KEY_PREFIX = "rpa-screenshots/"
 
-    def self.call(local_path, client_id:, scenario_id:, bot_order_id:)
-      new(local_path, client_id: client_id, scenario_id: scenario_id, bot_order_id: bot_order_id).call
+    def self.call(local_path, client_id:, scenario_id:, bot_order_id:, kind: "fail")
+      new(
+        local_path,
+        client_id: client_id,
+        scenario_id: scenario_id,
+        bot_order_id: bot_order_id,
+        kind: kind
+      ).call
     end
 
     def self.s3_key?(path)
@@ -22,11 +28,12 @@ module AmazonWebServices
       s3.bucket(Settings.aws.s3.S3_BUCKET).object(key)
     end
 
-    def initialize(local_path, client_id:, scenario_id:, bot_order_id:)
+    def initialize(local_path, client_id:, scenario_id:, bot_order_id:, kind: "fail")
       @local_path = local_path
       @client_id = client_id
       @scenario_id = scenario_id
       @bot_order_id = bot_order_id
+      @kind = kind.to_s.presence || "fail"
     end
 
     def call
@@ -34,7 +41,7 @@ module AmazonWebServices
         "rpa-screenshots",
         @client_id,
         @scenario_id,
-        "#{@bot_order_id}_#{timestamp}_fail.png"
+        "#{@bot_order_id}_#{timestamp}_#{@kind}.png"
       ].join("/")
       File.open(@local_path, "rb") do |file|
         self.class.object(key).put(body: file, content_type: "image/png")

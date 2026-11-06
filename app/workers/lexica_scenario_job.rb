@@ -63,21 +63,36 @@ class LexicaScenarioJob
       result&.update!(last_step_description: "running", start_time: Time.current)
       service = SeleniumServices::Lexica.build(scenario, conversations)
       service.process
+    rescue Selenium::WebDriver::Error::UnexpectedAlertOpenError => e
+      mark_error(scenario_id, user_id, "alert", e.message)
+    rescue Timeout::Error => e
+      # Net::ReadTimeout < Timeout::Error — may fire after Lexica already completed.
+      unless self.class.salvage_lexica_complete!(find_result(scenario_id, user_id))
+        self.class.schedule_chrome_slot_retry_or_fail(
+          scenario_id,
+          user_id,
+          "chrome_slot_timeout",
+          e.message,
+          chrome_slot_attempt
+        )
+      end
+    rescue => e
+      result = find_result(scenario_id, user_id)
+      if self.class.salvage_lexica_complete!(result)
+        Rails.logger.info(
+          "LexicaScenarioJob salvaged /order/complete after #{e.class}: #{e.message}"
+        )
+      else
+        mark_error(scenario_id, user_id, "rpa_error", e.message)
+      end
     ensure
+      result = find_result(scenario_id, user_id)
+      unless self.class.salvage_lexica_complete!(result)
+        # Last resort: if steps already show /order/complete, never leave rpa_error.
+        self.class.salvage_lexica_complete!(result&.reload)
+      end
       slot.release_if_acquired
     end
-  rescue Selenium::WebDriver::Error::UnexpectedAlertOpenError => e
-    mark_error(scenario_id, user_id, "alert", e.message)
-  rescue Timeout::Error => e
-    self.class.schedule_chrome_slot_retry_or_fail(
-      scenario_id,
-      user_id,
-      "chrome_slot_timeout",
-      e.message,
-      chrome_slot_attempt
-    )
-  rescue => e
-    mark_error(scenario_id, user_id, "rpa_error", e.message)
   end
 
   def self.recover_chrome_slot_orphan!(result)
@@ -163,6 +178,7 @@ class LexicaScenarioJob
   def self.mark_error(scenario_id, user_id, kind, message)
     result = find_result(scenario_id, user_id)
     return unless result
+    return if salvage_lexica_complete!(result)
 
     result.update!(
       result: :error,
@@ -170,6 +186,28 @@ class LexicaScenarioJob
       error_kind: kind,
       error_message: message.to_s.slice(0, 2000)
     )
+  end
+
+  # Lexica may finish at /order/complete/{code} while Selenium raises Net::ReadTimeout.
+  # Prefer that URL over marking the real order as rpa_error. Uses sink mark_done! for Order.create!.
+  def self.salvage_lexica_complete!(result)
+    return false unless result
+
+    result.reload
+    return true if result.done? && result.lexica_order_id.present?
+
+    code = SeleniumServices::Lexica::CompleteOrderSalvage.code_from_steps(result.rpa_steps_array)
+    return false if code.blank?
+
+    SeleniumServices::Lexica::CompleteOrderSalvage.promote_record!(
+      result,
+      lexica_order_id: code,
+      last_step_no: result.last_step_no,
+      last_step_description: "完了を確認"
+    )
+  rescue StandardError => e
+    Rails.logger.error("LexicaScenarioJob.salvage_lexica_complete! failed: #{e.message}")
+    false
   end
 
   def self.find_result(scenario_id, user_id)
