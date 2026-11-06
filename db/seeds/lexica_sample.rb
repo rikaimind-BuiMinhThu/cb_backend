@@ -9,6 +9,12 @@ PASSWORD = "Password123!"
 CART_URL = "https://cart.mirai-japan.co.jp/"
 # I'm PINCH 10ml 7日間お試しキット（単品）. LP AddItemToCart id. SAMPLE-SKU is not a cart item.
 PINCH_TRIAL_SKU = "_P046"
+PINCH_HEADER_LOGO_PATH = Rails.root.join("db/seeds/assets/pinch_header_logo.jpg")
+PINCH_HEADER_LOGO_DATA_URI = if File.file?(PINCH_HEADER_LOGO_PATH)
+  "data:image/jpeg;base64,#{Base64.strict_encode64(File.binread(PINCH_HEADER_LOGO_PATH))}"
+else
+  ""
+end
 SHOP_URL = "https://mirai-japan.co.jp/"
 LP_URL = "https://lp.mirai-japan.co.jp/ab/QvEvbJAyCPfzYIkKS_gvQ"
 OPERATOR_ICON = "https://botchan.blob.core.windows.net/production/uploads/bot_picture/624c0e7303a30.png"
@@ -154,8 +160,48 @@ CUSTOM_CSS = <<~CSS
   .ss-message__content--user-agree_to_term-title {
     font-weight: 700;
   }
+  .ss-message__content--user-text-input-top {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
   .ss-message__content--user-text-input-required {
-    display: none !important;
+    display: inline !important;
+    color: #FF7E00 !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0 !important;
+  }
+  .ss-message__content--user-text-input-title,
+  .ss-message__content--user-radio_button-title,
+  .ss-message__content--user-label-title,
+  .ss-message__content--user-pull_down-title,
+  .ss-message__content--user-textarea-title {
+    font-size: 17px !important;
+    font-weight: 700 !important;
+    letter-spacing: 2px !important;
+  }
+  .sp-body .ss-input-value.ss-input-custom-field,
+  .sp-body input.ss-input-value,
+  .field-float .ss-input-value {
+    min-height: 55px !important;
+    height: 55px !important;
+    box-sizing: border-box !important;
+  }
+  .sp-header.sp-header--logo,
+  .preview-open-frame__header.sp-header--logo {
+    height: 34px !important;
+    min-height: 34px !important;
+    background-size: 25% !important;
+    background-position: center !important;
+  }
+  .ss-input-value:placeholder-shown,
+  input.ss-input-value:placeholder-shown {
+    background: #F7E9E5 !important;
+  }
+  .option-gender-item {
+    border-radius: 5px !important;
   }
   .ss-message__content--user-agree_to_term-detail_content textarea {
     border: 1px solid #cccccc;
@@ -202,14 +248,15 @@ CUSTOM_CSS = <<~CSS
     line-height: 1 !important;
   }
   .chatbot-submit-button {
-    background: #f4b183 !important;
+    background: #EE9E3A !important;
     color: #ffffff !important;
     border: none !important;
-    border-radius: 64px !important;
-    min-height: 56px !important;
-    height: 56px !important;
-    width: 100% !important;
-    font-size: 18px !important;
+    border-radius: 5px !important;
+    min-height: 60px !important;
+    height: 60px !important;
+    min-width: 190px !important;
+    width: 190px !important;
+    font-size: 20px !important;
     font-weight: 700 !important;
   }
   .pinch-card-brands {
@@ -222,32 +269,72 @@ CUSTOM_CSS = <<~CSS
     height: 28px;
     width: auto;
   }
-  #sp-process-bar {
+  /* Expected: same row = n/N left + slogan center; thin full-width track below */
+  #sp-process-bar.sp-process-bar--fraction {
     position: relative !important;
-    padding-top: 22px !important;
+    padding: 6px 20px 10px !important;
     height: auto !important;
-    border-radius: 20px !important;
-    background: #ffffff !important;
+    min-height: 0 !important;
+    background: transparent !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
   }
-  #sp-process-bar::before {
-    content: "お申し込み最短３０秒";
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    width: 100%;
-    text-align: center;
-    color: #f19f95;
-    font-size: 13px;
-    font-weight: 700;
-    line-height: 20px;
-  }
-  .sp-process-bar .animation,
-  .sp-process-bar-color {
-    background: #d96b62 !important;
-    color: #ffffff !important;
+  #sp-process-bar.sp-process-bar--fraction::before {
+    content: "お申し込み最短30秒";
+    position: absolute !important;
+    left: 20px !important;
+    right: 20px !important;
+    top: 6px !important;
+    width: auto !important;
+    text-align: center !important;
+    color: #f48879 !important;
+    font-size: 12px !important;
     font-weight: 700 !important;
-    min-width: 36% !important;
+    line-height: 18px !important;
+    margin: 0 !important;
+    z-index: 1 !important;
+    pointer-events: none !important;
+  }
+  #sp-process-bar.sp-process-bar--fraction .sp-process-bar__meta {
+    position: relative !important;
+    height: 18px !important;
+    margin-bottom: 4px !important;
+    z-index: 2 !important;
+  }
+  #sp-process-bar.sp-process-bar--fraction .sp-process-bar__step {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    color: #f48879 !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    line-height: 18px !important;
+  }
+  #sp-process-bar.sp-process-bar--fraction .sp-process-bar__track {
+    background: #ffffff !important;
+    border-radius: 20px !important;
+    height: 10px !important;
+  }
+  #sp-process-bar.sp-process-bar--fraction .sp-process-bar-color,
+  #sp-process-bar.sp-process-bar--fraction .animation {
+    background: #f19f95 !important;
+    min-width: 0 !important;
+    height: 10px !important;
+    color: transparent !important;
+    font-size: 0 !important;
+    padding: 0 !important;
+    margin-top: 0 !important;
+    border-radius: 20px !important;
+  }
+  .field-float .ss-input-value,
+  .field-float textarea {
+    padding: 8px 12px !important;
+    line-height: 18px !important;
+  }
+  .field-float:focus-within .ss-input-value,
+  .field-float--filled .ss-input-value {
+    padding-top: 18px !important;
+    padding-bottom: 6px !important;
   }
   .sp-process-bar-complete { background: #ca2618 !important; color: #ffffff !important; border-radius: 15px !important; }
 CSS
@@ -261,8 +348,8 @@ PINCH_DESIGN_SETTINGS = {
   position_pc: 1,
   button_type_pc: 1,
   right_position_pc_title: "",
-  right_margin_pc: 16,
-  bottom_margin_pc: 16,
+  right_margin_pc: 10,
+  bottom_margin_pc: 0,
   position_sp: 1,
   button_type_sp: 1,
   right_position_sp_title: "",
@@ -277,7 +364,10 @@ PINCH_DESIGN_SETTINGS = {
     header_title_font_size: "15px",
     header_subtitle_text_color: "#FFFFFF",
     header_subtitle_font_size: "13px",
-    chat_window_bg_color: "#FFF8F2",
+    header_chrome: "logo",
+    header_bg_color: "#FFFFFF",
+    header_logo_image: PINCH_HEADER_LOGO_DATA_URI,
+    chat_window_bg_color: "#F7E9E5",
     bot_message_bg_color: "#FFEEEE",
     bot_message_text_color: "#333333",
     bot_message_font_size: "17px",
@@ -289,15 +379,22 @@ PINCH_DESIGN_SETTINGS = {
     required_label_text_color: "#FF0000",
     required_label_font_size: "12px",
     field_font_size: "17px",
-    field_unfocus_bg_color: "#FFFFFF",
+    field_unfocus_bg_color: "#F7E9E5",
     field_unfocus_border_color: "#E0E0E0",
     field_focus_bg_color: "#FFFFFF",
     field_focus_border_color: "#0597F2",
+    field_focus_border_width: "2px",
     field_focus_bg_effect: "outline_soft",
+    field_title_bold: true,
+    field_title_font_size: "17px",
+    field_title_letter_spacing: "2px",
+    field_placeholder_style: "float",
+    field_placeholder_font_size: "16px",
+    field_placeholder_focus_font_size: "10px",
     radio_unselected_bg_color: "#FFFFFF",
     radio_unselected_border_color: "#E0E0E0",
-    radio_selected_bg_color: "#FFB1C2",
-    radio_selected_border_color: "#EE4D67",
+    radio_selected_bg_color: "#8C6049",
+    radio_selected_border_color: "#8C6049",
     radio_font_size: "17px",
     radio_selected_border_effect: "none",
     checkbox_unchecked_bg_color: "#FFFFFF",
@@ -314,22 +411,27 @@ PINCH_DESIGN_SETTINGS = {
     button_disabled_text_color: "#FFFFFF",
     button_font_size: "16px",
     button_border_style: "pill",
-    button_effect: "bounce",
+    button_effect: "shake",
     button_width: "100%",
     button_position: "center",
     progress_bar_bg_color: "#FFFFFF",
-    progress_bar_text_color: "#F19F95",
-    progress_bar_font_size: "13px",
+    progress_bar_text_color: "#F48879",
+    progress_bar_font_size: "12px",
+    progress_bar_bold: true,
+    progress_bar_height: "10px",
+    progress_bar_radius: "20px",
+    progress_bar_fill_color: "#F19F95",
+    progress_label_mode: "fraction",
     modal_bg_color: "#FFFFFF",
     modal_title_text_color: "#333333",
     modal_title_font_size: "17px",
     modal_title_alignment: "left",
-    modal_cancel_button_bg_color: "#FFFFFF",
-    modal_cancel_button_text_color: "#333333",
-    modal_cancel_button_border_color: "#E0E0E0",
-    modal_close_button_bg_color: "#02BB92",
-    modal_close_button_text_color: "#FFFFFF",
-    modal_button_font_size: "16px",
+    modal_cancel_button_bg_color: "#D9534F",
+    modal_cancel_button_text_color: "#FFFFFF",
+    modal_cancel_button_border_color: "#AC2925",
+    modal_close_button_bg_color: "#DDDDDD",
+    modal_close_button_text_color: "#646464",
+    modal_button_font_size: "14px",
     validation_message_bg_color: "#FFF0F0",
     validation_message_text_color: "#CC0000",
     validation_message_font_size: "13px",

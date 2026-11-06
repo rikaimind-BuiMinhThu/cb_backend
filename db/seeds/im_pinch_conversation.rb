@@ -148,7 +148,7 @@ module Seeds
         id: 1,
         type: "radio_button",
         radio_button: {
-          title_require: true,
+          title_require: !title.to_s.empty?,
           title: title,
           require: true,
           type: "default",
@@ -218,14 +218,14 @@ module Seeds
             {
               id: 1,
               text: "男性",
-              value: "male",
-              preset_config: gender_preset("#7EB6E8", "#5A9BD4", "#3D7ABF", icon_url: GENDER_ICON_MALE)
+              value: "men",
+              preset_config: gender_preset("#209DA9", "#1A858F", "#209DA9", icon_url: GENDER_ICON_MALE)
             },
             {
               id: 2,
               text: "女性",
-              value: "female",
-              preset_config: gender_preset("#F5A3B5", "#EE8FA6", "#E56B88", icon_url: GENDER_ICON_FEMALE)
+              value: "women",
+              preset_config: gender_preset("#EE4D67", "#D63E58", "#EE4D67", icon_url: GENDER_ICON_FEMALE)
             }
           ],
           radio_button_img: [{ id: 1 }],
@@ -270,36 +270,22 @@ module Seeds
 
     def build(images = {})
       reset_ids!
-      profile = cond_or("path", %w[first_time new])
-      path_new = cond_is("path", "new")
-      path_existing = cond_is("path", "existing")
       pay_credit = cond_is("payment_method", "credit")
 
+      # Guest LP path (no upfront ご注文の種類). Member login stays for a later branch.
       messages = [
         bot_text("I’m PINCH(10ml)7日間お試しキットのご注文を承ります。はじめに、性別をお選びください。"),
-        user_message(gender_radio("性別", "gender")),
+        user_message(gender_radio("性別", "gender"), next_button: false),
+        bot_text("次にお名前をご入力ください。"),
         user_message(
-          radio(
-            "ご注文の種類",
-            "path",
-            [
-              { text: "はじめてご注文（会員にならない）", value: "first_time" },
-              { text: "新規会員登録して注文", value: "new" },
-              { text: "会員ログインして注文", value: "existing" }
-            ]
-          )
+          text_input("お名前", "user_name", "text", placeholder: "山田", split: true, left: "山田", right: "花子")
         ),
-        bot_text("お客様情報をご入力ください。", conditions: profile),
-        user_message(
-          text_input("お名前", "user_name", "text", placeholder: "山田", split: true, left: "山田", right: "花子"),
-          conditions: profile
-        ),
+        bot_text("{{user_name}}様ですね、ありがとうございます。次に、ご連絡先をご入力ください。"),
         user_message(
           text_input("メールアドレス", "user_email", "email_address", placeholder: "hanako@impinch.com"),
-          text_input("電話番号", "phone_number", "phone_number", placeholder: "09012345678"),
-          conditions: profile
+          text_input("電話番号", "phone_number", "phone_number", placeholder: "09012345678")
         ),
-        bot_text("ご住所をご入力ください。", conditions: profile),
+        bot_text("ご住所をご入力ください。"),
         user_message(
           {
             id: 1,
@@ -311,7 +297,7 @@ module Seeds
               save_input_content: "zip_code_address",
               isCheckRequire: "require",
               post_code: "",
-              is_use_dropdown: false,
+              is_use_dropdown: true,
               prefecture: nil,
               municipality: "",
               address: "",
@@ -323,10 +309,9 @@ module Seeds
               municipality_label: "市区町村",
               address_label: "番地・建物名"
             }
-          },
-          conditions: profile
+          }
         ),
-        bot_text("ご生年月日をご入力ください。特典としてお誕生月にお祝いさせていただきます。", conditions: profile),
+        bot_text("ご生年月日をご入力ください。特典としてお誕生月にお祝いさせていただきます。"),
         user_message(
           {
             id: 1,
@@ -359,46 +344,14 @@ module Seeds
               lp_integration_option: {},
               from_js_result: {}
             }
-          },
-          conditions: profile
-        ),
-        bot_text("パスワードを設定してください。半角英数字8文字以上です。", conditions: path_new),
-        user_message(
-          text_input("パスワード", "password", "password", placeholder: "abcd1234"),
-          conditions: path_new
-        ),
-        bot_text("会員規約に同意してください。", conditions: path_new),
-        user_message(
-          {
-            id: 1,
-            type: "agree_term",
-            agree_term: {
-              require: true,
-              title_require: true,
-              title: "会員規約",
-              term: "会員規約に同意します。",
-              type: "detail_content",
-              detail_content: { content: "会員規約に同意します。" },
-              post_link_only: [{}]
-            }
-          },
-          conditions: path_new
-        ),
-        bot_text("会員の方はログインしてください。お届け先は会員情報の住所を使用します。", conditions: path_existing),
-        user_message(
-          text_input("メールアドレス（ログインID）", "user_email", "email_address", placeholder: "hanako@impinch.com"),
-          conditions: path_existing
-        ),
-        user_message(
-          text_input("パスワード", "password", "password", placeholder: "パスワード"),
-          conditions: path_existing
+          }
         ),
         bot_text("お支払い方法をお選びください。クレジットカードが便利でおすすめです。"),
         bot_art(images[:pay_promo], "コンビニ後払いとクレジットカード払いの比較"),
         user_message(
           user_image(images[:pay_banner], alt: "お支払い方法"),
           radio(
-            "お支払い方法",
+            "",
             "payment_method",
             [
               { text: "クレジットカード（手数料　0円）", value: "credit" },
@@ -439,7 +392,7 @@ module Seeds
           conditions: pay_credit
         ),
         bot_text("最後にサイズを選択してください。"),
-        bot_text("山田様、実は特別に大容量サイズもございます。通常価格7,150円ですが、今ならたったの1,980円でご用意ができます。"),
+        bot_text("{{user_name}}様、実は特別に大容量サイズもございます。通常価格7,150円ですが、今ならたったの1,980円でご用意ができます。"),
         bot_art(images[:upsell_compare], "アップセル画像"),
         bot_text("下のボタンを押してもまだご注文確定ではありません。ぜひ、お好きなサイズをお選びください。"),
         user_message(
@@ -465,7 +418,6 @@ module Seeds
           user_image(images[:upsell_footer], alt: "サイズ比較")
         ),
         bot_text("ありがとうございます。ご注文内容はこちらでよろしいでしょうか？ご確認ください。"),
-        bot_text("お届け先は会員情報の住所を使用します。", conditions: path_existing),
         bot_text("カード番号は下4桁のみ表示されます。", conditions: pay_credit),
         user_message(
           user_image(images[:confirm_hero_1], alt: "980_01"),
