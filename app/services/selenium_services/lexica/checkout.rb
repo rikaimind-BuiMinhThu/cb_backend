@@ -18,6 +18,10 @@ module SeleniumServices
       end
     end
 
+    # Alias for Selectors so included mixins (CartFlow, DomActions, …) resolve S::
+    # via Lexica nesting — Checkout::S is not visible from those modules.
+    S = Selectors
+
     class Checkout < SeleniumServices::Lexica::Base
       S = Selectors
       PATH_NAME = nil
