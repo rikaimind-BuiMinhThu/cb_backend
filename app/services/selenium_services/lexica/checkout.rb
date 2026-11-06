@@ -22,39 +22,22 @@ module SeleniumServices
         @log_tab_level += 1
         Log.info "Start lexica #{self.class.name}", @log_tab_level
         snapshot_scenario_urls
-        begin
-          apply_selected_upsell_and_cross_sell
-          run_checkout
-          mark_done
-        rescue OfferError, LexicaStop => e
-          if recover_completed_order!
-            mark_done
-          else
-            fail_result(e.error_kind, e.message)
-          end
-        rescue => e
-          Log.error e.message
-          Log.error e.backtrace.join("\n\t")
-          if recover_completed_order!
-            mark_done
-          else
-            fail_result("rpa_error", e.message)
-          end
-        ensure
-          # Prefer /order/complete before quit — quit can hang on a dead Chrome socket.
-          begin
-            if @lexica_order_id.blank? && recover_completed_order!
-              mark_done
-            end
-          rescue StandardError => ensure_error
-            Log.error "ensure recover_completed_order! failed: #{ensure_error.message}"
-          end
-          begin
-            quit
-          rescue => quit_error
-            Log.error "driver.quit failed: #{quit_error.message}"
-          end
-        end
+        run_checkout_flow
+      end
+
+      def run_checkout_flow
+        apply_selected_upsell_and_cross_sell
+        run_checkout
+        mark_done
+      rescue OfferError, LexicaStop => error
+        mark_done_or_fail(error.error_kind, error.message)
+      rescue StandardError => error
+        Log.error error.message
+        Log.error error.backtrace.join("\n\t")
+        mark_done_or_fail("rpa_error", error.message)
+      ensure
+        salvage_completed_order
+        quit_driver
       end
 
       private
@@ -70,6 +53,29 @@ module SeleniumServices
 
       def run_checkout
         raise NotImplementedError, "#{self.class} must implement run_checkout"
+      end
+
+      def mark_done_or_fail(error_kind, message)
+        if recover_completed_order!
+          mark_done
+        else
+          fail_result(error_kind, message)
+        end
+      end
+
+      def salvage_completed_order
+        return if @lexica_order_id.present?
+        return unless recover_completed_order!
+
+        mark_done
+      rescue StandardError => error
+        Log.error "salvage_completed_order failed: #{error.class}: #{error.message}"
+      end
+
+      def quit_driver
+        quit
+      rescue StandardError => error
+        Log.error "quit_driver failed: #{error.class}: #{error.message}"
       end
 
       def extract_conversions_data
