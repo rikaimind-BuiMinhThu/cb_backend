@@ -20,6 +20,8 @@ module SeleniumServices
       path_rows = conversations.select { |c| %w[path order_path].include?(c.data_input_name.to_s) }
       raw = path_rows.reverse_each.map { |c| c.value.to_s.strip }.find(&:present?)
       value = raw.to_s
+      # Guest-only scenarios omit the path radio; Lexica cart is first_time.
+      return "first_time" if value.blank? && path_rows.empty?
       return value if PATHS.include?(value)
 
       mapped = {
