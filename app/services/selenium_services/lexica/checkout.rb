@@ -7,6 +7,17 @@ require File.dirname(__FILE__) + "/../../log"
 
 module SeleniumServices
   module Lexica
+    # Module-level so StepLogging / CartFlow / Recaptcha rescue LexicaStop without
+    # nesting under Checkout (Zeitwerk + include constant lookup).
+    class LexicaStop < StandardError
+      attr_reader :error_kind
+
+      def initialize(error_kind, message)
+        @error_kind = error_kind
+        super(message)
+      end
+    end
+
     class Checkout < SeleniumServices::Lexica::Base
       S = Selectors
       PATH_NAME = nil
@@ -41,15 +52,6 @@ module SeleniumServices
       end
 
       private
-
-      class LexicaStop < StandardError
-        attr_reader :error_kind
-
-        def initialize(error_kind, message)
-          @error_kind = error_kind
-          super(message)
-        end
-      end
 
       def run_checkout
         raise NotImplementedError, "#{self.class} must implement run_checkout"
