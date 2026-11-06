@@ -235,7 +235,7 @@ module Seeds
       }
     end
 
-    def radio_img(title, save_name, options, type: "radio_button_img", layout: "horizontal_equal_2")
+    def radio_img(title, save_name, options, type: "radio_button_img", layout: "horizontal_equal_2", initial_selection: "")
       items = options.each_with_index.map { |option, index| option.merge(id: index + 1) }
       widths = layout == "vertical" ? ["100"] : ["50", "50"]
       {
@@ -246,7 +246,7 @@ module Seeds
           title: title,
           require: true,
           type: type,
-          initial_selection: "",
+          initial_selection: initial_selection,
           is_save_input_content: true,
           save_input_content: save_name,
           img_layout: { type: layout, custom_widths: widths },
@@ -413,7 +413,9 @@ module Seeds
                 alt: "30ml毎月1本お届けコース　初回3,575円（半額）"
               }
             ],
-            type: "upsell_button"
+            type: "upsell_button",
+            # Pre-select keep-trial so staging walk/RPA can advance without a flaky img click.
+            initial_selection: "not_upsell"
           ),
           user_image(images[:upsell_footer], alt: "サイズ比較")
         ),
