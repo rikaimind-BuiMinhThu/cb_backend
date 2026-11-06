@@ -395,6 +395,7 @@ module Seeds
         bot_text("{{user_name}}様、実は特別に大容量サイズもございます。通常価格7,150円ですが、今ならたったの1,980円でご用意ができます。"),
         bot_art(images[:upsell_compare], "アップセル画像"),
         bot_text("下のボタンを押してもまだご注文確定ではありません。ぜひ、お好きなサイズをお選びください。"),
+        bot_art(images[:upsell_footer], "サイズ比較"),
         user_message(
           radio_img(
             "",
@@ -416,8 +417,7 @@ module Seeds
             type: "upsell_button",
             # Pre-select keep-trial so staging walk/RPA can advance without a flaky img click.
             initial_selection: "not_upsell"
-          ),
-          user_image(images[:upsell_footer], alt: "サイズ比較")
+          )
         ),
         bot_text("ありがとうございます。ご注文内容はこちらでよろしいでしょうか？ご確認ください。"),
         bot_text("カード番号は下4桁のみ表示されます。", conditions: pay_credit),
