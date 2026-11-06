@@ -94,7 +94,18 @@ module SeleniumServices
 
       def sync_last_step_screenshot!(step_payload)
         key = step_payload["screenshot_path"]
-        return if key.blank? || !@selenium_result.respond_to?(:rpa_steps_array)
+        return if key.blank?
+
+        # Lambda HttpResultSink has no local step array; patch via callback event.
+        if @selenium_result.respond_to?(:patch_last_step_screenshot!)
+          @selenium_result.patch_last_step_screenshot!(
+            screenshot_path: key,
+            step_no: step_payload["step_no"]
+          )
+          return
+        end
+
+        return unless @selenium_result.respond_to?(:rpa_steps_array)
 
         steps = @selenium_result.rpa_steps_array
         return if steps.empty?

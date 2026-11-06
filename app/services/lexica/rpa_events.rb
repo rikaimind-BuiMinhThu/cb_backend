@@ -29,6 +29,7 @@ module Lexica
       case @params[:event].to_s
       when "update" then update_attrs
       when "append_step" then append_step
+      when "patch_last_step" then patch_last_step
       when "submitted" then mark_submitted
       when "done" then mark_done
       when "fail" then mark_failed
@@ -52,6 +53,22 @@ module Lexica
       return { ok: false, error: "missing_step" } unless step.respond_to?(:to_h)
 
       @result.append_rpa_step(step.to_h.stringify_keys)
+      { ok: true }
+    end
+
+    def patch_last_step
+      steps = @result.rpa_steps_array
+      return { ok: false, error: "no_steps" } if steps.empty?
+
+      last = steps.last
+      return { ok: false, error: "bad_last_step" } unless last.is_a?(Hash)
+
+      key = @params[:screenshot_path].to_s
+      return { ok: false, error: "missing_screenshot_path" } if key.blank?
+
+      last["screenshot_path"] = key
+      last["step_no"] = @params[:step_no] if @params[:step_no].present?
+      @result.update!(rpa_steps: JSON.generate(steps))
       { ok: true }
     end
 

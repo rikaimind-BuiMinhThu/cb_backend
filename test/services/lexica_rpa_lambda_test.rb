@@ -313,3 +313,65 @@ class LexicaCompleteOrderSalvageTest < ActiveSupport::TestCase
     assert_equal 1, created.length
   end
 end
+
+class LexicaLambdaHandlerLoadTest < ActiveSupport::TestCase
+  # No DB fixtures — only checks Lambda require order after the Checkout split.
+  self.fixture_table_names = []
+
+  def test_handler_requires_checkout_modules_before_checkout
+    handler = File.read(Rails.root.join("rpa-lambda/handler.rb"))
+    checkout_at = handler.index('lexica/checkout"')
+    assert checkout_at, "handler must require checkout"
+
+    %w[
+      step_logging
+      complete_order_salvage
+      dom_actions
+      cart_flow
+      payment_delivery
+      recaptcha
+      complete_order
+    ].each do |name|
+      at = handler.index("lexica/#{name}\"")
+      assert at, "handler must require #{name}"
+      assert at < checkout_at, "#{name} must load before checkout"
+    end
+  end
+end
+
+class LexicaRpaEventsPatchLastStepTest < ActiveSupport::TestCase
+  self.fixture_table_names = []
+
+  class FakeResult
+    attr_reader :attrs
+
+    def initialize(steps)
+      @attrs = { rpa_steps: steps }
+    end
+
+    def rpa_steps_array
+      Array(@attrs[:rpa_steps])
+    end
+
+    def update!(hash)
+      @attrs.merge!(hash.transform_keys(&:to_sym))
+      if hash.key?(:rpa_steps) || hash.key?("rpa_steps")
+        raw = hash[:rpa_steps] || hash["rpa_steps"]
+        @attrs[:rpa_steps] = JSON.parse(raw)
+      end
+    end
+  end
+
+  def test_patch_last_step_sets_screenshot_on_last_step
+    result = FakeResult.new([{ "name" => "detect_result", "url" => "https://cart.example/order/complete/1" }])
+    response = Lexica::RpaEvents.apply(
+      result,
+      event: "patch_last_step",
+      screenshot_path: "rpa-screenshots/1/2/3_step9.png",
+      step_no: 9
+    )
+    assert_equal true, response[:ok]
+    assert_equal "rpa-screenshots/1/2/3_step9.png", result.attrs[:rpa_steps].last["screenshot_path"]
+    assert_equal 9, result.attrs[:rpa_steps].last["step_no"]
+  end
+end

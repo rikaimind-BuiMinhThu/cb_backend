@@ -77,6 +77,12 @@ module SeleniumServices
         upload_screenshot(path, scenario_id: scenario_id, kind: "step#{step_no}")
       end
 
+      def patch_last_step_screenshot!(screenshot_path:, step_no: nil)
+        payload = { "screenshot_path" => screenshot_path }
+        payload["step_no"] = step_no if step_no.present?
+        post_event("patch_last_step", payload)
+      end
+
       def reload
         self
       end
