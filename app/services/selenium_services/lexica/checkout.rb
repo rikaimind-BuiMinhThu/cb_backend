@@ -23,7 +23,7 @@ module SeleniumServices
         Log.info "Start lexica #{self.class.name}", @log_tab_level
         snapshot_scenario_urls
         begin
-          apply_resolved_offers
+          apply_selected_upsell_and_cross_sell
           run_checkout
           mark_done
         rescue OfferError, LexicaStop => e
@@ -103,7 +103,7 @@ module SeleniumServices
         @token_key = @card_data && (@card_data["token_key"] || @card_data[:token_key])
       end
 
-      def apply_resolved_offers
+      def apply_selected_upsell_and_cross_sell
         resolved = OfferResolver.new(@scenario, @conversations).resolve!
         @sku = resolved.sku
         @product_url = resolved.product_url

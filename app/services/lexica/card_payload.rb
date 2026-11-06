@@ -1,15 +1,15 @@
 module Lexica
   class CardPayload
-    PAN_REGEX = /\d[ \-]*\d[ \-]*\d[ \-]*\d[ \-]*\d[ \-]*\d[ \-]*\d[ \-]*\d[ \-]*\d[ \-]*\d[ \-]*\d[ \-]*\d[ \-]*\d+/
+    CARD_NUMBER_REGEX = /\d[ \-]*\d[ \-]*\d[ \-]*\d[ \-]*\d[ \-]*\d[ \-]*\d[ \-]*\d[ \-]*\d[ \-]*\d[ \-]*\d[ \-]*\d[ \-]*\d+/
 
-    def self.contains_pan?(raw)
+    def self.contains_card_number?(raw)
       text = decoded_text(raw)
       return false if text.blank?
       return false if parsed_token?(text)
 
       digits = text.gsub(/[^\d]/, "")
       return true if digits.length.between?(13, 19)
-      return true if text.match?(PAN_REGEX)
+      return true if text.match?(CARD_NUMBER_REGEX)
 
       false
     end

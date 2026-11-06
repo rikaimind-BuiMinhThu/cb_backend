@@ -217,9 +217,7 @@ class ScenarioUserResponse < ApplicationRecord
             value = selected[:value]
             data_input_name = "payment_method"
           when "path", "order_path"
-            selected = get_selected_obj_for_radio_button(conversation)
-            value = selected && (selected[:value] || selected["value"])
-            data_input_name = "path"
+            data_input_name, value = record_order_path_answer(conversation)
           when "sex"
             selected = get_selected_obj_for_radio_button(conversation)
             value = selected[:value]
@@ -437,6 +435,12 @@ class ScenarioUserResponse < ApplicationRecord
 
   # FE stores initial_selection as option value (preferred) or id via
   # getRadioOptionSelectionKey. Match either so path/payment resolve.
+  def self.record_order_path_answer(conversation)
+    selected = get_selected_obj_for_radio_button(conversation)
+    value = selected && (selected[:value] || selected["value"])
+    ["path", value]
+  end
+
   def self.get_selected_obj_for_radio_button(conversation)
     rb = conversation[:radio_button] || conversation["radio_button"] || {}
     sel = (rb[:initial_selection] || rb["initial_selection"]).to_s

@@ -21,7 +21,7 @@ module Lexica
 
     def self.start!(scenario, _client, params)
       return nil if params[:user_id].blank?
-      if stored_pan?(scenario, params[:user_id])
+      if stored_card_number?(scenario, params[:user_id])
         return { json: { code: 2, message: "card data rejected" } }
       end
 
@@ -152,10 +152,10 @@ module Lexica
       }
     end
 
-    def self.stored_pan?(scenario, user_id)
+    def self.stored_card_number?(scenario, user_id)
       raw = scenario.scenario_user_responses.where(user_input_id: user_id, data_input_name: "credit_card_payment").last&.value
-      Lexica::CardPayload.contains_pan?(raw)
+      Lexica::CardPayload.contains_card_number?(raw)
     end
-    private_class_method :stored_pan?
+    private_class_method :stored_card_number?
   end
 end
