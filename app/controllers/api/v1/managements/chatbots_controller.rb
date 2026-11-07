@@ -49,7 +49,7 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
   def update
     chatbot = Chatbot.find_by(id: params[:id])
     return render json: {code: 2, message: "Chatbot not found"} if chatbot.blank?
-    return render json: {code: 2, message: "No permission"} unless current_user.admin_deel? || current_user.id == chatbot.user_id
+    return render json: {code: 2, message: "No permission"} unless can_update_chatbot?(chatbot)
     ActiveRecord::Base.transaction do
       chatbot.update!(chatbot_params)
     rescue StandardError => error
@@ -232,6 +232,14 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
   end
 
   private
+
+  def can_update_chatbot?(chatbot)
+    return true if current_user.admin_deel?
+    return true if current_user.id == chatbot.user_id
+
+    user_chatbot = UserChatbot.find_by(user_id: current_user.id, chatbot_id: chatbot.id)
+    user_chatbot.present? && !user_chatbot.reader?
+  end
 
   def chatbot_params
     params.require(:chatbot).permit(:title, :subtitle, :design_type,
