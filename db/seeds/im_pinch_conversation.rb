@@ -442,6 +442,7 @@ module Seeds
             id: 1,
             type: "button_submit",
             button_submit_name: "注文を確定する",
+            button_submit_use_loading_text: true,
             button_submit: {
               title_require: false,
               require: false,
@@ -450,7 +451,14 @@ module Seeds
               is_used_cart_confirm_page: false,
               use_for_confirm_order: false,
               button_image_url: "",
-              button_image_width: "80%"
+              button_image_width: "80%",
+              # Staging bot 325 / scenario 549 parity (2026-11-08).
+              loading_config: {
+                buttonHtml: "処理中…",
+                buttonStyle: "",
+                loadingHtml: "<div style=\"text-align:center;margin-top:8px;font-size:13px;color:#666;\">注文を処理しています。しばらくお待ちください。</div>",
+                loadingStyle: ""
+              }
             }
           },
           next_button: false

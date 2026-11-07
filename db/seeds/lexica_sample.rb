@@ -2,6 +2,15 @@
 
 # Development sample for 未来 (Mirai) Lexica. Idempotent. Does not change Local Dev.
 # Does not enqueue LexicaScenarioJob.
+#
+# Staging parity (bot 325 / scenario 549, 2026-11-08) — Design → ボタン:
+#   button_normal_bg_color   #F49440  / text #2C2C2C
+#   button_pressed_bg_color  #E08838  / text #2C2C2C
+#   button_disabled_bg_color #F4CCAC  / text #A4A4A4
+# Submit loading (I'm PINCH お申し込み → 注文を確定する):
+#   button_submit_use_loading_text true
+#   loading_config.buttonHtml "処理中…"
+#   loading_config.loadingHtml under-button note (see im_pinch_conversation.rb)
 
 load Rails.root.join("db/seeds/im_pinch_conversation.rb") unless defined?(Seeds::ImPinchConversation)
 
@@ -390,12 +399,12 @@ PINCH_DESIGN_SETTINGS = {
     checkbox_checked_border_color: "#F6CA21",
     checkbox_font_size: "17px",
     checkbox_checked_border_effect: "none",
-    button_normal_bg_color: "#02BB92",
-    button_normal_text_color: "#FFFFFF",
-    button_pressed_bg_color: "#019A78",
-    button_pressed_text_color: "#FFFFFF",
-    button_disabled_bg_color: "#D0D6DC",
-    button_disabled_text_color: "#FFFFFF",
+    button_normal_bg_color: "#F49440",
+    button_normal_text_color: "#2C2C2C",
+    button_pressed_bg_color: "#E08838",
+    button_pressed_text_color: "#2C2C2C",
+    button_disabled_bg_color: "#F4CCAC",
+    button_disabled_text_color: "#A4A4A4",
     button_font_size: "16px",
     button_border_style: "pill",
     button_effect: "shake",
