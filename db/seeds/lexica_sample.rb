@@ -279,22 +279,6 @@ CUSTOM_CSS = <<~CSS
     overflow: visible !important;
     box-sizing: border-box !important;
   }
-  #sp-process-bar.sp-process-bar--fraction::before {
-    content: "お申し込み最短30秒";
-    position: absolute !important;
-    left: 20px !important;
-    right: 20px !important;
-    top: 6px !important;
-    width: auto !important;
-    text-align: center !important;
-    color: #f48879 !important;
-    font-size: 12px !important;
-    font-weight: 700 !important;
-    line-height: 18px !important;
-    margin: 0 !important;
-    z-index: 1 !important;
-    pointer-events: none !important;
-  }
   #sp-process-bar.sp-process-bar--fraction .sp-process-bar__meta {
     position: relative !important;
     height: 18px !important;
@@ -362,9 +346,12 @@ PINCH_DESIGN_SETTINGS = {
   theme: {
     header_title_text_color: "#FFFFFF",
     header_title_font_size: "15px",
+    header_subtitle_visible: false,
     header_subtitle_text_color: "#FFFFFF",
     header_subtitle_font_size: "13px",
-    header_chrome: "logo",
+    header_chrome: "icon_and_title",
+    header_close_icon: "times",
+    header_close_icon_color: "#9e9e9e",
     header_bg_color: "#FFFFFF",
     header_logo_image: PINCH_HEADER_LOGO_DATA_URI,
     chat_window_bg_color: "#F7E9E5",
@@ -421,7 +408,9 @@ PINCH_DESIGN_SETTINGS = {
     progress_bar_height: "10px",
     progress_bar_radius: "20px",
     progress_bar_fill_color: "#F19F95",
+    progress_bar_style: "style2",
     progress_label_mode: "fraction",
+    progress_bar_above_text: "お申し込み最短30秒",
     modal_bg_color: "#FFFFFF",
     modal_title_text_color: "#333333",
     modal_title_font_size: "17px",
