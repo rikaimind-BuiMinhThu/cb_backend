@@ -46,33 +46,102 @@ PINCH_CARD_BRAND_URLS = [
 ].freeze
 PINCH_CARD_BRANDS_HTML = %(<div class="pinch-card-brands">#{PINCH_CARD_BRAND_URLS.map { |alt, src| %(<img src="#{src}" alt="#{alt}" />) }.join}</div>)
 PINCH_CONFIRM_HTML = <<~HTML
-  <div class="pinch-confirm">
-    <a class="pinch-confirm-edit" href="#">修正したい場合はこちら</a>
-    <div class="pinch-confirm-title">◆注文内容◆</div>
-    <div class="pinch-confirm-row"><span>商品名</span><span>I'm PINCH10ml　7日間お試しキット（単品）</span></div>
-    <div class="pinch-confirm-row"><span>数量</span><span>1点</span></div>
-    <div class="pinch-confirm-row"><span>金額</span><span>980円（税込）</span></div>
-    <div class="pinch-confirm-row"><span>手数料</span><span>0円</span></div>
-    <div class="pinch-confirm-row"><span>送料</span><span>0円</span></div>
-    <div class="pinch-confirm-row"><span>合計</span><span>980円（税込）</span></div>
-    <div class="pinch-confirm-title">◆お客様情報（お届け先）◆</div>
-    <div class="pinch-confirm-row"><span>お名前</span><span>テスト テスト</span></div>
-    <div class="pinch-confirm-row"><span>住所</span><span>〒1000001 東京都千代田区千代田1-1</span></div>
-    <div class="pinch-confirm-row"><span>電話番号</span><span>09012345678</span></div>
-    <div class="pinch-confirm-row"><span>メールアドレス</span><span>pinch@test.test</span></div>
-    <div class="pinch-confirm-title">◆配送方法◆</div>
-    <div class="pinch-confirm-row"><span>配送方法</span><span>ポスト投函（ご在宅不要）</span></div>
-    <div class="pinch-confirm-title">◆お支払い方法◆</div>
-    <div class="pinch-confirm-row"><span>お支払い方法</span><span>後払い（コンビニ・郵便局）</span></div>
-    <p>クレジットカード：商品発送時に決済(お届け日の1日～7日前)いたします。</p>
-    <p>後払い：商品に同封する請求書にて商品到着から14日以内にお手続きください。</p>
-    <p>お支払い期限を一定期間過ぎてもお支払いの確認がとれない場合、ご請求金額に回収事務手数料297円 (税込) が加算されます。(最大3回、合計 891円)</p>
-    <div class="pinch-confirm-title">◆お届けについて◆</div>
-    <p>お届けはご注文から3営業日程度でお届けします。</p>
-    <div class="pinch-confirm-title">◆変更・返品について◆</div>
-    <p>変更・解約をご希望の場合は、お届け日の7日前までご連絡を承っておりますので安心してお試しください。</p>
-    <p>美容コンサルティング窓口：お電話番号　0120-577-361※平日9時～18時</p>
-    <p>メールアドレス　info@impinch.com※24時間受付可能</p>
+  <style>
+  .pinch-order-confirm{font-size:14px;line-height:1.55;color:#222;background:#fff}
+  .pinch-order-confirm .return_infutsFields{text-align:right;margin:0 0 10px}
+  .pinch-order-confirm .return_infutsFields a{color:#0597F2;text-decoration:underline;font-size:13px}
+  .pinch-order-confirm .confirm_title{text-align:center;font-weight:700;font-size:15px;margin:18px 0 8px;color:#000}
+  .pinch-order-confirm .item_area{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:10px 0}
+  .pinch-order-confirm .confirm_item_title{flex:0 0 auto;max-width:42%}
+  .pinch-order-confirm .confirm_item_name{display:inline-block;background:#ececec;padding:2px 8px;font-size:13px;line-height:1.4;color:#333}
+  .pinch-order-confirm .confirm_item_variable{flex:1 1 auto;text-align:right;word-break:break-word;font-size:14px}
+  .pinch-order-confirm .item_area--product .confirm_item_variable{text-align:left}
+  .pinch-order-confirm .bold-red{color:#e53935;font-weight:700}
+  .pinch-order-confirm hr{border:0;border-top:1px solid #222;margin:0;opacity:.55}
+  .pinch-order-confirm .confirm_item_variable_title{display:block;font-weight:700;margin:12px 0 6px;font-size:14px}
+  .pinch-order-confirm .confirm_body,.pinch-order-confirm .confirm_note_block{font-size:13px;line-height:1.65;margin:0 0 12px;white-space:pre-wrap;text-align:left}
+  .pinch-order-confirm .note{display:block;margin-top:8px;font-size:12px}
+  </style>
+  <div class="pinch-order-confirm">
+    <div class="return_infutsFields"><a href="#chat_user_names">修正したい場合はこちら</a></div>
+    <div class="confirm_title">◆お申込み商品◆</div>
+    <div class="item_area item_area--product">
+      <span class="confirm_item_title"><span class="confirm_item_name">商品名</span></span>
+      <span class="confirm_item_variable">【特別価格】I'm　PINCH  21日分定期ケアコース（初回30mlサイズ）</span>
+    </div>
+    <hr>
+    <div class="item_area">
+      <span class="confirm_item_title"><span class="confirm_item_name">数量</span></span>
+      <span class="confirm_item_variable">1点</span>
+    </div>
+    <hr>
+    <div class="item_area">
+      <span class="confirm_item_title"><span class="confirm_item_name">金額</span></span>
+      <span class="confirm_item_variable bold-red">1,980円（税込）</span>
+    </div>
+    <hr>
+    <div class="item_area">
+      <span class="confirm_item_title"><span class="confirm_item_name">手数料</span></span>
+      <span class="confirm_item_variable">0円</span>
+    </div>
+    <hr>
+    <div class="item_area">
+      <span class="confirm_item_title"><span class="confirm_item_name">送料</span></span>
+      <span class="confirm_item_variable">0円</span>
+    </div>
+    <hr>
+    <div class="item_area">
+      <span class="confirm_item_title"><span class="confirm_item_name">合計</span></span>
+      <span class="confirm_item_variable bold-red">1,980円（税込）</span>
+    </div>
+    <hr>
+    <div class="item_area item_area--product">
+      <span class="confirm_item_title"><span class="confirm_item_name">配送方法</span></span>
+      <span class="confirm_item_variable">ポスト投函（ご在宅不要）</span>
+    </div>
+    <div class="confirm_title">◆お客様情報（お届け先）◆</div>
+    <div class="item_area">
+      <span class="confirm_item_title"><span class="confirm_item_name">お名前</span></span>
+      <span class="confirm_item_variable">{{user_name}}</span>
+    </div>
+    <hr>
+    <div class="item_area">
+      <span class="confirm_item_title"><span class="confirm_item_name">住所</span></span>
+      <span class="confirm_item_variable">{{zip_code_address}}</span>
+    </div>
+    <hr>
+    <div class="item_area">
+      <span class="confirm_item_title"><span class="confirm_item_name">電話番号</span></span>
+      <span class="confirm_item_variable">{{phone_number}}</span>
+    </div>
+    <hr>
+    <div class="item_area">
+      <span class="confirm_item_title"><span class="confirm_item_name">メールアドレス</span></span>
+      <span class="confirm_item_variable">{{user_email}}</span>
+    </div>
+    <div class="confirm_title">◆お支払い方法◆</div>
+    <div class="item_area">
+      <span class="confirm_item_title"><span class="confirm_item_name">お支払い方法</span></span>
+      <span class="confirm_item_variable">{{payment_method}}</span>
+    </div>
+    <div class="confirm_item_variable_title">お支払方法・お支払時期</div>
+    <div class="confirm_note_block">クレジットカード：商品発送時に決済(お届け日の1日～7日前)。
+  後払い：商品同封の請求書にて到着後14日以内にお支払い。
+  <span class="note">支払い期限を一定期間過ぎても未払いの場合、回収事務手数料297円 (税込) が加算。
+  (最大3回、 合計 891円) https://www.impinch.com/company/index_test.html</span></div>
+    <hr>
+    <div class="confirm_title">◆お届けについて◆</div>
+    <div class="confirm_body">定期お届けコースは、中止のお申し出があるまで自動でお届けします。 ※購入回数の縛りはありません。
+  初回（30mlサイズ）：ご注文から3営業日程度でお届け。ポスト投函。 ２回目（60mlサイズ）：初回発送の21日後に1本お届け。宅配便でお届け。
+  3回目以降（60mlサイズ）：30日間隔で毎月1本（2回目お届け日と同じ日のお届け）のお届け。宅配便でお届け。
+  2回目以降は1本（60ml）ずっと15％OFFの10,909円（税込）、送料無料。 仮に3回継続した場合の代金総額は23,798円（税込）。</div>
+    <hr>
+    <div class="confirm_title">◆変更・返品・解約について◆</div>
+    <div class="confirm_body">次回お届け日の7日前までにご連絡ください。
+  美容コンサルティング窓口：
+  お電話番号　0120-577-361※平日9時～18時
+  メールアドレス　info@impinch.com※24時間受付可能
+  お電話1本、メール１本でお休み・変更・解約を承ります。</div>
   </div>
 HTML
 PINCH_CONFIRM_PRIVACY = <<~TEXT

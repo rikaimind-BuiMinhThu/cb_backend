@@ -421,10 +421,11 @@ module Seeds
         ),
         bot_text("ありがとうございます。ご注文内容はこちらでよろしいでしょうか？ご確認ください。"),
         bot_text("カード番号は下4桁のみ表示されます。", conditions: pay_credit),
+        # Bot html_code so {{user_name}} / {{zip_code_address}} / etc. run through replaceVariables.
+        bot_html(images[:confirm_html].to_s),
         user_message(
           user_image(images[:confirm_hero_1], alt: "980_01"),
           user_image(images[:confirm_hero_2], alt: "980_02"),
-          user_html(images[:confirm_html].to_s),
           {
             id: 1,
             type: "agree_term",
