@@ -120,8 +120,8 @@ module SeleniumServices
           error_message: message.to_s.slice(0, 2000),
           screenshot_path: screenshot_path
         )
-        Lexica::FailureMail.deliver(@record, kind, message)
-        Lexica::RpaEvents.requeue_if_retryable(@record)
+        ::Lexica::FailureMail.deliver(@record, kind, message)
+        ::Lexica::RpaEvents.requeue_if_retryable(@record)
       end
 
       def upload_failure_screenshot(path, scenario_id:)

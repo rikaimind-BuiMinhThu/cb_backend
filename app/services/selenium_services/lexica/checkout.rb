@@ -112,6 +112,8 @@ module SeleniumServices
         @cart_url = @scenario.lexica_cart_url.to_s
         @cart_skus = [@sku].reject(&:blank?)
         @offer_surfaces = []
+        @click_confirm_teiki = false
+        @confirm_teiki_applied = false
         @token_key = @card_data && (@card_data["token_key"] || @card_data[:token_key])
       end
 
@@ -122,6 +124,8 @@ module SeleniumServices
         @cart_skus = resolved.cart_skus
         @offer_surfaces = resolved.surfaces.dup
         @cross_sell_sku = resolved.cross_sell_sku
+        @click_confirm_teiki = resolved.click_confirm_teiki
+        @confirm_teiki_applied = false
         snapshot_scenario_urls
       end
 
@@ -146,28 +150,96 @@ module SeleniumServices
       def apply_payment_and_submit
         apply_payment
         apply_delivery
-        apply_confirm_upsell
         submit_order
         detect_thanks
         apply_thanks_offers
       end
 
+      # Runs on /order/confirm only (see confirm_review_page). Entry form is too early.
       def apply_confirm_upsell
-        return unless offer_flag?(:lexica_offer_confirm_upsell)
+        return unless @click_confirm_teiki
 
-        upsell_sku = @scenario.lexica_upsell_sku.to_s
-        if upsell_sku.present? && @cart_skus.include?(upsell_sku)
-          record_offer_surface("confirm_upsell_skipped")
-          return
+        # Chat selected upsell: never silently keep trial when the scenario flag is off.
+        unless offer_flag?(:lexica_offer_confirm_upsell)
+          raise LexicaStop.new(
+            "confirm_upsell_disabled",
+            "チャットでアップセル選択済みですが confirm upsell が無効です"
+          )
         end
 
-        click_offer_or_defer(
-          selector: S::CONFIRM_UPSELL,
-          surface: "confirm_upsell",
-          missing_kind: "confirm_upsell_missing",
-          missing_message: "確認画面のアップセルが見つかりません",
-          sku: upsell_sku
-        )
+        step("confirm_upsell", "confirm_upsell") do
+          matched = @driver.execute_script(<<~JS)
+            var el = document.querySelector(#{S::CONFIRM_UPSELL.to_json});
+            if (!el) return null;
+            var oc = el.getAttribute('onclick') || '';
+            var text = (el.innerText || el.value || '').replace(/\\s+/g, '');
+            if (oc.indexOf('Upselling') === -1) return null;
+            if (text.indexOf('定期') === -1) return null;
+            return {
+              id: el.id || '',
+              className: String(el.className || '').slice(0, 200),
+              text: text.slice(0, 80),
+              onclick: oc.slice(0, 200)
+            };
+          JS
+          unless matched
+            raise LexicaStop.new("confirm_upsell_missing", "確認画面のアップセルが見つかりません")
+          end
+
+          record_action(
+            type: :detect,
+            where: S::CONFIRM_UPSELL,
+            label: "confirm_teiki",
+            value: matched.to_json
+          )
+          click S::CONFIRM_UPSELL, "confirm_upsell"
+          wait_after_confirm_teiki!
+          # Cart line stays trial SKU; Lexica Upselling swaps on their side.
+          # Surfaces + teiki flag make ops reporting unambiguous.
+          @confirm_teiki_applied = true
+          record_offer_surface("confirm_upsell")
+          snapshot_confirm_teiki!
+        end
+      end
+
+      def wait_after_confirm_teiki!
+        wait_page_load_complete
+        Selenium::WebDriver::Wait.new(timeout: 15).until do
+          url = @driver.current_url.to_s
+          source = begin
+            @driver.page_source.to_s
+          rescue StandardError
+            ""
+          end
+          url.include?("/order/confirm") || thanks_page?(url, source)
+        end
+        Selenium::WebDriver::Wait.new(timeout: 10).until do
+          url = @driver.current_url.to_s
+          source = begin
+            @driver.page_source.to_s
+          rescue StandardError
+            ""
+          end
+          next true if thanks_page?(url, source)
+
+          submit_button_by_text.present?
+        end
+      rescue Selenium::WebDriver::Error::TimeoutError
+        nil
+      end
+
+      def snapshot_confirm_teiki!
+        return unless @selenium_result
+
+        attrs = {}
+        # Cart SKU stays trial; offer_surfaces includes confirm_upsell for ops.
+        if @selenium_result.respond_to?(:resolved_sku)
+          attrs[:resolved_sku] = @sku.to_s
+        end
+        if @selenium_result.respond_to?(:offer_surfaces)
+          attrs[:offer_surfaces] = JSON.generate(Array(@offer_surfaces))
+        end
+        @selenium_result.update!(attrs) if attrs.any?
       end
 
       def apply_thanks_offers

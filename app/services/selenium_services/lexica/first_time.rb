@@ -7,7 +7,6 @@ module SeleniumServices
         apply_payment
         apply_delivery
         fill_first_time
-        apply_confirm_upsell
         submit_order
         detect_thanks
         apply_thanks_offers

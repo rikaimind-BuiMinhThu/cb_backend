@@ -10,6 +10,7 @@ module SeleniumServices
         :surfaces,
         :cross_sell_sku,
         :cross_sell_url,
+        :click_confirm_teiki,
         keyword_init: true
       )
 
@@ -24,11 +25,11 @@ module SeleniumServices
         surfaces = []
         cross_sell_sku = nil
         cross_sell_url = nil
+        click_confirm_teiki = false
 
         if selected?("upsell")
-          raise_missing!("missing_upsell_product", "アップセル商品コードが未設定です") if upsell_incomplete?
-          sku = @scenario.lexica_upsell_sku.to_s
-          product_url = @scenario.lexica_upsell_product_url.to_s.presence || @scenario.landing_page_product_url.to_s
+          # Keep trial SKU in cart. RPA clicks 定期 on /order/confirm (button#selectItem).
+          click_confirm_teiki = true
           surfaces << "chat_upsell"
         end
 
@@ -48,7 +49,8 @@ module SeleniumServices
           cart_skus: cart_skus,
           surfaces: surfaces,
           cross_sell_sku: cross_sell_sku,
-          cross_sell_url: cross_sell_url
+          cross_sell_url: cross_sell_url,
+          click_confirm_teiki: click_confirm_teiki
         )
       end
 
@@ -64,10 +66,6 @@ module SeleniumServices
       def conversation_value(name)
         row = @conversations.detect { |item| item.data_input_name.to_s == name }
         row&.value
-      end
-
-      def upsell_incomplete?
-        @scenario.lexica_upsell_sku.to_s.blank?
       end
 
       def cross_sell_incomplete?

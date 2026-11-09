@@ -75,8 +75,8 @@ module SeleniumServices
         ".order-complete",
         "#order-complete"
       ].freeze
-      # Fill after MIRAI confirm/thanks screenshots. Blank = skip unless LEXICA_STRICT_OFFERS=1.
-      CONFIRM_UPSELL = "".freeze
+      # Confirm-page 定期 (Upselling). Thanks selectors still blank unless LEXICA_STRICT_OFFERS=1.
+      CONFIRM_UPSELL = "button#selectItem".freeze
       THANKS_UPSELL = "".freeze
       THANKS_CROSS_SELL = "".freeze
       ALREADY_MEMBER_TEXT = "既に会員".freeze

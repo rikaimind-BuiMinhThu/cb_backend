@@ -422,7 +422,8 @@ module Seeds
         bot_text("ありがとうございます。ご注文内容はこちらでよろしいでしょうか？ご確認ください。"),
         bot_text("カード番号は下4桁のみ表示されます。", conditions: pay_credit),
         # Bot html_code so {{user_name}} / {{zip_code_address}} / etc. run through replaceVariables.
-        bot_html(images[:confirm_html].to_s),
+        bot_html(images[:confirm_html].to_s, conditions: cond_is("upsell", "up1")),
+        bot_html(images[:confirm_html_trial].to_s, conditions: cond_is("upsell", "not_upsell")),
         user_message(
           user_image(images[:confirm_hero_1], alt: "980_01"),
           user_image(images[:confirm_hero_2], alt: "980_02"),
@@ -443,7 +444,6 @@ module Seeds
             id: 1,
             type: "button_submit",
             button_submit_name: "注文を確定する",
-            button_submit_use_loading_text: true,
             button_submit: {
               title_require: false,
               require: false,
@@ -452,14 +452,7 @@ module Seeds
               is_used_cart_confirm_page: false,
               use_for_confirm_order: false,
               button_image_url: "",
-              button_image_width: "80%",
-              # Staging bot 325 / scenario 549 parity (2026-11-08).
-              loading_config: {
-                buttonHtml: "処理中…",
-                buttonStyle: "",
-                loadingHtml: "<div style=\"text-align:center;margin-top:8px;font-size:13px;color:#666;\">注文を処理しています。しばらくお待ちください。</div>",
-                loadingStyle: ""
-              }
+              button_image_width: "50%"
             }
           },
           next_button: false

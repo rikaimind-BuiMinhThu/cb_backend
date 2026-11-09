@@ -185,20 +185,40 @@ module SeleniumServices
       end
 
 
+      # Guest submit may land on /order/entry first, then /order/confirm.
+      # Upsell (定期 / #selectItem) must run on confirm even after that hop.
+      CONFIRM_REVIEW_MAX_PASSES = 2
+
       def confirm_review_page
-        url_before = @driver.current_url.to_s
-        source = @driver.page_source.to_s
-        return if thanks_page?(url_before, source)
-        return unless url_before.include?("/order/entry") || url_before.include?("/order/confirm")
-        return if url_before.include?("/order/confirm") && purchase_blocked_banner.present?
+        CONFIRM_REVIEW_MAX_PASSES.times do |pass|
+          url = @driver.current_url.to_s
+          source = @driver.page_source.to_s
+          return if thanks_page?(url, source)
+          return unless url.include?("/order/entry") || url.include?("/order/confirm")
 
-        selector = submit_button_by_text
-        return if selector.blank?
+          if url.include?("/order/confirm")
+            # Teiki first: blocked banner may clear after Upselling swaps the cart line.
+            apply_confirm_upsell
+            banner = purchase_blocked_banner
+            if banner.present?
+              raise LexicaStop.new("purchase_blocked", banner)
+            end
+          end
 
-        click selector, "confirm order"
-        Selenium::WebDriver::Wait.new(timeout: 20).until do
+          selector = submit_button_by_text
+          return if selector.blank?
+
+          url_before = url
+          click selector, "confirm order"
+          Selenium::WebDriver::Wait.new(timeout: 20).until do
+            current = @driver.current_url.to_s
+            current != url_before || thanks_page?(current, @driver.page_source.to_s)
+          end
+
           current = @driver.current_url.to_s
-          current != url_before || thanks_page?(current, @driver.page_source.to_s)
+          return if thanks_page?(current, @driver.page_source.to_s)
+          # Entry → confirm: one more pass for teiki + final 注文を確定.
+          break unless pass.zero? && current.include?("/order/confirm")
         end
       rescue Selenium::WebDriver::Error::TimeoutError
         nil

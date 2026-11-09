@@ -18,14 +18,16 @@ class LexicaOfferResolverTest < ActiveSupport::TestCase
     assert_equal "SAMPLE-SKU", resolved.sku
     assert_equal ["SAMPLE-SKU"], resolved.cart_skus
     assert_empty resolved.surfaces
+    assert_equal false, resolved.click_confirm_teiki
   end
 
-  def test_switches_to_upsell_when_up1_selected
+  def test_keeps_base_sku_and_flags_confirm_teiki_when_up1_selected
     resolved = resolve!(row("upsell", "up1"))
-    assert_equal "SAMPLE-UPSELL-SKU", resolved.sku
-    assert_equal "https://shop.example.test/30ml", resolved.product_url
-    assert_equal ["SAMPLE-UPSELL-SKU"], resolved.cart_skus
+    assert_equal "SAMPLE-SKU", resolved.sku
+    assert_equal "https://lp.example.test/10ml", resolved.product_url
+    assert_equal ["SAMPLE-SKU"], resolved.cart_skus
     assert_includes resolved.surfaces, "chat_upsell"
+    assert_equal true, resolved.click_confirm_teiki
   end
 
   def test_appends_cross_sell_when_xs1_selected
@@ -34,12 +36,11 @@ class LexicaOfferResolverTest < ActiveSupport::TestCase
     assert_includes resolved.surfaces, "chat_cross_sell"
   end
 
-  def test_missing_upsell_product_when_up1_and_sku_blank
+  def test_up1_with_blank_upsell_sku_keeps_base_and_flags_teiki
     @scenario.lexica_upsell_sku = ""
-    error = assert_raises(SeleniumServices::Lexica::OfferError) do
-      resolve!(row("upsell", "up1"))
-    end
-    assert_equal "missing_upsell_product", error.error_kind
+    resolved = resolve!(row("upsell", "up1"))
+    assert_equal "SAMPLE-SKU", resolved.sku
+    assert_equal true, resolved.click_confirm_teiki
   end
 
   def test_raises_when_cross_sell_selected_and_sku_blank
@@ -48,13 +49,6 @@ class LexicaOfferResolverTest < ActiveSupport::TestCase
       resolve!(row("cross_sell", "xs1"))
     end
     assert_equal "missing_cross_sell_product", error.error_kind
-  end
-
-  def test_upsell_blank_url_falls_back_to_landing_page
-    @scenario.lexica_upsell_product_url = ""
-    resolved = resolve!(row("upsell", "up1"))
-    assert_equal "SAMPLE-UPSELL-SKU", resolved.sku
-    assert_equal "https://lp.example.test/10ml", resolved.product_url
   end
 
   def test_cross_sell_blank_url_falls_back_to_landing_page

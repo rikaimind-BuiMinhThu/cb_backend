@@ -3,14 +3,12 @@
 # Development sample for 未来 (Mirai) Lexica. Idempotent. Does not change Local Dev.
 # Does not enqueue LexicaScenarioJob.
 #
-# Staging parity (bot 325 / scenario 549, 2026-11-08) — Design → ボタン:
-#   button_normal_bg_color   #F49440  / text #2C2C2C
-#   button_pressed_bg_color  #E08838  / text #2C2C2C
-#   button_disabled_bg_color #F4CCAC  / text #A4A4A4
-# Submit loading (I'm PINCH お申し込み → 注文を確定する):
-#   button_submit_use_loading_text true
-#   loading_config.buttonHtml "処理中…"
-#   loading_config.loadingHtml under-button note (see im_pinch_conversation.rb)
+# Staging parity (bot 325 / scenario 549, 2026-11-09) — Design → ボタン:
+#   button_normal_bg_color   #01bb92  / text #ffffff
+#   button_pressed_bg_color  #10997b  / text #ffffff
+#   button_disabled_bg_color #09866b  / text #ffffff
+# Scenario custom_css_content matches staging (~10.3k; payment radios + #msg_id_26/27 full-bleed).
+# Submit (注文を確定する): no loading_config on staging; button_image_width 50%.
 
 load Rails.root.join("db/seeds/im_pinch_conversation.rb") unless defined?(Seeds::ImPinchConversation)
 
@@ -45,7 +43,7 @@ PINCH_CARD_BRAND_URLS = [
   ["Diners", "https://app2.blob.core.windows.net/botchan/images/card_type/diner_club.png"]
 ].freeze
 PINCH_CARD_BRANDS_HTML = %(<div class="pinch-card-brands">#{PINCH_CARD_BRAND_URLS.map { |alt, src| %(<img src="#{src}" alt="#{alt}" />) }.join}</div>)
-PINCH_CONFIRM_HTML = <<~HTML
+PINCH_CONFIRM_CSS = <<~CSS
   <style>
   .pinch-order-confirm{font-size:14px;line-height:1.55;color:#222;background:#fff}
   .pinch-order-confirm .return_infutsFields{text-align:right;margin:0 0 10px}
@@ -62,6 +60,16 @@ PINCH_CONFIRM_HTML = <<~HTML
   .pinch-order-confirm .confirm_body,.pinch-order-confirm .confirm_note_block{font-size:13px;line-height:1.65;margin:0 0 12px;white-space:pre-wrap;text-align:left}
   .pinch-order-confirm .note{display:block;margin-top:8px;font-size:12px}
   </style>
+CSS
+PINCH_CONFIRM_PAYMENT_NOTE = <<~HTML
+    <div class="confirm_item_variable_title">お支払方法・お支払時期</div>
+    <div class="confirm_note_block">クレジットカード：商品発送時に決済(お届け日の1日～7日前)。
+  後払い：商品同封の請求書にて到着後14日以内にお支払い。
+  <span class="note">支払い期限を一定期間過ぎても未払いの場合、回収事務手数料297円 (税込) が加算。
+  (最大3回、 合計 891円) https://www.impinch.com/company/index_test.html</span></div>
+HTML
+PINCH_CONFIRM_HTML = <<~HTML
+  #{PINCH_CONFIRM_CSS.strip}
   <div class="pinch-order-confirm">
     <div class="return_infutsFields"><a href="#chat_user_names">修正したい場合はこちら</a></div>
     <div class="confirm_title">◆お申込み商品◆</div>
@@ -124,11 +132,7 @@ PINCH_CONFIRM_HTML = <<~HTML
       <span class="confirm_item_title"><span class="confirm_item_name">お支払い方法</span></span>
       <span class="confirm_item_variable">{{payment_method}}</span>
     </div>
-    <div class="confirm_item_variable_title">お支払方法・お支払時期</div>
-    <div class="confirm_note_block">クレジットカード：商品発送時に決済(お届け日の1日～7日前)。
-  後払い：商品同封の請求書にて到着後14日以内にお支払い。
-  <span class="note">支払い期限を一定期間過ぎても未払いの場合、回収事務手数料297円 (税込) が加算。
-  (最大3回、 合計 891円) https://www.impinch.com/company/index_test.html</span></div>
+    #{PINCH_CONFIRM_PAYMENT_NOTE.strip}
     <hr>
     <div class="confirm_title">◆お届けについて◆</div>
     <div class="confirm_body">定期お届けコースは、中止のお申し出があるまで自動でお届けします。 ※購入回数の縛りはありません。
@@ -144,6 +148,82 @@ PINCH_CONFIRM_HTML = <<~HTML
   お電話1本、メール１本でお休み・変更・解約を承ります。</div>
   </div>
 HTML
+PINCH_CONFIRM_HTML_TRIAL = <<~HTML
+  #{PINCH_CONFIRM_CSS.strip}
+  <div class="pinch-order-confirm">
+    <div class="return_infutsFields"><a href="#chat_user_names">修正したい場合はこちら</a></div>
+    <div class="confirm_title">◆お申込み商品◆</div>
+    <div class="item_area item_area--product">
+      <span class="confirm_item_title"><span class="confirm_item_name">商品名</span></span>
+      <span class="confirm_item_variable">I'm PINCH10ml　7日間お試しキット（単品）</span>
+    </div>
+    <hr>
+    <div class="item_area">
+      <span class="confirm_item_title"><span class="confirm_item_name">数量</span></span>
+      <span class="confirm_item_variable">1点</span>
+    </div>
+    <hr>
+    <div class="item_area">
+      <span class="confirm_item_title"><span class="confirm_item_name">金額</span></span>
+      <span class="confirm_item_variable bold-red">980円（税込）</span>
+    </div>
+    <hr>
+    <div class="item_area">
+      <span class="confirm_item_title"><span class="confirm_item_name">手数料</span></span>
+      <span class="confirm_item_variable">0円</span>
+    </div>
+    <hr>
+    <div class="item_area">
+      <span class="confirm_item_title"><span class="confirm_item_name">送料</span></span>
+      <span class="confirm_item_variable">0円</span>
+    </div>
+    <hr>
+    <div class="item_area">
+      <span class="confirm_item_title"><span class="confirm_item_name">合計</span></span>
+      <span class="confirm_item_variable bold-red">980円（税込）</span>
+    </div>
+    <hr>
+    <div class="item_area item_area--product">
+      <span class="confirm_item_title"><span class="confirm_item_name">配送方法</span></span>
+      <span class="confirm_item_variable">ポスト投函（ご在宅不要）</span>
+    </div>
+    <div class="confirm_title">◆お客様情報（お届け先）◆</div>
+    <div class="item_area">
+      <span class="confirm_item_title"><span class="confirm_item_name">お名前</span></span>
+      <span class="confirm_item_variable">{{user_name}}</span>
+    </div>
+    <hr>
+    <div class="item_area">
+      <span class="confirm_item_title"><span class="confirm_item_name">住所</span></span>
+      <span class="confirm_item_variable">{{zip_code_address}}</span>
+    </div>
+    <hr>
+    <div class="item_area">
+      <span class="confirm_item_title"><span class="confirm_item_name">電話番号</span></span>
+      <span class="confirm_item_variable">{{phone_number}}</span>
+    </div>
+    <hr>
+    <div class="item_area">
+      <span class="confirm_item_title"><span class="confirm_item_name">メールアドレス</span></span>
+      <span class="confirm_item_variable">{{user_email}}</span>
+    </div>
+    <div class="confirm_title">◆お支払い方法◆</div>
+    <div class="item_area">
+      <span class="confirm_item_title"><span class="confirm_item_name">お支払い方法</span></span>
+      <span class="confirm_item_variable">{{payment_method}}</span>
+    </div>
+    #{PINCH_CONFIRM_PAYMENT_NOTE.strip}
+    <hr>
+    <div class="confirm_title">◆お届けについて◆</div>
+    <div class="confirm_body">ご注文から3営業日程度でお届けします。ポスト投函（ご在宅不要）。</div>
+    <hr>
+    <div class="confirm_title">◆変更・返品・解約について◆</div>
+    <div class="confirm_body">商品到着後、お肌に合わない場合は返金制度をご利用いただけます。
+  美容コンサルティング窓口：
+  お電話番号　0120-577-361※平日9時～18時
+  メールアドレス　info@impinch.com※24時間受付可能</div>
+  </div>
+HTML
 PINCH_CONFIRM_PRIVACY = <<~TEXT
   お客様からお教えいただく個人情報は、厳重に取り扱ってまいります。お客様がご自身の個人情報に関する開示、登録内容の変更・訂正等を希望される場合には、合理的な範囲で速やかに対応いたします。お問合せや訂正などがございましたら上記お客様おもてなし窓口にご連絡くださいますようお願いいたします。
   お教えいただきましたお客様の情報に関しましては以下のように活かしていきます。
@@ -157,264 +237,220 @@ TEXT
 SAMPLE_PASSWORD = "Sample1234"
 LAUNCH_BUTTON_SELECTORS = ".bot_open, .p-cta__bodyBtn_a, .p-ctasp__btn12, .float.bot_open"
 CUSTOM_CSS = <<~CSS
-  #sp-header .sp-header-left-label-sub-title {
-    display: none !important;
+#sp-body {
+  background: radial-gradient(circle, rgba(255, 210, 209, 1) 0%, rgba(255, 249, 251, 1) 61%) !important;
+}
+#sp-body .ss-bot-chat-detail-content {
+  padding: 15px 12px !important;
+}
+#sp-container1 #sp-body.sp-body .ss-user-message__content-wrapper > .m-b-10:has(+ .sp-user-message-button-action) {
+  margin-bottom: 0 !important;
+}
+#sp-container1 #sp-body.sp-body .ss-user-message__content-wrapper > .sp-user-message-button-action {
+  margin-top: 0 !important;
+  padding-top: 48px !important;
+}
+#sp-container1 #sp-body.sp-body .sp-user-message-button-action button.ss-user-message__action-btn {
+  min-height: 64px !important;
+  height: 64px !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+  padding: 0 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+#sp-container1 #sp-body.sp-body .ss-user-message__content-wrapper:has(.ss-email-domain-suggestions) > .m-b-10:has(.ss-email-domain-suggestions) > .ss-message__content--user-text-input-top > .ss-message__content--user-text-input-title::before,
+#sp-container1 #sp-body.sp-body .ss-user-message__content-wrapper:has(.ss-email-domain-suggestions) > .m-b-10:has(input[inputmode="numeric"]) > .ss-message__content--user-text-input-top > .ss-message__content--user-text-input-title::before {
+  content: "";
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  margin-right: 6px;
+  vertical-align: -5px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+#sp-container1 #sp-body.sp-body .ss-user-message__content-wrapper:has(.ss-email-domain-suggestions) > .m-b-10:has(.ss-email-domain-suggestions) > .ss-message__content--user-text-input-top > .ss-message__content--user-text-input-title::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'%3E%3Cpath stroke='%23333333' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' d='M4 6h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z'/%3E%3Cpath stroke='%23333333' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' d='m3 7 9 6 9-6'/%3E%3C/svg%3E");
+}
+
+#sp-container1 #sp-body.sp-body .ss-user-message__content-wrapper:has(.ss-email-domain-suggestions) > .m-b-10:has(input[inputmode="numeric"]) > .ss-message__content--user-text-input-top > .ss-message__content--user-text-input-title::before {
+  width: 18px;
+  height: 18px;
+  vertical-align: -3px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath fill='%23000' d='M164.9 24.6c-7.7-18.6-28-28.5-47.4-23.2l-88 24C12.1 30.2 0 46 0 64C0 311.4 200.6 512 448 512c18 0 33.8-12.1 38.6-29.5l24-88c5.3-19.4-4.6-39.7-23.2-47.4l-96-40c-16.3-6.8-35.2-2.1-46.3 11.6L304.7 368C234.3 334.7 177.3 277.7 144 207.3L193.3 167c13.7-11.2 18.4-30 11.6-46.3l-40-96z'/%3E%3C/svg%3E");
+}
+.ss-user-message__content-wrapper:has([data-messsagetype="zip_code_address"]) .ss-message__content--user-pull_down-title {
+  display: none !important;
+}
+
+.ss-message__content--user-zip-code-address-search-link,
+.ss-message__content--user-zip-code-address-search-link span {
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+}
+.ss-message__content--user-pull_down-top:has(+ .ss-message__content--user-pull_down--time_hm) .ss-message__content--user-pull_down-title {
+  display: none !important;
+}
+
+@keyframes miraiPaymentBorderTwinkle {
+  0%, 100% {
+    border-color: #E02020;
+    box-shadow: 0 0 0 2px #E02020;
   }
-  .ss-message__content--user { border-radius: 12px 12px 0 12px !important; }
-  .ss-message__content--bot { font-size: 19px !important; }
-  #sp-container1 #sp-body.sp-body .sp-user-message-button-action button.ss-user-message__action-btn {
-    background: #02BB92 !important;
-    color: #FFFFFF !important;
-    border-radius: 35px !important;
-    min-height: 64px !important;
-    height: 64px !important;
-    min-width: 137px !important;
-    width: calc(100% - 24px) !important;
-    font-size: 16px !important;
-    font-weight: 700 !important;
-    box-sizing: border-box !important;
-    padding: 0 16px !important;
+  50% {
+    border-color: transparent;
+    box-shadow: 0 0 0 2px transparent;
   }
-  .pinch-bot-art,
-  .ss-message__content--user-chat-image img,
-  .ss-message__content--user-radio_button--radio_button_img img,
-  .ss-message__content--user-radio_button--upsell_button img {
-    width: 100% !important;
-    height: auto !important;
-    object-fit: contain !important;
-    display: block !important;
-  }
-  .html-code-message-preview:has(.pinch-bot-art) {
-    background: transparent !important;
-    padding: 0 !important;
-  }
-  .ss-message__content--user-radio_button--radio_button_img {
-    border: 1px solid #E0E0E0 !important;
-    border-radius: 8px !important;
-    overflow: hidden !important;
-    padding: 0 !important;
-  }
-  .ss-message__content--user-radio_button--selected {
-    border: 2px solid #EE4D67 !important;
-  }
-  .ss-message__content--user-html-code {
-    width: 100%;
-    background: #ffffff;
-  }
-  .pinch-confirm {
-    font-size: 13px;
-    color: #333333;
-    line-height: 1.6;
-    background: #ffffff;
-    padding: 0 4px 8px;
-  }
-  .pinch-confirm-edit {
-    display: block;
-    text-align: right;
-    color: #0597F2;
-    text-decoration: underline;
-    margin: 0 0 12px;
-  }
-  .pinch-confirm-title {
-    font-weight: 700;
-    text-align: center;
-    margin: 16px 0 8px;
-  }
-  .pinch-confirm-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 8px 0;
-    border-top: 1px solid #e5e5e5;
-  }
-  .pinch-confirm-row span:first-child {
-    flex: 0 0 88px;
-    color: #666666;
-  }
-  .pinch-confirm-row span:last-child {
-    text-align: right;
-    flex: 1;
-  }
-  .ss-message__content--user-agree_to_term-title {
-    font-weight: 700;
-  }
-  .ss-message__content--user-text-input-top {
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-    margin-bottom: 4px;
-  }
-  .ss-message__content--user-text-input-required {
-    display: inline !important;
-    color: #FF7E00 !important;
-    font-size: 12px !important;
-    font-weight: 700 !important;
-    letter-spacing: 0 !important;
-  }
-  .ss-message__content--user-text-input-title,
-  .ss-message__content--user-radio_button-title,
-  .ss-message__content--user-label-title,
-  .ss-message__content--user-pull_down-title,
-  .ss-message__content--user-textarea-title {
-    font-size: 17px !important;
-    font-weight: 700 !important;
-    letter-spacing: 2px !important;
-  }
-  .sp-body .ss-input-value.ss-input-custom-field,
-  .sp-body input.ss-input-value,
-  .field-float .ss-input-value {
-    min-height: 55px !important;
-    height: 55px !important;
-    box-sizing: border-box !important;
-  }
-  .sp-header.sp-header--logo,
-  .preview-open-frame__header.sp-header--logo {
-    height: 34px !important;
-    min-height: 34px !important;
-    background-size: 25% !important;
-    background-position: center !important;
-  }
-  .ss-input-value:placeholder-shown,
-  input.ss-input-value:placeholder-shown {
-    background: #F7E9E5 !important;
-  }
-  .option-gender-item {
-    border-radius: 5px !important;
-  }
-  .ss-message__content--user-agree_to_term-detail_content textarea {
-    border: 1px solid #cccccc;
-    border-radius: 0;
-    background: #ffffff;
-    box-sizing: border-box;
-    min-height: 160px;
-    overflow-y: auto;
-  }
-  .ss-message__content--user-agree_to_term-detail_content .ss-user-setting__item-checkbox {
-    display: flex !important;
-    justify-content: center !important;
-    width: 100% !important;
-    margin-top: 12px;
-  }
-  .ss-message__content--user-agree_to_term-detail_content .ant-checkbox-wrapper {
-    display: inline-flex !important;
-    align-items: center !important;
-    color: #333333 !important;
-  }
-  .ss-message__content--user-agree_to_term-detail_content .ant-checkbox {
-    top: 0 !important;
-  }
-  .ss-message__content--user-agree_to_term-detail_content .ant-checkbox-inner,
-  .ss-message__content--user-agree_to_term-detail_content .ant-checkbox-checked::after {
-    display: none !important;
-  }
-  .ss-message__content--user-agree_to_term-detail_content .ant-checkbox-input {
-    opacity: 1 !important;
-    position: static !important;
-    width: 18px !important;
-    height: 18px !important;
-    pointer-events: auto !important;
-    appearance: checkbox !important;
-    -webkit-appearance: checkbox !important;
-  }
-  .ss-message__content--user-agree_to_term-detail_content .ant-checkbox + span {
-    padding-left: 8px !important;
-    display: inline-flex !important;
-    align-items: center !important;
-  }
-  .ss-message__content--user-agree_to_term-detail_content .ant-checkbox + span > div {
-    display: inline !important;
-    line-height: 1 !important;
-  }
-  .chatbot-submit-button {
-    background: #EE9E3A !important;
-    color: #ffffff !important;
-    border: none !important;
-    border-radius: 5px !important;
-    min-height: 60px !important;
-    height: 60px !important;
-    min-width: 190px !important;
-    width: 190px !important;
-    font-size: 20px !important;
-    font-weight: 700 !important;
-  }
-  .pinch-card-brands {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-  }
-  .pinch-card-brands img {
-    height: 28px;
-    width: auto;
-  }
-  /* Expected: same row = n/N left + slogan center; thin full-width track below */
-  #sp-process-bar.sp-process-bar--fraction {
-    position: relative !important;
-    padding: 6px 20px 10px !important;
-    height: auto !important;
-    min-height: 0 !important;
-    background: transparent !important;
-    overflow: visible !important;
-    box-sizing: border-box !important;
-  }
-  #sp-process-bar.sp-process-bar--fraction .sp-process-bar__meta {
-    position: relative !important;
-    height: 18px !important;
-    margin-bottom: 4px !important;
-    z-index: 2 !important;
-  }
-  #sp-process-bar.sp-process-bar--fraction .sp-process-bar__step {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    color: #f48879 !important;
-    font-size: 12px !important;
-    font-weight: 700 !important;
-    line-height: 18px !important;
-  }
-  #sp-process-bar.sp-process-bar--fraction .sp-process-bar__track {
-    background: #ffffff !important;
-    border-radius: 20px !important;
-    height: 10px !important;
-  }
-  #sp-process-bar.sp-process-bar--fraction .sp-process-bar-color,
-  #sp-process-bar.sp-process-bar--fraction .animation {
-    background: #f19f95 !important;
-    min-width: 0 !important;
-    height: 10px !important;
-    color: transparent !important;
-    font-size: 0 !important;
-    padding: 0 !important;
-    margin-top: 0 !important;
-    border-radius: 20px !important;
-  }
-  .field-float .ss-input-value,
-  .field-float textarea {
-    padding: 8px 12px !important;
-    line-height: 18px !important;
-  }
-  .field-float:focus-within .ss-input-value,
-  .field-float--filled .ss-input-value {
-    padding-top: 18px !important;
-    padding-bottom: 6px !important;
-  }
-  .sp-process-bar-complete { background: #ca2618 !important; color: #ffffff !important; border-radius: 15px !important; }
+}
+
+/* MIRAI payment method side-by-side buttons */
+/* Scope to default radios only — gender uses .options-gender_wrapper inside the same wrapper class. */
+#sp-container1 #sp-body.sp-body .ss-message__content--user-radio_button-wrapper:has(> .ss-message__content--user-radio_button) {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 8px !important;
+  align-items: stretch !important;
+}
+#sp-container1 #sp-body.sp-body .ss-message__content--user-radio_button-wrapper:has(> .ss-message__content--user-radio_button) > .ss-message__content--user-radio_button {
+  flex: 1 1 0 !important;
+  margin-bottom: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  min-height: 56px !important;
+  padding: 10px 8px !important;
+  box-sizing: border-box !important;
+  border-radius: 6px !important;
+}
+#sp-container1 #sp-body.sp-body .ss-message__content--user-radio_button-wrapper:has(> .ss-message__content--user-radio_button) > .ss-message__content--user-radio_button input[type="radio"] {
+  position: absolute !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  pointer-events: none !important;
+}
+#sp-container1 #sp-body.sp-body .ss-message__content--user-radio_button-wrapper:has(> .ss-message__content--user-radio_button) > .ss-message__content--user-radio_button > label {
+  margin: 0 !important;
+  width: 100% !important;
+  text-align: center !important;
+  line-height: 1.3 !important;
+  cursor: pointer !important;
+  white-space: normal !important;
+}
+#sp-container1 #sp-body.sp-body .ss-message__content--user-radio_button-wrapper:has(> .ss-message__content--user-radio_button) > .ss-message__content--user-radio_button {
+  background: #E6E6E6 !important;
+  background-color: #E6E6E6 !important;
+  border: 2px solid #E6E6E6 !important;
+  animation: none !important;
+}
+#sp-container1 #sp-body.sp-body .ss-message__content--user-radio_button-wrapper:has(> .ss-message__content--user-radio_button) > .ss-message__content--user-radio_button > label {
+  color: #9A9A9A !important;
+}
+#sp-container1 #sp-body.sp-body .ss-message__content--user-radio_button-wrapper:has(> .ss-message__content--user-radio_button) > .ss-message__content--user-radio_button--selected,
+#sp-container1 #sp-body.sp-body .ss-message__content--user-radio_button-wrapper:has(> .ss-message__content--user-radio_button) > .ss-message__content--user-radio_button:has(input[type="radio"]:checked) {
+  background: #7A4030 !important;
+  background-color: #7A4030 !important;
+  border: 2px solid #E02020 !important;
+  outline: none !important;
+  animation: miraiPaymentBorderTwinkle 1.2s ease-in-out infinite !important;
+}
+#sp-container1 #sp-body.sp-body .ss-message__content--user-radio_button-wrapper:has(> .ss-message__content--user-radio_button) > .ss-message__content--user-radio_button--selected > label,
+#sp-container1 #sp-body.sp-body .ss-message__content--user-radio_button-wrapper:has(> .ss-message__content--user-radio_button) > .ss-message__content--user-radio_button:has(input[type="radio"]:checked) > label {
+  color: #FFFFFF !important;
+}
+
+/* MIRAI msg_id_26 + msg_id_27 pinch combine full width */
+/* Bleed past #sp-body 10px padding so promo/upsell match chatbot frame width. */
+#sp-container1 #sp-body.sp-body #msg_id_26.sp-body-user-side,
+#sp-container1 #sp-body.sp-body #msg_id_27.sp-body-user-side {
+  width: calc(100% + 20px) !important;
+  max-width: none !important;
+  box-sizing: border-box !important;
+  margin-left: -10px !important;
+  margin-right: -10px !important;
+  justify-content: stretch !important;
+}
+#sp-container1 #sp-body.sp-body #msg_id_26 .sp-body-user-side-messages,
+#sp-container1 #sp-body.sp-body #msg_id_27 .sp-body-user-side-messages {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+#sp-container1 #sp-body.sp-body #msg_id_26 .ss-user-message__content-wrapper,
+#sp-container1 #sp-body.sp-body #msg_id_26 .ss-combine-message__content,
+#sp-container1 #sp-body.sp-body #msg_id_26 .ss-combine-message__block,
+#sp-container1 #sp-body.sp-body #msg_id_26 .ss-combine-message__block-inner,
+#sp-container1 #sp-body.sp-body #msg_id_26 .ss-bot-chat-text-input-shell,
+#sp-container1 #sp-body.sp-body #msg_id_27 .ss-user-message__content-wrapper,
+#sp-container1 #sp-body.sp-body #msg_id_27 .ss-combine-message__content,
+#sp-container1 #sp-body.sp-body #msg_id_27 .ss-combine-message__block,
+#sp-container1 #sp-body.sp-body #msg_id_27 .ss-combine-message__block-inner,
+#sp-container1 #sp-body.sp-body #msg_id_27 .ss-bot-chat-text-input-shell {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+#sp-container1 #sp-body.sp-body #msg_id_26 .ss-combine-message__block,
+#sp-container1 #sp-body.sp-body #msg_id_27 .ss-combine-message__block {
+  padding: 0 !important;
+  --ss-combine-block-padding: 0px !important;
+}
+#sp-container1 #sp-body.sp-body #msg_id_26 .ss-bot-chat-detail-content,
+#sp-container1 #sp-body.sp-body #msg_id_26 .html-code-message-preview,
+#sp-container1 #sp-body.sp-body #msg_id_27 .ss-bot-chat-detail-content,
+#sp-container1 #sp-body.sp-body #msg_id_27 .html-code-message-preview {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+#sp-container1 #sp-body.sp-body #msg_id_26 .pinch-bot-art,
+#sp-container1 #sp-body.sp-body #msg_id_27 .pinch-bot-art {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  display: block !important;
+  object-fit: contain !important;
+}
+#sp-container1 #sp-body.sp-body #msg_id_26 .ss-user-chat-text-input-user-icon,
+#sp-container1 #sp-body.sp-body #msg_id_27 .ss-user-chat-text-input-user-icon {
+  display: none !important;
+}
+#sp-container1 .sp-body .ss-message__content--user-radio_button--radio_button_img.ss-message__content--user-radio_button--selected,
+#sp-container .sp-body .ss-message__content--user-radio_button--radio_button_img.ss-message__content--user-radio_button--selected,
+#sp-container1 .sp-body .ss-message__content--user-radio_button--radio_button_img:has(input[type="radio"]:checked),
+#sp-container .sp-body .ss-message__content--user-radio_button--radio_button_img:has(input[type="radio"]:checked) {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 1px solid #000 !important;
+  animation: none !important;
+}
 CSS
 
 PINCH_DESIGN_SETTINGS = {
-  display_type: 3,
+  display_type: 2,
   width_pc: 500,
   height_pc: 680,
   width_sp: 100,
   height_sp: 100,
   position_pc: 1,
-  button_type_pc: 1,
-  right_position_pc_title: "",
+  button_type_pc: 2,
+  right_position_pc_title: "30秒でカンタンお申込み♪",
   right_margin_pc: 10,
   bottom_margin_pc: 0,
   position_sp: 1,
-  button_type_sp: 1,
-  right_position_sp_title: "",
+  button_type_sp: 2,
+  right_position_sp_title: "30秒でカンタンお申込み♪",
   right_margin_sp: 0,
   bottom_margin_sp: 0,
   popup_close_bot: true,
@@ -422,64 +458,22 @@ PINCH_DESIGN_SETTINGS = {
   open_animation_duration_ms: 400,
   open_animation_style: "slide_up",
   theme: {
-    header_title_text_color: "#FFFFFF",
+    header_title_text_color: "#000000",
     header_title_font_size: "15px",
+    header_title_bold: true,
     header_subtitle_visible: false,
     header_subtitle_text_color: "#FFFFFF",
     header_subtitle_font_size: "13px",
-    header_chrome: "icon_and_title",
+    header_subtitle_bold: false,
+    header_chrome: "title_only",
+    header_title_alignment: "center",
     header_close_icon: "times",
     header_close_icon_color: "#9e9e9e",
     header_bg_color: "#FFFFFF",
     header_logo_image: PINCH_HEADER_LOGO_DATA_URI,
-    chat_window_bg_color: "#F7E9E5",
-    bot_message_bg_color: "#FFEEEE",
-    bot_message_text_color: "#333333",
-    bot_message_font_size: "17px",
-    bot_message_border_style: "no_tail",
-    user_message_bg_color: "#F5F5F5",
-    user_message_text_color: "#333333",
-    user_message_font_size: "17px",
-    user_message_border_style: "with_tail",
-    required_label_text_color: "#FF0000",
-    required_label_font_size: "12px",
-    field_font_size: "17px",
-    field_unfocus_bg_color: "#F7E9E5",
-    field_unfocus_border_color: "#E0E0E0",
-    field_focus_bg_color: "#FFFFFF",
-    field_focus_border_color: "#0597F2",
-    field_focus_border_width: "2px",
-    field_focus_bg_effect: "outline_soft",
-    field_title_bold: true,
-    field_title_font_size: "17px",
-    field_title_letter_spacing: "2px",
-    field_placeholder_style: "float",
-    field_placeholder_font_size: "16px",
-    field_placeholder_focus_font_size: "10px",
-    radio_unselected_bg_color: "#FFFFFF",
-    radio_unselected_border_color: "#E0E0E0",
-    radio_selected_bg_color: "#8C6049",
-    radio_selected_border_color: "#8C6049",
-    radio_font_size: "17px",
-    radio_selected_border_effect: "none",
-    checkbox_unchecked_bg_color: "#FFFFFF",
-    checkbox_unchecked_border_color: "#E0E0E0",
-    checkbox_checked_bg_color: "#F6CA21",
-    checkbox_checked_border_color: "#F6CA21",
-    checkbox_font_size: "17px",
-    checkbox_checked_border_effect: "none",
-    button_normal_bg_color: "#F49440",
-    button_normal_text_color: "#2C2C2C",
-    button_pressed_bg_color: "#E08838",
-    button_pressed_text_color: "#2C2C2C",
-    button_disabled_bg_color: "#F4CCAC",
-    button_disabled_text_color: "#A4A4A4",
-    button_font_size: "16px",
-    button_border_style: "pill",
-    button_effect: "shake",
-    button_width: "100%",
-    button_position: "center",
-    progress_bar_bg_color: "#FFFFFF",
+    header_height: "34px",
+    progress_bar_container_bg_color: "#f7e9e5",
+    progress_bar_bg_color: "#ffffff",
     progress_bar_text_color: "#F48879",
     progress_bar_font_size: "12px",
     progress_bar_bold: true,
@@ -489,6 +483,71 @@ PINCH_DESIGN_SETTINGS = {
     progress_bar_style: "style2",
     progress_label_mode: "fraction",
     progress_bar_above_text: "お申し込み最短30秒",
+    chat_window_bg_color: "#F7E9E5",
+    bot_message_bg_color: "#FFEEEE",
+    bot_message_text_color: "#333333",
+    bot_message_font_size: "17px",
+    bot_message_bold: false,
+    bot_message_border_style: "no_tail",
+    user_message_bg_color: "#F5F5F5",
+    user_message_text_color: "#333333",
+    user_message_font_size: "17px",
+    user_message_bold: false,
+    user_message_border_style: "with_tail",
+    field_focus_border_color: "#0597F2",
+    field_focus_border_width: "2px",
+    field_focus_bg_color: "#FFFFFF",
+    field_focus_bg_effect: "outline_soft",
+    field_unfocus_border_color: "#E0E0E0",
+    field_unfocus_border_width: "1px",
+    field_unfocus_bg_color: "#F7E9E5",
+    field_font_size: "17px",
+    field_text_bold: false,
+    field_placeholder_bold: false,
+    field_placeholder_style: "float",
+    field_placeholder_font_size: "16px",
+    field_placeholder_focus_font_size: "10px",
+    field_title_bold: true,
+    field_title_font_size: "17px",
+    field_title_letter_spacing: "2px",
+    validation_message_bg_color: "#FFF0F0",
+    validation_message_text_color: "#CC0000",
+    validation_message_font_size: "13px",
+    required_label_text_color: "#FF0000",
+    required_label_font_size: "12px",
+    button_normal_bg_color: "#01bb92",
+    button_normal_text_color: "#ffffff",
+    button_pressed_bg_color: "#10997b",
+    button_pressed_text_color: "#ffffff",
+    button_disabled_bg_color: "#09866b",
+    button_disabled_text_color: "#ffffff",
+    button_font_size: "16px",
+    button_bold: false,
+    button_border_style: "pill",
+    button_effect: "shake",
+    button_width: "100%",
+    button_padding: "1px 8px",
+    button_position: "center",
+    checkbox_unchecked_bg_color: "#FFFFFF",
+    checkbox_unchecked_border_color: "#E0E0E0",
+    checkbox_checked_bg_color: "#F6CA21",
+    checkbox_checked_border_color: "#F6CA21",
+    checkbox_checked_border_effect: "none",
+    checkbox_font_size: "17px",
+    radio_unselected_bg_color: "#FFFFFF",
+    radio_selected_bg_color: "#8C6049",
+    radio_unselected_border_color: "#E0E0E0",
+    radio_selected_border_color: "#8C6049",
+    radio_selected_border_effect: "none",
+    radio_input_unselected_color: "#cccccc",
+    radio_input_selected_color: "yellow",
+    radio_font_size: "17px",
+    error_message_bg_color: "#FFF0F0",
+    error_message_text_color: "#CC0000",
+    error_message_font_size: "13px",
+    thanks_message_bg_color: "#e8f5e9",
+    thanks_message_text_color: "#2e7d32",
+    thanks_message_font_size: "14px",
     modal_bg_color: "#FFFFFF",
     modal_title_text_color: "#333333",
     modal_title_font_size: "17px",
@@ -498,13 +557,7 @@ PINCH_DESIGN_SETTINGS = {
     modal_cancel_button_border_color: "#AC2925",
     modal_close_button_bg_color: "#DDDDDD",
     modal_close_button_text_color: "#646464",
-    modal_button_font_size: "14px",
-    validation_message_bg_color: "#FFF0F0",
-    validation_message_text_color: "#CC0000",
-    validation_message_font_size: "13px",
-    error_message_bg_color: "#FFF0F0",
-    error_message_text_color: "#CC0000",
-    error_message_font_size: "13px"
+    modal_button_font_size: "14px"
   }
 }.freeze
 
@@ -571,8 +624,8 @@ chatbot = Chatbot.find_by(bot_name: "I'm PINCH") || Chatbot.find_or_initialize_b
 chatbot.assign_attributes(
   user: owner,
   bot_name: "I'm PINCH",
-  title: "30秒でカンタンお申込み♪",
-  subtitle: "I'm PINCH美容液",
+  title: "I'm PINCH",
+  subtitle: "x",
   design_type: :material,
   main_color: :yellow,
   status: :on,
@@ -609,6 +662,7 @@ conversation = Seeds::ImPinchConversation.build(
   PINCH_IMG.merge(
     card_brands_html: PINCH_CARD_BRANDS_HTML,
     confirm_html: PINCH_CONFIRM_HTML,
+    confirm_html_trial: PINCH_CONFIRM_HTML_TRIAL,
     confirm_privacy: PINCH_CONFIRM_PRIVACY
   )
 )
@@ -623,14 +677,14 @@ scenario.assign_attributes(
   lexica_cart_url: CART_URL,
   order_result_mode: "async",
   lexica_upsell_product_url: SHOP_URL,
-  lexica_upsell_sku: "SAMPLE-UPSELL-SKU",
+  lexica_upsell_sku: "",
   lexica_cross_sell_product_url: SHOP_URL,
-  lexica_cross_sell_sku: "SAMPLE-XSELL-SKU",
+  lexica_cross_sell_sku: "",
   lexica_offer_chat: true,
   lexica_offer_confirm_upsell: true,
   lexica_offer_confirm_cross_sell: false,
-  lexica_offer_thanks_upsell: true,
-  lexica_offer_thanks_cross_sell: true,
+  lexica_offer_thanks_upsell: false,
+  lexica_offer_thanks_cross_sell: false,
   is_used_custom_css: true,
   custom_css_content: CUSTOM_CSS,
   launch_button_selectors: LAUNCH_BUTTON_SELECTORS,
