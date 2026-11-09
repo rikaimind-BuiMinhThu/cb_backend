@@ -216,6 +216,14 @@ class ScenarioUserResponse < ApplicationRecord
             selected = get_selected_obj_for_radio_button(conversation)
             value = selected[:value]
             data_input_name = "payment_method"
+          when "upsell"
+            # I'm PINCH size / 定期 upsell (radio type upsell_button, values not_upsell|up1).
+            data_input_name = "upsell"
+            selected = get_selected_obj_for_radio_button(conversation)
+            rb = conversation[:radio_button] || conversation["radio_button"] || {}
+            value =
+              (selected && (selected[:value] || selected["value"])) ||
+              (rb[:initial_selection] || rb["initial_selection"])
           when "path", "order_path"
             data_input_name, value = record_order_path_answer(conversation)
           when "sex"
@@ -280,16 +288,7 @@ class ScenarioUserResponse < ApplicationRecord
           when 'credit_card', 'credit', 'zeus'
             data_input_name = "credit_card_payment"
             card = conversation[:card_payment_radio_button] || conversation["card_payment_radio_button"]
-            if card && (card[:token_key] || card["token_key"])
-              value = {
-                token_key: card[:token_key] || card["token_key"],
-                masked_pan: card[:masked_pan] || card["masked_pan"],
-                expiry: card[:expiry] || card["expiry"],
-                holder: card[:holder] || card["holder"]
-              }.to_json
-            else
-              value = conversation[:card_payment_radio_button].to_json
-            end
+            value = credit_card_payment_value(card) || conversation[:card_payment_radio_button].to_json
           when 'paypal'
             data_input_name = "paypal_payment"
             value = selected[:value]
@@ -303,6 +302,11 @@ class ScenarioUserResponse < ApplicationRecord
             data_input_name = "np_delivery_payment"
             value = selected[:value]
           end
+        when "credit_card_payment"
+          # I'm PINCH / Lexica Path A uses type credit_card_payment (not card_payment_radio_button).
+          card = conversation[:credit_card_payment] || conversation["credit_card_payment"]
+          data_input_name = "credit_card_payment"
+          value = credit_card_payment_value(card) || card.to_json
         when "pull_down"
           case conversation[:pull_down][:save_input_content]
           when "birthday", "birth_date" # 誕生日 (I'm PINCH uses birth_date)
@@ -446,7 +450,10 @@ class ScenarioUserResponse < ApplicationRecord
     sel = (rb[:initial_selection] || rb["initial_selection"]).to_s
     return nil if sel.blank?
 
-    opts = Array(rb[:default] || rb["default"]) + Array(rb[:radio_button_img] || rb["radio_button_img"])
+    opts =
+      Array(rb[:default] || rb["default"]) +
+      Array(rb[:radio_button_img] || rb["radio_button_img"]) +
+      Array(rb[:upsell_button] || rb["upsell_button"])
     opts.find do |obj|
       [obj[:id], obj["id"], obj[:value], obj["value"]].compact.map(&:to_s).include?(sel)
     end
@@ -455,6 +462,21 @@ class ScenarioUserResponse < ApplicationRecord
   def self.get_selected_obj_for_card_payment_radio_button(conversation)
     selected_value = conversation[:card_payment_radio_button][:initial_selection]
     conversation[:card_payment_radio_button][:radio_contents].detect { |obj| obj[:value] == selected_value }
+  end
+
+  # Persist ZEUS token only (never raw PAN) for Lexica credit RPA.
+  def self.credit_card_payment_value(card)
+    return nil if card.blank?
+
+    token = card[:token_key] || card["token_key"]
+    return nil if token.blank?
+
+    {
+      token_key: token,
+      masked_pan: card[:masked_pan] || card["masked_pan"],
+      expiry: card[:expiry] || card["expiry"],
+      holder: card[:holder] || card["holder"]
+    }.to_json
   end
 
   def self.get_selected_value_for_pull_down(conversation)
