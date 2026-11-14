@@ -102,11 +102,12 @@ module SeleniumServices
                   });
                 } catch (e) {}
                 xhr.addEventListener('loadend', function() {
+                  var body = String(xhr.responseText || '');
                   window.__ecchPosts.push({
                     method: xhr.__ecchMethod,
                     url: xhr.__ecchUrl.slice(0, 200),
                     status: xhr.status,
-                    response: String(xhr.responseText || '').slice(0, 3000),
+                    response: 'len' + body.length,
                     fields: fields.slice(0, 60)
                   });
                 });
@@ -487,11 +488,19 @@ module SeleniumServices
             label: "order_post",
             value: "#{post["method"]} #{post["status"]}",
             request: { "fields" => post["fields"] },
-            response: post["response"].to_s
+            response: redact_order_post_response(post["response"])
           )
         end
       rescue StandardError => error
         Log.error "order post capture failed: #{sanitize_error(error.message)}", @log_tab_level
+      end
+
+
+      def redact_order_post_response(raw)
+        text = raw.to_s
+        return text if text.match?(/\Alen\d+\z/)
+
+        "len#{text.bytesize}"
       end
 
 

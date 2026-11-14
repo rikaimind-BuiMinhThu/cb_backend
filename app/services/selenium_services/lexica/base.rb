@@ -45,7 +45,7 @@ module SeleniumServices
           else
             selenium_log
           end
-        Selenium::WebDriver.logger.level = :debug
+        Selenium::WebDriver.logger.level = :warn
         Log.info "Init selenium driver for chrome", @log_tab_level
         chrome_args = [
           "--lang=ja",

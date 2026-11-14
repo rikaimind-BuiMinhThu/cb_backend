@@ -151,6 +151,19 @@ class LexicaJobPayloadCardTest < ActiveSupport::TestCase
     refute cleaned.key?("card_number")
     refute cleaned.key?("cvc")
   end
+
+  def test_password_stays_encrypted_in_claim_conversation
+    plaintext = "shop-secret-pass"
+    token = JWT.encode(
+      { "data" => plaintext, "exp" => (Time.current + 1.hour).to_i },
+      Rails.application.secrets.secret_refresh_token
+    )
+    row = Struct.new(:id, :data_input_name, :value, :user_input_id).new(9, "password", token, "u-1")
+    hash = Lexica::JobPayload.new(nil).send(:conversation_hash, row)
+    assert_equal token, hash["value"]
+    refute_equal plaintext, hash["value"]
+    refute_includes hash["value"].to_s, plaintext
+  end
 end
 
 module LexicaOrderCreateStub

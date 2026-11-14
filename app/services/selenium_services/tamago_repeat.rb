@@ -66,7 +66,7 @@ module SeleniumServices
       @log_tab_level += 1
 
       Selenium::WebDriver.logger.output = File.join("#{Rails.root}/log", "selenium.log")
-      Selenium::WebDriver.logger.level = :debug
+      Selenium::WebDriver.logger.level = :warn
       Log.info "Init selenium driver for chrome", @log_tab_level
       options = Selenium::WebDriver::Chrome::Options.new(
         args: [

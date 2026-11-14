@@ -58,7 +58,8 @@ module Lexica
       value =
         case name
         when "password"
-          decode_secret(row.value)
+          # Keep JWT ciphertext in the claim payload; Lambda decodes at fill time.
+          row.value
         when "credit_card_payment"
           card_for_lambda(row.value)
         else
@@ -70,14 +71,6 @@ module Lexica
         "value" => value,
         "user_input_id" => row.user_input_id
       }
-    end
-
-    def decode_secret(raw)
-      return nil if raw.blank?
-
-      JWT.decode(raw, secret_key)[0]["data"]
-    rescue StandardError
-      raw
     end
 
     def decode_card(raw)
