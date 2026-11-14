@@ -316,7 +316,7 @@ module SeleniumServices
       Log.info "Fill to text input #{css_selector}: #{description}", @log_tab_level
       Log.info "input_element = @driver.find_element(css: #{css_selector})", @log_tab_level + 1
       input_element = @driver.find_element(css: css_selector)
-      Log.info "input_element.send_keys(#{value})", @log_tab_level + 1
+      Log.info "input_element.send_keys([REDACTED]) description=#{description}", @log_tab_level + 1
       input_element.clear if clear_input
       input_element.send_keys(value)
       capture

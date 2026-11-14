@@ -74,7 +74,7 @@ module Captcha
       uri = URI(RES_URL)
       uri.query = URI.encode_www_form(params)
       res = http_get(uri)
-      Log.info "TwoCaptcha report response: #{res&.body}", @log_tab_level
+      Log.info "TwoCaptcha report response: [REDACTED len=#{res&.body.to_s.bytesize}]", @log_tab_level
       body = parse_json_body(res&.body)
       { request: request_log, response: body }
     rescue StandardError => e
@@ -94,7 +94,7 @@ module Captcha
       raise "2Captcha in.php HTTP failure" unless res.is_a?(Net::HTTPSuccess)
 
       body = JSON.parse(res.body)
-      Log.info "TwoCaptcha in.php body: #{body.inspect}", @log_tab_level
+      Log.info "TwoCaptcha in.php body: [REDACTED status=#{body['status']}]", @log_tab_level
       raise "2Captcha in.php error: #{body['request']}" if body["status"].to_i != 1
 
       {

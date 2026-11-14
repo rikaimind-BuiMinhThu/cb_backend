@@ -49,10 +49,9 @@ module Captcha
         .gsub(":request_id", request_id))
 
       res = Net::HTTP.get_response(uri)
-      Log.info res.inspect, @log_tab_level
+      Log.info "get_captcha_response HTTP #{res.code} body=[REDACTED len=#{res.body.to_s.bytesize}]", @log_tab_level
       if res.is_a?(Net::HTTPSuccess)
         Log.info "get_captcha_response: success", @log_tab_level
-        Log.info "response body: #{res.body}", @log_tab_level
         @log_tab_level -= 1
         res = JSON.parse(res.body)
 
@@ -81,8 +80,7 @@ module Captcha
 
       res = Net::HTTP.get_response(uri)
       if res.is_a?(Net::HTTPSuccess)
-        Log.info "send_in_request: success", @log_tab_level
-        Log.info "response body: #{res.body}", @log_tab_level
+        Log.info "send_in_request: success body=[REDACTED len=#{res.body.to_s.bytesize}]", @log_tab_level
         @log_tab_level -= 1
         return JSON.parse(res.body)
       else

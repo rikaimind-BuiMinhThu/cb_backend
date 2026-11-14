@@ -236,7 +236,7 @@ module SeleniumServices
       page_url = @driver.current_url
 
       token = Captcha::RecaptchaV2.new(google_key, page_url, @log_tab_level).process
-      Log.info "token: #{token}", @log_tab_level
+      Log.info "token: [REDACTED]", @log_tab_level
 
       js_script = "textarea = document.createElement('textarea');"
       js_script += "textarea.name = 'g-recaptcha-response';"
@@ -455,7 +455,7 @@ module SeleniumServices
       Log.info "Fill to text input #{css_selector}: #{description}", @log_tab_level
       Log.info "input_element = @driver.find_element(css: #{css_selector})", @log_tab_level + 1
       input_element = @driver.find_element(css: css_selector)
-      Log.info "input_element.send_keys(#{value})", @log_tab_level + 1
+      Log.info "input_element.send_keys([REDACTED]) description=#{description}", @log_tab_level + 1
       input_element.send_keys(value)
       capture
       @log_tab_level -= 1
