@@ -59,11 +59,8 @@ class Api::V1::MessageManagements::MessageGroupsController < ApplicationControll
       CopyObject::MessageManager.new(message_group, "group", current_user.id).call
       render json: {code: 1, message: "Success!"}
     rescue StandardError => error
-      Rails.logger.debug(error)
-      error.backtrace.each do |line|
-        Rails.logger.error(line)
-      end
-      return render json: {code: 2, message: error}
+      log_request_error(error)
+      return render json: {code: 2, message: error.message}
     end
   end
 

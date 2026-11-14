@@ -38,4 +38,11 @@ class ApplicationController < ActionController::Base
     # trackable
     @user.update_tracked_fields!(request)
   end
+
+  # Log class + message + request_id only (no backtrace / full exception dump).
+  def log_request_error(error)
+    Rails.logger.error(
+      "#{error.class}: #{error.message} request_id=#{request.request_id}"
+    )
+  end
 end

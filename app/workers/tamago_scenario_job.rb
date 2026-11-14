@@ -1,6 +1,7 @@
 class TamagoScenarioJob
   include Sidekiq::Worker
 
+  # SECURITY(A19): Sidekiq args must be primitive IDs only — never secrets or AR objects.
   def perform(scenario_id, user_id)
     begin
       scenario = Scenario.find(scenario_id)

@@ -9,6 +9,7 @@ class LexicaScenarioJob
   RPA_STEP_DEFER = "chrome_slot_defer"
   RPA_STEP_RETRY = "chrome_slot_retry"
 
+  # SECURITY(A19): Sidekiq args must be primitive IDs/ints only — never secrets or AR objects.
   def perform(scenario_id, user_id, chrome_slot_attempt = 0, slot_wait_started_at = nil)
     chrome_slot_attempt = chrome_slot_attempt.to_i
     slot_wait_started_at = (slot_wait_started_at || Time.now.to_i).to_i

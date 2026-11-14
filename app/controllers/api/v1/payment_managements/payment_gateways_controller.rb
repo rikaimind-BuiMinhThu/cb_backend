@@ -40,12 +40,9 @@ class Api::V1::PaymentManagements::PaymentGatewaysController < ApplicationContro
       end
       payment.update!(payment_update_params)
       render json: {code: 1, data: payment}
-    rescue
-      Rails.logger.error(error)
-      error.backtrace.each do |line|
-        Rails.logger.error(line)
-      end
-      render json: {code: 2, message: error}
+    rescue StandardError => error
+      log_request_error(error)
+      render json: {code: 2, message: error.message}
     end
   end
 
@@ -56,12 +53,9 @@ class Api::V1::PaymentManagements::PaymentGatewaysController < ApplicationContro
       payment.destroy!
       current_user.payment_gateways.charge_gateways.first&.update(is_default: :yes)
       render json: {code: 1, data: payment}
-    rescue
-      Rails.logger.error(error)
-      error.backtrace.each do |line|
-        Rails.logger.error(line)
-      end
-      render json: {code: 2, message: error}
+    rescue StandardError => error
+      log_request_error(error)
+      render json: {code: 2, message: error.message}
     end
   end
 

@@ -40,8 +40,8 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
       chatbot.save!
       UserChatbot.create!(user: current_user, chatbot: chatbot, role: :bot_admin)
     rescue StandardError => error
-      Rails.logger.debug(error)
-      return render json: {code: 2, message: error}
+      log_request_error(error)
+      return render json: {code: 2, message: error.message}
     end
     render json: {code: 1, data: chatbot}
   end
@@ -53,8 +53,8 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
     ActiveRecord::Base.transaction do
       chatbot.update!(chatbot_params)
     rescue StandardError => error
-      Rails.logger.debug(error)
-      return render json: {code: 2, message: error}
+      log_request_error(error)
+      return render json: {code: 2, message: error.message}
     end
     render json: {code: 1, data: chatbot}
   end
@@ -67,8 +67,8 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
       user_chatbots = UserChatbot.where(chatbot_id: params[:id]).destroy_all
       chatbot.destroy!
     rescue StandardError => error
-      Rails.logger.debug(error)
-      return render json: {code: 2, message: error}
+      log_request_error(error)
+      return render json: {code: 2, message: error.message}
     end
     render json: {code: 1, message: "Success"}
   end
@@ -124,11 +124,8 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
                           role: 'bot_admin')
       render json: {code: 1, data: chatbot_dup}
     rescue StandardError => error
-      Rails.logger.debug(error)
-      # error.backtrace.each do |line|
-      #   Rails.logger.debug(line)
-      # end
-      return render json: {code: 2, message: error}
+      log_request_error(error)
+      return render json: {code: 2, message: error.message}
     end
   end
 
@@ -140,8 +137,8 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
     ActiveRecord::Base.transaction do
       chatbot.update! scenario_selected: params[:scenario_selected]
     rescue StandardError => error
-      Rails.logger.debug(error)
-      return render json: {code: 2, message: error}
+      log_request_error(error)
+      return render json: {code: 2, message: error.message}
     end
     render json: {code: 1, data: chatbot}
   end
@@ -172,8 +169,8 @@ class Api::V1::Managements::ChatbotsController < ApplicationController
     ActiveRecord::Base.transaction do
       chatbot.update!(design_settings: JSON.generate(params[:design_settings].as_json)) if params[:design_settings].present?
     rescue StandardError => error
-      Rails.logger.debug(error)
-      return render json: {code: 2, message: error}
+      log_request_error(error)
+      return render json: {code: 2, message: error.message}
     end
     return render json: {code: 1, message: "Success"}
   end
