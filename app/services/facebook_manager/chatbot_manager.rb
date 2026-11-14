@@ -75,7 +75,6 @@ module FacebookManager
       end
 
       request_body = build_message_request_body(response)
-      Rails.logger.debug(request_body)
       message_response = post_message(page_access_token, request_body)
       log_graph_failure('send_message_to_user', message_response)
       usage_type = @message_type.split("bag")[0] + "sent"
@@ -95,7 +94,6 @@ module FacebookManager
         }
       }
       request_body = build_message_request_body(response)
-      Rails.logger.debug(request_body)
       message_response = post_message(page_access_token, request_body)
       log_graph_failure('send_image_to_user', message_response)
       usage_type = @message_type.split("bag")[0] + "sent"
@@ -114,7 +112,6 @@ module FacebookManager
         },
         "message": response
       }
-      Rails.logger.debug(request_body)
       message_response = post_message(page_access_token, request_body)
       log_graph_failure('send_payload_to_user', message_response)
       create_instagram_log(@sender_psid, "dm_sent", @payload, @instagram_account, nil, nil) if message_response.dig(:data, "recipient_id").present?
@@ -134,7 +131,6 @@ module FacebookManager
           }
         }
       }
-      Rails.logger.debug(request_body)
       message_response = post_message(page_access_token, request_body)
       log_graph_failure('share_post_to_user', message_response)
       create_instagram_log(@sender_psid, "dm_sent", @message.message_value, @instagram_account, nil, nil) if message_response.dig(:data, "recipient_id").present?
