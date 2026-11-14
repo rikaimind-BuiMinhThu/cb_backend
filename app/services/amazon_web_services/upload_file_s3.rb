@@ -27,8 +27,8 @@ module AmazonWebServices
 
     def presigned
       if @type_name.present? && @user_id.present?
+        # Default credential chain (instance role on STG; env keys if present locally).
         s3 = Aws::S3::Resource.new(
-          credentials: Aws::Credentials.new(Settings.aws.s3.AWS_ACCESS_KEY_ID, Settings.aws.s3.AWS_SECRET_ACCESS_KEY),
           region: Settings.aws.s3.AWS_REGION
         )
         obj = s3.bucket(Settings.aws.s3.S3_BUCKET).object(@path)
