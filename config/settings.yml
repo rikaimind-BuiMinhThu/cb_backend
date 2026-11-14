@@ -17,8 +17,9 @@ facebook:
     app_secret: "<%= ENV.fetch("FACEBOOK_APP_SECRET") %>"
 aws:
   s3:
-    AWS_ACCESS_KEY_ID: "<%= ENV.fetch("AWS_ACCESS_KEY_ID") %>"
-    AWS_SECRET_ACCESS_KEY: "<%= ENV.fetch("AWS_SECRET_ACCESS_KEY") %>"
+    # Optional: prefer instance role / default chain when unset (STG A9 cutover).
+    AWS_ACCESS_KEY_ID: "<%= ENV.fetch("AWS_ACCESS_KEY_ID", "") %>"
+    AWS_SECRET_ACCESS_KEY: "<%= ENV.fetch("AWS_SECRET_ACCESS_KEY", "") %>"
     S3_BUCKET: "<%= ENV.fetch("S3_BUCKET") %>"
     AWS_REGION: "<%= ENV.fetch("AWS_REGION") %>"
 two_captcha:
