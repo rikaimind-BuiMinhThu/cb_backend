@@ -24,7 +24,7 @@ module Lexica
       return unless @client&.lexica?
 
       @scenario.merchandise_id = @params[:merchandise_id].to_s.strip.presence
-      @scenario.lexica_cart_url = @params[:lexica_cart_url]
+      @scenario.lexica_cart_url = sanitize_url(@params[:lexica_cart_url], :lexica_cart_url)
       mode = @params[:order_result_mode].to_s
       @scenario.order_result_mode = ORDER_RESULT_MODES.include?(mode) ? mode : DEFAULT_ORDER_RESULT_MODE
       assign_offers!
@@ -32,13 +32,27 @@ module Lexica
 
     private
 
+    def sanitize_url(raw, field)
+      value = Lexica::UrlSafety.normalize(raw)
+      return nil if value.nil?
+
+      Lexica::UrlSafety.assert_allowed!(value, field: field)
+      value
+    end
+
     def assign_offers!
       if @params.key?(:lexica_upsell_product_url)
-        @scenario.lexica_upsell_product_url = @params[:lexica_upsell_product_url]
+        @scenario.lexica_upsell_product_url = sanitize_url(
+          @params[:lexica_upsell_product_url],
+          :lexica_upsell_product_url
+        )
       end
       @scenario.lexica_upsell_sku = @params[:lexica_upsell_sku]
       if @params.key?(:lexica_cross_sell_product_url)
-        @scenario.lexica_cross_sell_product_url = @params[:lexica_cross_sell_product_url]
+        @scenario.lexica_cross_sell_product_url = sanitize_url(
+          @params[:lexica_cross_sell_product_url],
+          :lexica_cross_sell_product_url
+        )
       end
       @scenario.lexica_cross_sell_sku = @params[:lexica_cross_sell_sku]
 

@@ -4,6 +4,7 @@ require "uri"
 require_relative "boot"
 require_relative "app/services/lexica/rpa_queue"
 require_relative "app/services/lexica/rpa_dispatch"
+require_relative "app/services/lexica/url_safety"
 require_relative "app/services/selenium_services/base"
 require_relative "app/services/selenium_services/lexica"
 require_relative "app/services/selenium_services/lexica/selectors"
@@ -41,6 +42,7 @@ class Handler
     rescue StandardError => error
       warn "lexica rpa record failed: #{error.class}: #{error.message}"
       warn_chromedriver_failure
+      mark_record_failed(record, error)
       failures << { "itemIdentifier" => record["messageId"] }
     end
     { "batchItemFailures" => failures }
@@ -80,6 +82,29 @@ class Handler
     else
       nil
     end
+  end
+
+  def mark_record_failed(record, error)
+    body = JSON.parse(record.fetch("body"))
+    result_id = body["selenium_result_id"] || body["result_id"]
+    return if result_id.blank?
+
+    job = body["job"] || {}
+    sink = SeleniumServices::Lexica::HttpResultSink.new(
+      base_url: callback_base,
+      token: callback_token,
+      result_id: result_id,
+      client_id: job["client_id"] || body["client_id"]
+    )
+    sink.mark_failed!(
+      kind: "lambda_boot",
+      message: "#{error.class}: #{error.message}",
+      last_step_no: 0,
+      last_step_description: "lambda_boot",
+      screenshot_path: nil
+    )
+  rescue StandardError => mark_error
+    warn "lexica rpa mark_failed skipped: #{mark_error.class}: #{mark_error.message}"
   end
 
   def claim_job(result_id)

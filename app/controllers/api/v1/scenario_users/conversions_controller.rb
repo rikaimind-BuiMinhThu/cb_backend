@@ -3,7 +3,11 @@ class Api::V1::ScenarioUsers::ConversionsController < ApplicationController
   skip_before_action :verify_authenticity_token
 
   def create
-    Order.create!(order_params.merge({client_id: client_id}))
+    attrs = order_params.merge({ client_id: client_id })
+    Order.create!(attrs)
+    render json: { message: 'Order created successfully' }, status: :ok
+  rescue ActiveRecord::RecordNotUnique
+    # Unique (client, scenario, user) — webhook/retry safe.
     render json: { message: 'Order created successfully' }, status: :ok
   rescue ActionController::ParameterMissing => e
     render json: { error: e.message }, status: :bad_request

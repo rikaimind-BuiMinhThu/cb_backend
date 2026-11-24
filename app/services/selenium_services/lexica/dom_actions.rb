@@ -66,8 +66,7 @@ module SeleniumServices
 
 
       def fill_to_text_input(css_selector, value, description = "", pointer_action: true)
-        record_action(type: "fill", where: css_selector, label: description, value: value)
-        logged = description.to_s.downcase.include?("password") ? "********" : value
+        record_action(type: "fill", where: css_selector, label: description, value: "[redacted]")
         @log_tab_level += 1
         Log.info "Fill to text input #{css_selector}: #{description}", @log_tab_level
         input_element = @driver.find_element(css: css_selector)
@@ -75,7 +74,7 @@ module SeleniumServices
           @driver.execute_script("arguments[0].scrollIntoView({block:'center'});", input_element)
           input_element.click
           input_element.clear
-          Log.info "input_element.send_keys(#{logged})", @log_tab_level + 1
+          Log.info "input_element.send_keys([redacted])", @log_tab_level + 1
           input_element.send_keys(value)
           if input_element.attribute("value").to_s.blank?
             raise Selenium::WebDriver::Error::InvalidElementStateError, "value did not stick"
@@ -105,6 +104,7 @@ module SeleniumServices
 
 
       def navigate(url)
+        Lexica::UrlSafety.assert_allowed!(url, field: :navigate_url)
         record_action(type: "navigate", where: url, label: "navigate")
         super
       end

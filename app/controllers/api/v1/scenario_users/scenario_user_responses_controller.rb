@@ -51,12 +51,16 @@ class Api::V1::ScenarioUsers::ScenarioUserResponsesController < ApplicationContr
         elsif @client.repeat_plus?
           RepeatPlusJob.perform_async(params[:scenario_id], params[:user_id])
         end
-        Order.create(
-          client_id: @scenario.chatbot&.user&.client_id,
-          scenario_id: @scenario.id,
-          user_input_id: params[:user_id],
-          bot_type: bot_type,
-        )
+        begin
+          Order.create!(
+            client_id: @scenario.chatbot&.user&.client_id,
+            scenario_id: @scenario.id,
+            user_input_id: params[:user_id],
+            bot_type: bot_type,
+          )
+        rescue ActiveRecord::RecordNotUnique
+          # Unique (client, scenario, user) — idempotent on retry.
+        end
       else
         render json: { code: 1, message: "not create order" }
       end

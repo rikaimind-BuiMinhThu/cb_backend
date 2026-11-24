@@ -49,5 +49,6 @@ COPY app/services/selenium_services/lexica.rb ${LAMBDA_TASK_ROOT}/app/services/s
 COPY app/services/selenium_services/lexica ${LAMBDA_TASK_ROOT}/app/services/selenium_services/lexica
 COPY app/services/lexica/rpa_queue.rb ${LAMBDA_TASK_ROOT}/app/services/lexica/rpa_queue.rb
 COPY app/services/lexica/rpa_dispatch.rb ${LAMBDA_TASK_ROOT}/app/services/lexica/rpa_dispatch.rb
+COPY app/services/lexica/url_safety.rb ${LAMBDA_TASK_ROOT}/app/services/lexica/url_safety.rb
 
 CMD ["handler.Handler.process"]
