@@ -28,8 +28,8 @@ module Lexica
       uri = URI.parse(value)
       return false unless uri.is_a?(URI::HTTP) || uri.is_a?(URI::HTTPS)
       return false unless uri.scheme.to_s.downcase == "https"
-      return false if uri.host.blank?
-      return false if uri.userinfo.present?
+      return false if uri.host.to_s.strip.empty?
+      return false if uri.userinfo
 
       host = uri.host.to_s.downcase
       host_suffixes.any? { |suffix| host == suffix || host.end_with?(".#{suffix}") }
