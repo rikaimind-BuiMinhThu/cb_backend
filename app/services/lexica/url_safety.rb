@@ -10,10 +10,10 @@ module Lexica
     module_function
 
     def host_suffixes
-      raw = ENV["LEXICA_ALLOWED_URL_HOST_SUFFIXES"].to_s
-      return DEFAULT_HOST_SUFFIXES if raw.blank?
+      raw = ENV["LEXICA_ALLOWED_URL_HOST_SUFFIXES"].to_s.strip
+      return DEFAULT_HOST_SUFFIXES if raw.empty?
 
-      raw.split(",").map { |part| part.strip.downcase }.reject(&:blank?)
+      raw.split(",").map { |part| part.strip.downcase }.reject(&:empty?)
     end
 
     def normalize(url)
